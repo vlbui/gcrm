@@ -74,7 +74,7 @@ export default function YeuCauPage() {
       const requests = await fetchServiceRequests();
       setData(requests);
     } catch {
-      toast.error("Khong the tai du lieu");
+      toast.error("Không thể tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -105,10 +105,10 @@ export default function YeuCauPage() {
   ) => {
     try {
       await updateServiceRequest(item.id, { trang_thai: newStatus });
-      toast.success("Cap nhat trang thai thanh cong");
+      toast.success("Cập nhật trạng thái thành công");
       loadData();
     } catch {
-      toast.error("Khong the cap nhat trang thai");
+      toast.error("Không thể cập nhật trạng thái");
     }
   };
 
@@ -118,10 +118,10 @@ export default function YeuCauPage() {
         ghi_chu_nv: notes,
         xu_ly_boi: user?.id ?? null,
       });
-      toast.success("Cap nhat ghi chu thanh cong");
+      toast.success("Cập nhật ghi chú thành công");
       loadData();
     } catch {
-      toast.error("Khong the cap nhat ghi chu");
+      toast.error("Không thể cập nhật ghi chú");
     }
   };
 
@@ -137,19 +137,19 @@ export default function YeuCauPage() {
         dia_chi: convertDiaChi || null,
         loai_kh: "Hộ gia đình",
         trang_thai: "Mới",
-        ghi_chu: `Chuyen doi tu yeu cau ${selectedItem.ma_yc}`,
+        ghi_chu: `Chuyển đổi từ yêu cầu ${selectedItem.ma_yc}`,
       });
 
       // Create contract
       await createContract({
         customer_id: customer.id,
-        dich_vu: convertDichVu || "Kiem soat con trung",
+        dich_vu: convertDichVu || "Kiểm soát côn trùng",
         dien_tich: selectedItem.dien_tich ?? null,
         gia_tri: null,
         trang_thai: "Mới",
         ngay_bat_dau: new Date().toISOString().split("T")[0],
         ngay_ket_thuc: null,
-        ghi_chu: `Tu yeu cau ${selectedItem.ma_yc}. ${selectedItem.mo_ta ?? ""}`,
+        ghi_chu: `Từ yêu cầu ${selectedItem.ma_yc}. ${selectedItem.mo_ta ?? ""}`,
       });
 
       // Update request status
@@ -158,11 +158,11 @@ export default function YeuCauPage() {
         xu_ly_boi: user?.id ?? null,
       });
 
-      toast.success("Chuyen doi thanh cong! Da tao khach hang va hop dong moi.");
+      toast.success("Chuyển đổi thành công! Đã tạo khách hàng và hợp đồng mới.");
       setConvertDialogOpen(false);
       loadData();
     } catch {
-      toast.error("Co loi xay ra khi chuyen doi");
+      toast.error("Có lỗi xảy ra khi chuyển đổi");
     } finally {
       setConverting(false);
     }
@@ -185,9 +185,9 @@ export default function YeuCauPage() {
     <div>
       <div className="admin-page-header">
         <div>
-          <h1 className="admin-page-title">Yeu cau dich vu</h1>
+          <h1 className="admin-page-title">Yêu cầu dịch vụ</h1>
           <p className="admin-page-subtitle">
-            Quan ly yeu cau tu form lien he cong khai
+            Quản lý yêu cầu từ form liên hệ công khai
           </p>
         </div>
       </div>
@@ -197,7 +197,7 @@ export default function YeuCauPage() {
           <div className="data-table-search">
             <Search size={16} />
             <Input
-              placeholder="Tim kiem yeu cau..."
+              placeholder="Tìm kiếm yêu cầu..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -206,24 +206,24 @@ export default function YeuCauPage() {
 
         {loading ? (
           <div className="empty-state">
-            <p>Dang tai...</p>
+            <p>Đang tải...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
-            <p>Khong co du lieu</p>
+            <p>Không có dữ liệu</p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Ma YC</TableHead>
-                <TableHead>Ten KH</TableHead>
-                <TableHead>SDT</TableHead>
-                <TableHead>Loai hinh</TableHead>
-                <TableHead>Loai con trung</TableHead>
-                <TableHead>Trang thai</TableHead>
-                <TableHead>Ngay gui</TableHead>
-                <TableHead>Thao tac</TableHead>
+                <TableHead>Mã YC</TableHead>
+                <TableHead>Tên KH</TableHead>
+                <TableHead>SĐT</TableHead>
+                <TableHead>Loại hình</TableHead>
+                <TableHead>Loại côn trùng</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Ngày gửi</TableHead>
+                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -279,7 +279,7 @@ export default function YeuCauPage() {
                         <button
                           className="btn-action"
                           onClick={() => openConvertDialog(item)}
-                          title="Chuyen doi thanh khach hang"
+                          title="Chuyển đổi thành khách hàng"
                         >
                           <ArrowRightLeft size={14} />
                         </button>
@@ -298,20 +298,20 @@ export default function YeuCauPage() {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              Chi tiet yeu cau {selectedItem?.ma_yc}
+              Chi tiết yêu cầu {selectedItem?.ma_yc}
             </DialogTitle>
             <DialogDescription>
-              Thong tin chi tiet yeu cau dich vu
+              Thông tin chi tiết yêu cầu dịch vụ
             </DialogDescription>
           </DialogHeader>
           {selectedItem && (
             <div className="form-grid">
               <div className="form-field">
-                <Label>Ma yeu cau</Label>
+                <Label>Mã yêu cầu</Label>
                 <p>{selectedItem.ma_yc}</p>
               </div>
               <div className="form-field">
-                <Label>Trang thai</Label>
+                <Label>Trạng thái</Label>
                 <p>
                   <span
                     className={
@@ -325,11 +325,11 @@ export default function YeuCauPage() {
                 </p>
               </div>
               <div className="form-field">
-                <Label>Ten khach hang</Label>
+                <Label>Tên khách hàng</Label>
                 <p>{selectedItem.ten_kh}</p>
               </div>
               <div className="form-field">
-                <Label>So dien thoai</Label>
+                <Label>Số điện thoại</Label>
                 <p>{selectedItem.sdt}</p>
               </div>
               <div className="form-field">
@@ -337,23 +337,23 @@ export default function YeuCauPage() {
                 <p>{selectedItem.email ?? "—"}</p>
               </div>
               <div className="form-field">
-                <Label>Dia chi</Label>
+                <Label>Địa chỉ</Label>
                 <p>{selectedItem.dia_chi ?? "—"}</p>
               </div>
               <div className="form-field">
-                <Label>Loai hinh</Label>
+                <Label>Loại hình</Label>
                 <p>{selectedItem.loai_hinh ?? "—"}</p>
               </div>
               <div className="form-field">
-                <Label>Loai con trung</Label>
+                <Label>Loại côn trùng</Label>
                 <p>{selectedItem.loai_con_trung ?? "—"}</p>
               </div>
               <div className="form-field">
-                <Label>Dien tich</Label>
+                <Label>Diện tích</Label>
                 <p>{selectedItem.dien_tich ?? "—"}</p>
               </div>
               <div className="form-field">
-                <Label>Ngay gui</Label>
+                <Label>Ngày gửi</Label>
                 <p>
                   {new Date(selectedItem.created_at).toLocaleDateString(
                     "vi-VN"
@@ -361,11 +361,11 @@ export default function YeuCauPage() {
                 </p>
               </div>
               <div className="form-field full-width">
-                <Label>Mo ta</Label>
+                <Label>Mô tả</Label>
                 <p>{selectedItem.mo_ta ?? "—"}</p>
               </div>
               <div className="form-field full-width">
-                <Label>Ghi chu nhan vien</Label>
+                <Label>Ghi chú nhân viên</Label>
                 {canEdit ? (
                   <Textarea
                     rows={3}
@@ -375,7 +375,7 @@ export default function YeuCauPage() {
                         handleNotesUpdate(selectedItem, e.target.value);
                       }
                     }}
-                    placeholder="Nhap ghi chu..."
+                    placeholder="Nhập ghi chú..."
                   />
                 ) : (
                   <p>{selectedItem.ghi_chu_nv ?? "—"}</p>
@@ -388,7 +388,7 @@ export default function YeuCauPage() {
               variant="outline"
               onClick={() => setDetailDialogOpen(false)}
             >
-              Dong
+              Đóng
             </Button>
             {canEdit &&
               selectedItem &&
@@ -400,7 +400,7 @@ export default function YeuCauPage() {
                   }}
                 >
                   <ArrowRightLeft size={16} />
-                  Chuyen doi
+                  Chuyển đổi
                 </Button>
               )}
           </div>
@@ -412,23 +412,23 @@ export default function YeuCauPage() {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              Chuyen doi yeu cau {selectedItem?.ma_yc}
+              Chuyển đổi yêu cầu {selectedItem?.ma_yc}
             </DialogTitle>
             <DialogDescription>
-              Tao khach hang va hop dong moi tu yeu cau nay. Kiem tra va chinh
-              sua thong tin truoc khi chuyen doi.
+              Tạo khách hàng và hợp đồng mới từ yêu cầu này. Kiểm tra và chỉnh
+              sửa thông tin trước khi chuyển đổi.
             </DialogDescription>
           </DialogHeader>
           <div className="form-grid">
             <div className="form-field">
-              <Label>Ten khach hang *</Label>
+              <Label>Tên khách hàng *</Label>
               <Input
                 value={convertTenKH}
                 onChange={(e) => setConvertTenKH(e.target.value)}
               />
             </div>
             <div className="form-field">
-              <Label>So dien thoai *</Label>
+              <Label>Số điện thoại *</Label>
               <Input
                 value={convertSDT}
                 onChange={(e) => setConvertSDT(e.target.value)}
@@ -443,18 +443,18 @@ export default function YeuCauPage() {
               />
             </div>
             <div className="form-field">
-              <Label>Dia chi</Label>
+              <Label>Địa chỉ</Label>
               <Input
                 value={convertDiaChi}
                 onChange={(e) => setConvertDiaChi(e.target.value)}
               />
             </div>
             <div className="form-field full-width">
-              <Label>Dich vu (hop dong)</Label>
+              <Label>Dịch vụ (hợp đồng)</Label>
               <Input
                 value={convertDichVu}
                 onChange={(e) => setConvertDichVu(e.target.value)}
-                placeholder="Kiem soat con trung"
+                placeholder="Kiểm soát côn trùng"
               />
             </div>
           </div>
@@ -463,10 +463,10 @@ export default function YeuCauPage() {
               variant="outline"
               onClick={() => setConvertDialogOpen(false)}
             >
-              Huy
+              Hủy
             </Button>
             <Button onClick={handleConvert} disabled={converting}>
-              {converting ? "Dang xu ly..." : "Chuyen doi"}
+              {converting ? "Đang xử lý..." : "Chuyển đổi"}
             </Button>
           </div>
         </DialogContent>

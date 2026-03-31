@@ -88,7 +88,7 @@ export default function NguoiDungPage() {
       const users = await fetchUsers();
       setData(users);
     } catch {
-      toast.error("Khong the tai du lieu");
+      toast.error("Không thể tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -135,16 +135,16 @@ export default function NguoiDungPage() {
 
       if (editingItem) {
         await updateUser(editingItem.id, payload);
-        toast.success("Cap nhat nguoi dung thanh cong");
+        toast.success("Cập nhật người dùng thành công");
       } else {
         await createUser(payload);
-        toast.success("Them nguoi dung thanh cong");
+        toast.success("Thêm người dùng thành công");
       }
 
       setDialogOpen(false);
       loadData();
     } catch {
-      toast.error("Co loi xay ra, vui long thu lai");
+      toast.error("Có lỗi xảy ra, vui lòng thử lại");
     } finally {
       setSubmitting(false);
     }
@@ -154,12 +154,12 @@ export default function NguoiDungPage() {
     if (!deletingItem) return;
     try {
       await deleteUser(deletingItem.id);
-      toast.success("Xoa nguoi dung thanh cong");
+      toast.success("Xóa người dùng thành công");
       setDeleteDialogOpen(false);
       setDeletingItem(null);
       loadData();
     } catch {
-      toast.error("Khong the xoa nguoi dung");
+      toast.error("Không thể xóa người dùng");
     }
   };
 
@@ -176,14 +176,14 @@ export default function NguoiDungPage() {
     <div>
       <div className="admin-page-header">
         <div>
-          <h1 className="admin-page-title">Quan ly nguoi dung</h1>
+          <h1 className="admin-page-title">Quản lý người dùng</h1>
           <p className="admin-page-subtitle">
-            Quan ly tai khoan va phan quyen nguoi dung
+            Quản lý tài khoản và phân quyền người dùng
           </p>
         </div>
         <Button className="btn-add" onClick={openCreateDialog}>
           <Plus size={16} />
-          Them moi
+          Thêm mới
         </Button>
       </div>
 
@@ -192,7 +192,7 @@ export default function NguoiDungPage() {
           <div className="data-table-search">
             <Search size={16} />
             <Input
-              placeholder="Tim kiem nguoi dung..."
+              placeholder="Tìm kiếm người dùng..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -201,22 +201,22 @@ export default function NguoiDungPage() {
 
         {loading ? (
           <div className="empty-state">
-            <p>Dang tai...</p>
+            <p>Đang tải...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
-            <p>Khong co du lieu</p>
+            <p>Không có dữ liệu</p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
-                <TableHead>Ho ten</TableHead>
-                <TableHead>Vai tro</TableHead>
-                <TableHead>Trang thai</TableHead>
-                <TableHead>Ngay tao</TableHead>
-                <TableHead>Thao tac</TableHead>
+                <TableHead>Họ tên</TableHead>
+                <TableHead>Vai trò</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Ngày tạo</TableHead>
+                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -270,12 +270,12 @@ export default function NguoiDungPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Cap nhat nguoi dung" : "Them nguoi dung"}
+              {editingItem ? "Cập nhật người dùng" : "Thêm người dùng"}
             </DialogTitle>
             <DialogDescription>
               {editingItem
-                ? "Chinh sua thong tin nguoi dung"
-                : "Nhap thong tin nguoi dung moi"}
+                ? "Chỉnh sửa thông tin người dùng"
+                : "Nhập thông tin người dùng mới"}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -294,7 +294,7 @@ export default function NguoiDungPage() {
               </div>
 
               <div className="form-field">
-                <Label>Ho ten *</Label>
+                <Label>Họ tên *</Label>
                 <Input {...form.register("ho_ten")} />
                 {form.formState.errors.ho_ten && (
                   <p className="error">
@@ -304,7 +304,7 @@ export default function NguoiDungPage() {
               </div>
 
               <div className="form-field">
-                <Label>Vai tro</Label>
+                <Label>Vai trò</Label>
                 <Select
                   value={form.watch("vai_tro")}
                   onValueChange={(v) =>
@@ -312,7 +312,7 @@ export default function NguoiDungPage() {
                   }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Chon vai tro" />
+                    <SelectValue placeholder="Chọn vai trò" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Admin">Admin</SelectItem>
@@ -323,7 +323,7 @@ export default function NguoiDungPage() {
               </div>
 
               <div className="form-field">
-                <Label>Trang thai</Label>
+                <Label>Trạng thái</Label>
                 <Select
                   value={form.watch("trang_thai")}
                   onValueChange={(v) =>
@@ -331,7 +331,7 @@ export default function NguoiDungPage() {
                   }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Chon trang thai" />
+                    <SelectValue placeholder="Chọn trạng thái" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Hoạt động">Hoạt động</SelectItem>
@@ -352,14 +352,14 @@ export default function NguoiDungPage() {
                 variant="outline"
                 onClick={() => setDialogOpen(false)}
               >
-                Huy
+                Hủy
               </Button>
               <Button type="submit" disabled={submitting}>
                 {submitting
-                  ? "Dang xu ly..."
+                  ? "Đang xử lý..."
                   : editingItem
-                    ? "Cap nhat"
-                    : "Them moi"}
+                    ? "Cập nhật"
+                    : "Thêm mới"}
               </Button>
             </div>
           </form>
@@ -370,11 +370,11 @@ export default function NguoiDungPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Xac nhan xoa</DialogTitle>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
             <DialogDescription>
-              Ban co chac chan muon xoa nguoi dung{" "}
+              Bạn có chắc chắn muốn xóa người dùng{" "}
               <strong>{deletingItem?.ho_ten}</strong> ({deletingItem?.email})?
-              Hanh dong nay khong the hoan tac.
+              Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <div className="form-actions">
@@ -382,10 +382,10 @@ export default function NguoiDungPage() {
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
             >
-              Huy
+              Hủy
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Xoa
+              Xóa
             </Button>
           </div>
         </DialogContent>

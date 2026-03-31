@@ -94,7 +94,7 @@ export default function LichSuDichVuPage() {
       setContracts(contractList);
       setCustomers(customerList);
     } catch {
-      toast.error("Khong the tai du lieu");
+      toast.error("Không thể tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -156,7 +156,7 @@ export default function LichSuDichVuPage() {
         try {
           hoaChatParsed = JSON.parse(values.hoa_chat_su_dung);
         } catch {
-          toast.error("Hoa chat su dung khong dung dinh dang JSON");
+          toast.error("Hóa chất sử dụng không đúng định dạng JSON");
           setSubmitting(false);
           return;
         }
@@ -166,7 +166,7 @@ export default function LichSuDichVuPage() {
         try {
           vatTuParsed = JSON.parse(values.vat_tu_su_dung);
         } catch {
-          toast.error("Vat tu su dung khong dung dinh dang JSON");
+          toast.error("Vật tư sử dụng không đúng định dạng JSON");
           setSubmitting(false);
           return;
         }
@@ -187,16 +187,16 @@ export default function LichSuDichVuPage() {
 
       if (editingItem) {
         await updateServiceHistory(editingItem.id, payload);
-        toast.success("Cap nhat lich su dich vu thanh cong");
+        toast.success("Cập nhật lịch sử dịch vụ thành công");
       } else {
         await createServiceHistory(payload);
-        toast.success("Them lich su dich vu thanh cong");
+        toast.success("Thêm lịch sử dịch vụ thành công");
       }
 
       setDialogOpen(false);
       loadData();
     } catch {
-      toast.error("Co loi xay ra, vui long thu lai");
+      toast.error("Có lỗi xảy ra, vui lòng thử lại");
     } finally {
       setSubmitting(false);
     }
@@ -206,12 +206,12 @@ export default function LichSuDichVuPage() {
     if (!deletingItem) return;
     try {
       await deleteServiceHistory(deletingItem.id);
-      toast.success("Xoa lich su dich vu thanh cong");
+      toast.success("Xóa lịch sử dịch vụ thành công");
       setDeleteDialogOpen(false);
       setDeletingItem(null);
       loadData();
     } catch {
-      toast.error("Khong the xoa lich su dich vu");
+      toast.error("Không thể xóa lịch sử dịch vụ");
     }
   };
 
@@ -232,15 +232,15 @@ export default function LichSuDichVuPage() {
     <div>
       <div className="admin-page-header">
         <div>
-          <h1 className="admin-page-title">Lich su dich vu</h1>
+          <h1 className="admin-page-title">Lịch sử dịch vụ</h1>
           <p className="admin-page-subtitle">
-            Quan ly lich su thuc hien dich vu
+            Quản lý lịch sử thực hiện dịch vụ
           </p>
         </div>
         {canEdit && (
           <Button className="btn-add" onClick={openCreateDialog}>
             <Plus size={16} />
-            Them moi
+            Thêm mới
           </Button>
         )}
       </div>
@@ -250,7 +250,7 @@ export default function LichSuDichVuPage() {
           <div className="data-table-search">
             <Search size={16} />
             <Input
-              placeholder="Tim kiem lich su dich vu..."
+              placeholder="Tìm kiếm lịch sử dịch vụ..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -259,23 +259,23 @@ export default function LichSuDichVuPage() {
 
         {loading ? (
           <div className="empty-state">
-            <p>Dang tai...</p>
+            <p>Đang tải...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
-            <p>Khong co du lieu</p>
+            <p>Không có dữ liệu</p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Ma LSDV</TableHead>
-                <TableHead>Khach hang</TableHead>
-                <TableHead>Hop dong</TableHead>
-                <TableHead>Ngay thuc hien</TableHead>
-                <TableHead>KTV thuc hien</TableHead>
-                <TableHead>Ket qua</TableHead>
-                <TableHead>Thao tac</TableHead>
+                <TableHead>Mã LSDV</TableHead>
+                <TableHead>Khách hàng</TableHead>
+                <TableHead>Hợp đồng</TableHead>
+                <TableHead>Ngày thực hiện</TableHead>
+                <TableHead>KTV thực hiện</TableHead>
+                <TableHead>Kết quả</TableHead>
+                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -328,24 +328,24 @@ export default function LichSuDichVuPage() {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Cap nhat lich su dich vu" : "Them lich su dich vu"}
+              {editingItem ? "Cập nhật lịch sử dịch vụ" : "Thêm lịch sử dịch vụ"}
             </DialogTitle>
             <DialogDescription>
               {editingItem
-                ? "Chinh sua thong tin lich su dich vu"
-                : "Nhap thong tin lich su dich vu moi"}
+                ? "Chỉnh sửa thông tin lịch sử dịch vụ"
+                : "Nhập thông tin lịch sử dịch vụ mới"}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="form-grid">
               <div className="form-field">
-                <Label>Hop dong *</Label>
+                <Label>Hợp đồng *</Label>
                 <Select
                   value={form.watch("contract_id")}
                   onValueChange={handleContractChange}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Chon hop dong" />
+                    <SelectValue placeholder="Chọn hợp đồng" />
                   </SelectTrigger>
                   <SelectContent>
                     {contracts.map((c) => (
@@ -363,13 +363,13 @@ export default function LichSuDichVuPage() {
               </div>
 
               <div className="form-field">
-                <Label>Khach hang *</Label>
+                <Label>Khách hàng *</Label>
                 <Select
                   value={form.watch("customer_id")}
                   onValueChange={(v) => form.setValue("customer_id", v)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Chon khach hang" />
+                    <SelectValue placeholder="Chọn khách hàng" />
                   </SelectTrigger>
                   <SelectContent>
                     {customers.map((c) => (
@@ -387,7 +387,7 @@ export default function LichSuDichVuPage() {
               </div>
 
               <div className="form-field">
-                <Label>Ngay thuc hien *</Label>
+                <Label>Ngày thực hiện *</Label>
                 <Input
                   type="date"
                   {...form.register("ngay_thuc_hien")}
@@ -408,30 +408,30 @@ export default function LichSuDichVuPage() {
               </div>
 
               <div className="form-field">
-                <Label>Hoa chat su dung (JSON)</Label>
+                <Label>Hóa chất sử dụng (JSON)</Label>
                 <Textarea
                   rows={3}
-                  placeholder='[{"id":"1","ten":"Hoa chat A","lieu_luong":"100ml"}]'
+                  placeholder='[{"id":"1","ten":"Hóa chất A","lieu_luong":"100ml"}]'
                   {...form.register("hoa_chat_su_dung")}
                 />
               </div>
 
               <div className="form-field">
-                <Label>Vat tu su dung (JSON)</Label>
+                <Label>Vật tư sử dụng (JSON)</Label>
                 <Textarea
                   rows={3}
-                  placeholder='[{"id":"1","ten":"Bay dinh","so_luong":5}]'
+                  placeholder='[{"id":"1","ten":"Bẫy dính","so_luong":5}]'
                   {...form.register("vat_tu_su_dung")}
                 />
               </div>
 
               <div className="form-field">
-                <Label>Ket qua</Label>
+                <Label>Kết quả</Label>
                 <Textarea rows={3} {...form.register("ket_qua")} />
               </div>
 
               <div className="form-field full-width">
-                <Label>Ghi chu</Label>
+                <Label>Ghi chú</Label>
                 <Textarea rows={3} {...form.register("ghi_chu")} />
               </div>
             </div>
@@ -442,14 +442,14 @@ export default function LichSuDichVuPage() {
                 variant="outline"
                 onClick={() => setDialogOpen(false)}
               >
-                Huy
+                Hủy
               </Button>
               <Button type="submit" disabled={submitting}>
                 {submitting
-                  ? "Dang xu ly..."
+                  ? "Đang xử lý..."
                   : editingItem
-                    ? "Cap nhat"
-                    : "Them moi"}
+                    ? "Cập nhật"
+                    : "Thêm mới"}
               </Button>
             </div>
           </form>
@@ -460,11 +460,11 @@ export default function LichSuDichVuPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Xac nhan xoa</DialogTitle>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
             <DialogDescription>
-              Ban co chac chan muon xoa lich su dich vu{" "}
-              <strong>{deletingItem?.ma_lsdv}</strong>? Hanh dong nay khong the
-              hoan tac.
+              Bạn có chắc chắn muốn xóa lịch sử dịch vụ{" "}
+              <strong>{deletingItem?.ma_lsdv}</strong>? Hành động này không thể
+              hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <div className="form-actions">
@@ -472,10 +472,10 @@ export default function LichSuDichVuPage() {
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
             >
-              Huy
+              Hủy
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Xoa
+              Xóa
             </Button>
           </div>
         </DialogContent>
