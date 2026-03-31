@@ -3,15 +3,38 @@
 import { createClient } from "@/lib/supabase/client";
 import { Shield } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
-  // Handle implicit flow - check session on page load
   useEffect(() => {
+    // Handle OAuth code exchange
+    const code = searchParams.get("code");
+    if (code) {
+      setLoading(true);
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (!error) {
+          router.push("/admin");
+        } else {
+          setLoading(false);
+          console.error("Exchange error:", error);
+        }
+      });
+      return;
+    }
+
+    // Check if already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.push("/admin");
+      }
+    });
+
+    // Listen for auth changes
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         router.push("/admin");

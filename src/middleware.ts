@@ -1,16 +1,25 @@
-import { type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { type NextRequest, NextResponse } from "next/server";
 
-export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  
+  // Only protect /admin routes - let everything else through
+  if (pathname.startsWith("/admin")) {
+    // Check for Supabase auth cookies
+    const hasAuthCookie = request.cookies.getAll().some(
+      (cookie) => cookie.name.startsWith("sb-")
+    );
+    
+    if (!hasAuthCookie) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    // Only run middleware on admin, login, auth, and cho-duyet routes
-    "/admin/:path*",
-    "/login",
-    "/auth/:path*",
-    "/cho-duyet",
-  ],
+  matcher: ["/admin/:path*"],
 };
