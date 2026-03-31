@@ -39,14 +39,26 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  // Let /auth/callback pass through untouched —
+  // the PKCE code verifier cookie must not be consumed here.
+  if (request.nextUrl.pathname.startsWith("/auth/")) {
+    return supabaseResponse;
+  }
+
   // Helper: create redirect with session cookies preserved
   function redirectWithCookies(pathname: string) {
     const url = request.nextUrl.clone();
     url.pathname = pathname;
     const redirectResponse = NextResponse.redirect(url);
-    // Copy all session cookies to the redirect response
+    // Copy all session cookies (with options) to the redirect response
     supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value);
+      redirectResponse.cookies.set(cookie.name, cookie.value, {
+        path: "/",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+      });
     });
     return redirectResponse;
   }
