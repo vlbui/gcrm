@@ -35,9 +35,9 @@ import {
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const supplySchema = z.object({
-  ten_vat_tu: z.string().min(1, "Tên vật tư là bắt buộc"),
-  loai_vt: z.string().nullable(),
-  don_vi_tinh: z.string().nullable(),
+  ten_vat_tu: z.string().min(2, "Tên vật tư tối thiểu 2 ký tự"),
+  loai_vt: z.string().min(1, "Loại vật tư là bắt buộc"),
+  don_vi_tinh: z.string().min(1, "Đơn vị tính là bắt buộc"),
   nha_cung_cap: z.string().nullable(),
   ghi_chu: z.string().nullable(),
 });
@@ -256,12 +256,18 @@ export default function VatTuPage() {
                 )}
               </div>
               <div className="form-field">
-                <Label>Loại vật tư</Label>
+                <Label>Loại vật tư *</Label>
                 <Input {...register("loai_vt")} />
+                {errors.loai_vt && (
+                  <span className="error">{errors.loai_vt.message}</span>
+                )}
               </div>
               <div className="form-field">
-                <Label>Đơn vị tính</Label>
+                <Label>Đơn vị tính *</Label>
                 <Input {...register("don_vi_tinh")} />
+                {errors.don_vi_tinh && (
+                  <span className="error">{errors.don_vi_tinh.message}</span>
+                )}
               </div>
               <div className="form-field">
                 <Label>Nhà cung cấp</Label>

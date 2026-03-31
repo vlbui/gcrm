@@ -41,8 +41,8 @@ import {
 import type { UserRole } from "@/lib/api/auth.api";
 
 const formSchema = z.object({
-  email: z.string().email("Email khong hop le").min(1, "Vui long nhap email"),
-  ho_ten: z.string().min(1, "Vui long nhap ho ten"),
+  email: z.string().min(1, "Vui lòng nhập email").email("Email không hợp lệ"),
+  ho_ten: z.string().min(2, "Họ tên tối thiểu 2 ký tự"),
   vai_tro: z.enum(["Admin", "Nhân viên", "Xem"]),
   trang_thai: z.enum(["Hoạt động", "Tạm khóa"]),
   avatar_url: z.string().nullable(),

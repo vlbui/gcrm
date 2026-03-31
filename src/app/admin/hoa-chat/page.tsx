@@ -35,11 +35,11 @@ import {
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const chemicalSchema = z.object({
-  ten_thuong_mai: z.string().min(1, "Tên thương mại là bắt buộc"),
-  hoat_chat: z.string().nullable(),
+  ten_thuong_mai: z.string().min(2, "Tên thương mại tối thiểu 2 ký tự"),
+  hoat_chat: z.string().min(1, "Hoạt chất là bắt buộc"),
   doi_tuong: z.string().nullable(),
   dang_su_dung: z.string().nullable(),
-  don_vi_tinh: z.string().nullable(),
+  don_vi_tinh: z.string().min(1, "Đơn vị tính là bắt buộc"),
   nha_cung_cap: z.string().nullable(),
   ghi_chu: z.string().nullable(),
 });
@@ -269,8 +269,11 @@ export default function HoaChatPage() {
                 )}
               </div>
               <div className="form-field">
-                <Label>Hoạt chất</Label>
+                <Label>Hoạt chất *</Label>
                 <Input {...register("hoat_chat")} />
+                {errors.hoat_chat && (
+                  <span className="error">{errors.hoat_chat.message}</span>
+                )}
               </div>
               <div className="form-field">
                 <Label>Đối tượng</Label>
@@ -281,8 +284,11 @@ export default function HoaChatPage() {
                 <Input {...register("dang_su_dung")} />
               </div>
               <div className="form-field">
-                <Label>Đơn vị tính</Label>
+                <Label>Đơn vị tính *</Label>
                 <Input {...register("don_vi_tinh")} />
+                {errors.don_vi_tinh && (
+                  <span className="error">{errors.don_vi_tinh.message}</span>
+                )}
               </div>
               <div className="form-field">
                 <Label>Nhà cung cấp</Label>

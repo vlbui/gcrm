@@ -47,11 +47,11 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const contractSchema = z.object({
   customer_id: z.string().min(1, "Vui lòng chọn khách hàng"),
-  dich_vu: z.string().min(1, "Dịch vụ là bắt buộc"),
+  dich_vu: z.string().min(2, "Dịch vụ tối thiểu 2 ký tự"),
   dien_tich: z.string().nullable(),
-  gia_tri: z.coerce.number().nullable(),
+  gia_tri: z.coerce.number().min(0, "Giá trị không được âm").nullable(),
   trang_thai: z.string(),
-  ngay_bat_dau: z.string().nullable(),
+  ngay_bat_dau: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),
   ngay_ket_thuc: z.string().nullable(),
   ghi_chu: z.string().nullable(),
 });
@@ -348,6 +348,9 @@ export default function HopDongPage() {
               <div className="form-field">
                 <Label>Giá trị (VNĐ)</Label>
                 <Input type="number" {...register("gia_tri")} />
+                {errors.gia_tri && (
+                  <span className="error">{errors.gia_tri.message}</span>
+                )}
               </div>
               <div className="form-field">
                 <Label>Trạng thái</Label>
@@ -369,8 +372,11 @@ export default function HopDongPage() {
                 </Select>
               </div>
               <div className="form-field">
-                <Label>Ngày bắt đầu</Label>
+                <Label>Ngày bắt đầu *</Label>
                 <Input type="date" {...register("ngay_bat_dau")} />
+                {errors.ngay_bat_dau && (
+                  <span className="error">{errors.ngay_bat_dau.message}</span>
+                )}
               </div>
               <div className="form-field">
                 <Label>Ngày kết thúc</Label>

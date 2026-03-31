@@ -44,10 +44,10 @@ import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const formSchema = z.object({
-  contract_id: z.string().min(1, "Vui long chon hop dong"),
-  customer_id: z.string().min(1, "Vui long chon khach hang"),
-  ngay_thuc_hien: z.string().min(1, "Vui long nhap ngay thuc hien"),
-  ktv_thuc_hien: z.string().nullable(),
+  contract_id: z.string().min(1, "Vui lòng chọn hợp đồng"),
+  customer_id: z.string().min(1, "Vui lòng chọn khách hàng"),
+  ngay_thuc_hien: z.string().min(1, "Vui lòng nhập ngày thực hiện"),
+  ktv_thuc_hien: z.string().min(2, "Tên KTV tối thiểu 2 ký tự"),
   hoa_chat_su_dung: z.string().nullable(),
   vat_tu_su_dung: z.string().nullable(),
   ket_qua: z.string().nullable(),
@@ -400,8 +400,11 @@ export default function LichSuDichVuPage() {
               </div>
 
               <div className="form-field">
-                <Label>KTV thuc hien</Label>
+                <Label>KTV thực hiện *</Label>
                 <Input {...form.register("ktv_thuc_hien")} />
+                {form.formState.errors.ktv_thuc_hien && (
+                  <span className="error">{form.formState.errors.ktv_thuc_hien.message}</span>
+                )}
               </div>
 
               <div className="form-field">

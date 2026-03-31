@@ -42,10 +42,10 @@ import {
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const customerSchema = z.object({
-  ten_kh: z.string().min(1, "Tên khách hàng là bắt buộc"),
-  sdt: z.string().min(1, "Số điện thoại là bắt buộc"),
+  ten_kh: z.string().min(2, "Tên khách hàng tối thiểu 2 ký tự"),
+  sdt: z.string().regex(/^(0\d{9,10})$/, "SĐT phải có 10-11 số, bắt đầu bằng 0"),
   email: z.string().email("Email không hợp lệ").or(z.literal("")).nullable(),
-  dia_chi: z.string().nullable(),
+  dia_chi: z.string().min(1, "Địa chỉ là bắt buộc"),
   loai_kh: z.string(),
   trang_thai: z.string(),
   ghi_chu: z.string().nullable(),
@@ -333,8 +333,11 @@ export default function KhachHangPage() {
                 </Select>
               </div>
               <div className="form-field full-width">
-                <Label>Địa chỉ</Label>
+                <Label>Địa chỉ *</Label>
                 <Textarea {...register("dia_chi")} />
+                {errors.dia_chi && (
+                  <span className="error">{errors.dia_chi.message}</span>
+                )}
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>
