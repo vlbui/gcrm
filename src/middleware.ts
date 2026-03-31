@@ -1,25 +1,46 @@
+import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
-  
-  // Only protect /admin routes - let everything else through
-  if (pathname.startsWith("/admin")) {
-    // Check for Supabase auth cookies
-    const hasAuthCookie = request.cookies.getAll().some(
-      (cookie) => cookie.name.startsWith("sb-")
-    );
-    
-    if (!hasAuthCookie) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
     }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+
+  // Protect /admin routes
+  if (pathname.startsWith("/admin") && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js)$).*)",
+  ],
 };
