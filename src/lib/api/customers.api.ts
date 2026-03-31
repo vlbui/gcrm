@@ -22,13 +22,13 @@ async function generateMaKH(): Promise<string> {
   const { data } = await supabase
     .from("customers")
     .select("ma_kh")
-    .like("ma_kh", "GS-KH%")
     .order("ma_kh", { ascending: false })
-    .limit(1)
-    .single();
-  const lastNum = data?.ma_kh ? parseInt(data.ma_kh.replace("GS-KH", ""), 10) : 0;
-  const nextNum = (lastNum || 0) + 1;
-  return `GS-KH${String(nextNum).padStart(3, "0")}`;
+    .limit(1);
+
+  if (!data || data.length === 0) return "GS-KH001";
+
+  const lastNum = parseInt(data[0].ma_kh.replace("GS-KH", "")) || 0;
+  return `GS-KH${String(lastNum + 1).padStart(3, "0")}`;
 }
 
 export async function fetchCustomers(): Promise<Customer[]> {
