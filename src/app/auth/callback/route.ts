@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -7,33 +8,24 @@ export async function GET(request: Request) {
   const next = searchParams.get("next") ?? "/admin";
 
   if (code) {
-    const redirectUrl = `${origin}${next}`;
-    const response = NextResponse.redirect(redirectUrl);
-
+    const cookieStore = await cookies();
+    
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           getAll() {
-            // Parse cookies from the incoming request
-            const cookieHeader = request.headers.get("cookie") ?? "";
-            return cookieHeader.split(";").map((c) => {
-              const [name, ...rest] = c.trim().split("=");
-              return { name, value: rest.join("=") };
-            }).filter((c) => c.name);
+            return cookieStore.getAll();
           },
-          setAll(
-            cookiesToSet: {
-              name: string;
-              value: string;
-              options: Record<string, unknown>;
-            }[]
-          ) {
-            // Set session cookies on the redirect response
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options);
-            });
+          setAll(cookiesToSet: { name: string; value: string; options: Record<string, unknown> }[]) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // ignore
+            }
           },
         },
       }
@@ -42,31 +34,11 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Check if user exists in users table
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        const { data: dbUser } = await supabase
-          .from("users")
-          .select("id, trang_thai, vai_tro")
-          .eq("email", user.email)
-          .single();
-
-        if (!dbUser || dbUser.trang_thai !== "Hoạt động") {
-          const pendingResponse = NextResponse.redirect(`${origin}/cho-duyet`);
-          response.cookies.getAll().forEach((cookie) => {
-            pendingResponse.cookies.set(cookie.name, cookie.value);
-          });
-          return pendingResponse;
-        }
-      }
-
-      return response;
+      return NextResponse.redirect(`${origin}${next}`);
     }
+    
+    console.error("Exchange error:", error.message);
   }
 
-  // Auth error → redirect to login
   return NextResponse.redirect(`${origin}/login?error=auth_failed`);
 }
