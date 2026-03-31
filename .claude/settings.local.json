@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest _temp_next --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(rm -rf /d/gcrm/tmpnext)",
+      "Bash(npx shadcn@latest add button input label card dialog table sonner select textarea badge dropdown-menu sheet separator avatar tooltip --yes)",
+      "Bash(npx next:*)",
+      "Bash(find /d/gcrm/.next -name *.css)",
+      "Bash(curl -sI http://localhost:3000/_next/static/css/app/layout.css?v=1774951223455)",
+      "Bash(git add:*)",
+      "Bash(ls /d/gcrm/logo* /d/gcrm/public/logo*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
