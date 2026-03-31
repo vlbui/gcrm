@@ -2,38 +2,17 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { Shield } from "lucide-react";
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-function LoginContent() {
+export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
 
   useEffect(() => {
-    const code = searchParams.get("code");
-    if (code) {
-      setLoading(true);
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (!error) {
-          router.push("/admin");
-        } else {
-          setLoading(false);
-          console.error("Exchange error:", error);
-        }
-      });
-      return;
-    }
-
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        router.push("/admin");
-      }
-    });
-
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) {
         router.push("/admin");
       }
     });
@@ -44,7 +23,7 @@ function LoginContent() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     if (error) {
@@ -82,13 +61,5 @@ function LoginContent() {
         </p>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="login-page"><div className="login-card">Đang tải...</div></div>}>
-      <LoginContent />
-    </Suspense>
   );
 }
