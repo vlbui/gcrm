@@ -2,17 +2,16 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { Shield } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginContent() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
 
   useEffect(() => {
-    // Handle OAuth code exchange
     const code = searchParams.get("code");
     if (code) {
       setLoading(true);
@@ -27,14 +26,12 @@ export default function LoginPage() {
       return;
     }
 
-    // Check if already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         router.push("/admin");
       }
     });
 
-    // Listen for auth changes
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         router.push("/admin");
@@ -66,9 +63,7 @@ export default function LoginPage() {
           <h1>Lá Chắn Xanh</h1>
           <p>GreenShield CRM</p>
         </div>
-
         <div className="login-divider" />
-
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
@@ -82,11 +77,18 @@ export default function LoginPage() {
           </svg>
           {loading ? "Đang đăng nhập..." : "Đăng nhập bằng Google"}
         </button>
-
         <p className="login-note">
           Chỉ tài khoản được Admin cấp quyền mới có thể truy cập hệ thống.
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="login-page"><div className="login-card">Đang tải...</div></div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
