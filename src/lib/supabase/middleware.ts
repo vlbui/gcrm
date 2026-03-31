@@ -39,6 +39,18 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  // Helper: create redirect with session cookies preserved
+  function redirectWithCookies(pathname: string) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    const redirectResponse = NextResponse.redirect(url);
+    // Copy all session cookies to the redirect response
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
+  }
+
   try {
     const {
       data: { user },
@@ -48,9 +60,7 @@ export async function updateSession(request: NextRequest) {
 
     // Protect /admin routes — require authenticated user
     if (pathname.startsWith("/admin") && !user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
+      return redirectWithCookies("/login");
     }
 
     // If authenticated, check if user exists in users table with active status
@@ -63,9 +73,7 @@ export async function updateSession(request: NextRequest) {
 
       // User not in users table or not active → pending approval
       if (!dbUser || dbUser.trang_thai !== "Hoạt động") {
-        const url = request.nextUrl.clone();
-        url.pathname = "/cho-duyet";
-        return NextResponse.redirect(url);
+        return redirectWithCookies("/cho-duyet");
       }
 
       // Admin-only routes
@@ -73,21 +81,15 @@ export async function updateSession(request: NextRequest) {
         pathname.startsWith("/admin/nguoi-dung") &&
         dbUser.vai_tro !== "Admin"
       ) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/admin";
-        return NextResponse.redirect(url);
+        return redirectWithCookies("/admin");
       }
     }
 
     // Redirect logged-in users away from login page
     if (pathname === "/login" && user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/admin";
-      return NextResponse.redirect(url);
+      return redirectWithCookies("/admin");
     }
   } catch (error) {
-    // If auth check fails (network, env issue), let request through
-    // rather than crashing the middleware
     console.error("Middleware auth error:", error);
   }
 
