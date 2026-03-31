@@ -54,9 +54,11 @@ export async function fetchCustomer(id: string): Promise<Customer> {
 
 export async function createCustomer(input: CreateCustomerInput): Promise<Customer> {
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  // Debug: check auth
+  const { data: { session } } = await supabase.auth.getSession();
+  console.log("Auth session:", session ? "YES" : "NO");
+  console.log("Token:", session?.access_token?.substring(0, 20));
 
   const ma_kh = await generateMaKH();
   const { data, error } = await supabase
@@ -64,11 +66,15 @@ export async function createCustomer(input: CreateCustomerInput): Promise<Custom
     .insert({
       ma_kh,
       ...input,
-      created_by: user?.id ?? null,
+      created_by: session?.user?.id ?? null,
     })
     .select()
     .single();
-  if (error) throw error;
+
+  if (error) {
+    console.error("Insert error:", JSON.stringify(error));
+    throw error;
+  }
 
   await logActivity({
     hanh_dong: "Thêm khách hàng",
