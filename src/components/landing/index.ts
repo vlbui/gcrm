@@ -1,0 +1,23 @@
+export { default as Navbar } from "./Navbar";
+export { default as HeroSection } from "./HeroSection";
+export { default as TrustBar } from "./TrustBar";
+export { default as AboutSection } from "./AboutSection";
+export { default as IPMSection } from "./IPMSection";
+export { default as ServicesSection } from "./ServicesSection";
+export { default as SolutionsSection } from "./SolutionsSection";
+export { default as PricingSection } from "./PricingSection";
+export { default as CertificatesSection } from "./CertificatesSection";
+export { default as FAQSection } from "./FAQSection";
+export { default as ContactSection } from "./ContactSection";
+export { default as ContactForm } from "./ContactForm";
+export { default as MapSection } from "./MapSection";
+export { default as Footer } from "./Footer";
+export { default as FloatingWidgets } from "./FloatingWidgets";
+export { default as FadeUp } from "./FadeUp";
+
+export type { HeroData } from "./HeroSection";
+export type { CompanyInfo } from "./AboutSection";
+export type { ServiceItem } from "./ServicesSection";
+export type { PricingItem } from "./PricingSection";
+export type { CertificateItem } from "./CertificatesSection";
+export type { FAQItem } from "./FAQSection";
