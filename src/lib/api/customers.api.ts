@@ -19,10 +19,15 @@ export type CreateCustomerInput = Omit<Customer, "id" | "ma_kh" | "created_at" |
 
 async function generateMaKH(): Promise<string> {
   const supabase = createClient();
-  const { count } = await supabase
+  const { data } = await supabase
     .from("customers")
-    .select("*", { count: "exact", head: true });
-  const nextNum = (count ?? 0) + 1;
+    .select("ma_kh")
+    .like("ma_kh", "GS-KH%")
+    .order("ma_kh", { ascending: false })
+    .limit(1)
+    .single();
+  const lastNum = data?.ma_kh ? parseInt(data.ma_kh.replace("GS-KH", ""), 10) : 0;
+  const nextNum = (lastNum || 0) + 1;
   return `GS-KH${String(nextNum).padStart(3, "0")}`;
 }
 
