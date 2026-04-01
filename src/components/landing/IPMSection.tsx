@@ -4,26 +4,26 @@ const steps = [
   {
     num: 1,
     icon: "🔍",
-    title: "Khảo sát & Chẩn đoán",
-    desc: "Xác định chính xác đối tượng, mật độ và nguồn gốc phát sinh côn trùng trước khi đưa ra phác đồ xử lý.",
+    title: "Khảo sát miễn phí tại nhà",
+    desc: "Kỹ thuật viên đến tận nơi khảo sát, xác định chính xác loại côn trùng, mật độ và nguồn phát sinh trước khi đưa ra phương án diệt côn trùng phù hợp.",
   },
   {
     num: 2,
     icon: "🧱",
-    title: "Ngăn chặn từ gốc",
-    desc: "Tư vấn lấp kín kẽ hở hạ tầng và vệ sinh môi trường để triệt tiêu điều kiện sinh tồn của dịch hại.",
+    title: "Ngăn chặn & phòng ngừa",
+    desc: "Tư vấn bịt kín đường xâm nhập của chuột, gián, mối. Hướng dẫn vệ sinh môi trường để triệt tiêu điều kiện sinh sôi của côn trùng gây hại.",
   },
   {
     num: 3,
     icon: "🧬",
-    title: "Xử lý An toàn",
-    desc: "Ưu tiên bẫy bả và chế phẩm sinh học không mùi. Chỉ can thiệp hóa chất khi cần thiết tại điểm nóng.",
+    title: "Xử lý bằng hóa chất an toàn",
+    desc: "Sử dụng thuốc diệt côn trùng nhập ngoại không mùi, an toàn cho trẻ nhỏ và thú cưng. Ưu tiên bẫy bả sinh học, chỉ phun hóa chất tại điểm nóng.",
   },
   {
     num: 4,
     icon: "📊",
-    title: "Giám sát liên tục",
-    desc: "Theo dõi diễn biến và cung cấp báo cáo định kỳ, đảm bảo mật độ côn trùng luôn ở mức an toàn.",
+    title: "Giám sát & bảo hành",
+    desc: "Theo dõi diễn biến sau xử lý, cung cấp báo cáo định kỳ. Bảo hành cam kết — quay lại xử lý miễn phí nếu côn trùng tái phát.",
   },
 ];
 
@@ -33,10 +33,10 @@ export default function IPMSection() {
       <div className="container">
         <FadeUp>
           <div className="section-header">
-            <span className="section-label">🔬 Phương pháp IPM</span>
-            <h2 className="section-title">Hệ Tư Duy IPM — Quản Trị Tổng Hợp</h2>
+            <span className="section-label">🔬 Quy trình diệt côn trùng</span>
+            <h2 className="section-title">Phương Pháp IPM — Diệt Côn Trùng An Toàn, Hiệu Quả Lâu Dài</h2>
             <p className="section-desc">
-              Thay vì phun hóa chất tràn lan, IPM (Integrated Pest Management) là chiến lược kiểm soát dựa trên sự thấu hiểu về đặc tính loài và điều kiện môi trường thực tế.
+              IPM (Integrated Pest Management) là phương pháp kiểm soát côn trùng khoa học được áp dụng toàn cầu. Thay vì phun thuốc tràn lan, chúng tôi phân tích nguyên nhân gốc rễ và xử lý đúng mục tiêu — an toàn hơn, hiệu quả hơn, tiết kiệm hơn.
             </p>
           </div>
         </FadeUp>

@@ -13,33 +13,33 @@ interface AboutSectionProps {
 
 const defaultInfo: CompanyInfo = {
   name: "GreenShield JSC",
-  about_title: "Tâm thế của những người làm chuyên môn",
+  about_title: "Công ty diệt côn trùng uy tín tại Hà Nội",
   about_description:
-    "Lá Chắn Xanh (GreenShield JSC) không chỉ là một đơn vị cung cấp dịch vụ vệ sinh. Chúng tôi là tập hợp của đội ngũ chuyên gia có kinh nghiệm sâu sắc trong lĩnh vực <strong>dịch tễ và kiểm soát sinh vật gây hại</strong>.",
+    "<strong>Lá Chắn Xanh (GreenShield JSC)</strong> là công ty chuyên cung cấp <strong>dịch vụ diệt côn trùng chuyên nghiệp</strong> tại Hà Nội và các tỉnh phía Bắc. Đội ngũ kỹ thuật viên được đào tạo bài bản về <strong>dịch tễ học và kiểm soát sinh vật gây hại</strong>, áp dụng phương pháp IPM (Quản trị Dịch hại Tổng hợp) theo tiêu chuẩn quốc tế.",
   about_description2:
-    "Với chúng tôi, mỗi khách hàng là một hệ sinh thái cần được bảo vệ. Chúng tôi đặt sự minh bạch, an toàn pháp lý và hiệu quả bền vững lên hàng đầu trong mọi hành động.",
+    "Với hơn 10 năm kinh nghiệm phục vụ 300+ gia đình và doanh nghiệp, chúng tôi cam kết mang đến giải pháp diệt mối, gián, chuột, muỗi hiệu quả lâu dài, an toàn cho sức khỏe và tài sản của bạn.",
 };
 
 const highlights = [
   {
     icon: "🎓",
-    title: "Đội ngũ chuyên gia",
-    desc: "Kỹ thuật viên được đào tạo bài bản về dịch tễ học",
+    title: "10+ năm kinh nghiệm",
+    desc: "Đội ngũ chuyên gia diệt côn trùng được đào tạo bài bản về dịch tễ học",
   },
   {
     icon: "🔬",
-    title: "Khoa học dẫn đường",
-    desc: "Phương pháp IPM quốc tế, không phun tràn lan",
+    title: "Phương pháp IPM",
+    desc: "Kiểm soát côn trùng khoa học, không phun hóa chất tràn lan",
   },
   {
     icon: "📑",
-    title: "Minh bạch pháp lý",
-    desc: "Đầy đủ hồ sơ năng lực, giấy phép hành nghề",
+    title: "Đầy đủ giấy phép",
+    desc: "Hồ sơ năng lực, giấy phép hành nghề, chứng nhận hóa chất",
   },
   {
     icon: "🤝",
-    title: "Đồng hành lâu dài",
-    desc: "Hợp đồng định kỳ, báo cáo & giám sát liên tục",
+    title: "Bảo hành cam kết",
+    desc: "Bảo hành 30 ngày — 5 năm, xử lý lại miễn phí nếu tái phát",
   },
 ];
 

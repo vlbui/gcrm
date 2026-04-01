@@ -16,34 +16,39 @@ interface FAQSectionProps {
 
 const defaultFaqs: FAQItem[] = [
   {
-    question: "Phun thuốc có an toàn cho trẻ nhỏ và thú cưng không?",
+    question: "Thuốc diệt côn trùng có an toàn cho trẻ nhỏ và thú cưng không?",
     answer:
-      "Hoàn toàn an toàn. Chúng tôi sử dụng hóa chất nhập ngoại cao cấp — đều là dòng sản phẩm không mùi, có chứng nhận an toàn cho sức khỏe con người và thú cưng. Ngoài ra, kỹ thuật viên sẽ hướng dẫn bạn thời gian cách ly phù hợp (thường chỉ 2-4 giờ) trước khi quay lại sinh hoạt bình thường.",
+      "Hoàn toàn an toàn. Lá Chắn Xanh sử dụng thuốc diệt côn trùng nhập ngoại cao cấp từ Đức, Nhật — dòng sản phẩm không mùi, được Bộ Y tế cấp phép. Kỹ thuật viên sẽ hướng dẫn thời gian cách ly phù hợp (thường chỉ 2–4 giờ). Sau đó gia đình có thể sinh hoạt bình thường.",
+  },
+  {
+    question: "Giá dịch vụ diệt côn trùng tại Hà Nội bao nhiêu?",
+    answer:
+      "Chi phí phụ thuộc vào diện tích, loại côn trùng và mức độ nhiễm. Lá Chắn Xanh khảo sát miễn phí tại nhà trước khi báo giá chính xác. Giá gói đơn lẻ từ 300.000đ/lần, gói định kỳ hàng tháng tiết kiệm 15–25% so với đơn lẻ. Cam kết không phát sinh chi phí.",
   },
   {
     question: "Sau bao lâu thì côn trùng hết hoàn toàn?",
     answer:
-      "Tùy thuộc vào loại dịch hại và mức độ nhiễm. Với gián, thường thấy hiệu quả rõ rệt sau 3-5 ngày. Với chuột, sau 1-2 tuần. Với mối, cần 2-4 tuần để hệ thống mồi bả phát huy tác dụng triệt để. Chúng tôi cam kết bảo hành và quay lại xử lý miễn phí nếu chưa đạt hiệu quả.",
+      "Tùy loại côn trùng và mức độ: Gián giảm rõ sau 3–5 ngày. Chuột hết sau 1–2 tuần. Mối cần 2–4 tuần để hệ thống mồi bả phát huy triệt để. Trong thời gian bảo hành, nếu côn trùng tái phát, chúng tôi quay lại xử lý hoàn toàn miễn phí.",
   },
   {
-    question: "Tôi cần chuẩn bị gì trước khi đội ngũ đến?",
+    question: "Tôi cần chuẩn bị gì trước khi diệt côn trùng?",
     answer:
-      "Kỹ thuật viên sẽ liên hệ trước và hướng dẫn cụ thể. Thông thường, bạn chỉ cần cất thực phẩm hở và vật dụng cá nhân khỏi khu vực xử lý. Đội ngũ chúng tôi sẽ tự che phủ đồ đạc theo quy trình SOP chuẩn, bạn không cần di chuyển nội thất lớn.",
+      "Kỹ thuật viên sẽ gọi điện hướng dẫn trước khi đến. Thông thường bạn chỉ cần cất thực phẩm hở và vật dụng cá nhân. Đội ngũ Lá Chắn Xanh sẽ tự che phủ đồ đạc theo quy trình SOP chuẩn. Bạn không cần di chuyển nội thất lớn.",
   },
   {
-    question: "Chính sách bảo hành như thế nào?",
+    question: "Chính sách bảo hành dịch vụ diệt côn trùng như thế nào?",
     answer:
-      "Gói đơn lẻ: bảo hành 30 ngày. Gói định kỳ: bảo hành liên tục trong suốt hợp đồng, xử lý khẩn cấp miễn phí. Gói xử lý mối: bảo hành từ 3-5 năm tùy phương pháp. Trong thời gian bảo hành, nếu dịch hại tái phát, chúng tôi quay lại xử lý hoàn toàn miễn phí.",
+      "Gói đơn lẻ: bảo hành 30 ngày. Gói định kỳ: bảo hành liên tục, xử lý khẩn cấp miễn phí. Diệt mối: bảo hành 3–5 năm. Nếu côn trùng tái phát trong thời gian bảo hành, Lá Chắn Xanh quay lại xử lý hoàn toàn miễn phí — không phát sinh chi phí.",
   },
   {
-    question: "Lá Chắn Xanh có phục vụ ngoài Hà Nội không?",
+    question: "Lá Chắn Xanh phục vụ khu vực nào?",
     answer:
-      "Hiện tại chúng tôi tập trung phục vụ khu vực Hà Nội và các tỉnh lân cận (Bắc Ninh, Hưng Yên, Hải Dương, Vĩnh Phúc...). Đối với dự án lớn hoặc hợp đồng doanh nghiệp, chúng tôi có thể triển khai tại các tỉnh miền Bắc. Vui lòng liên hệ hotline để được tư vấn cụ thể.",
+      "Lá Chắn Xanh cung cấp dịch vụ diệt côn trùng tại Hà Nội và các tỉnh lân cận: Bắc Ninh, Hưng Yên, Hải Dương, Vĩnh Phúc, Hải Phòng. Đối với doanh nghiệp lớn, chúng tôi triển khai toàn miền Bắc. Gọi 085 9955 969 để được tư vấn.",
   },
   {
-    question: "IPM khác gì so với phun thuốc truyền thống?",
+    question: "Phương pháp IPM khác gì phun thuốc truyền thống?",
     answer:
-      "Phun thuốc truyền thống chỉ xử lý bề mặt, côn trùng dễ tái phát và kháng thuốc. IPM (Quản trị Dịch hại Tổng hợp) là phương pháp khoa học: phân tích nguyên nhân gốc rễ, chặn đường xâm nhập, ưu tiên biện pháp sinh học, chỉ dùng hóa chất tại điểm nóng. Hiệu quả lâu dài, ít hóa chất hơn, an toàn hơn.",
+      "Phun thuốc truyền thống chỉ xử lý bề mặt — côn trùng dễ tái phát và kháng thuốc. IPM (Quản trị Dịch hại Tổng hợp) phân tích nguyên nhân gốc rễ, chặn đường xâm nhập, ưu tiên bẫy bả sinh học. Chỉ dùng hóa chất tại điểm nóng. Kết quả: hiệu quả lâu dài, ít hóa chất hơn, an toàn hơn cho gia đình.",
   },
 ];
 
@@ -61,7 +66,7 @@ export default function FAQSection({ faqs }: FAQSectionProps) {
         <FadeUp>
           <div className="section-header">
             <span className="section-label">❓ Câu hỏi thường gặp</span>
-            <h2 className="section-title">Giải Đáp Thắc Mắc</h2>
+            <h2 className="section-title">Câu Hỏi Thường Gặp Về Dịch Vụ Diệt Côn Trùng</h2>
           </div>
         </FadeUp>
 

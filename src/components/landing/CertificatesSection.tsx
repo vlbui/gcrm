@@ -14,23 +14,23 @@ interface CertificatesSectionProps {
 const defaultCerts: CertificateItem[] = [
   {
     icon: "📋",
-    title: "Giấy phép kinh doanh",
-    description: "MST: 0110328932 — Sở KH&ĐT Hà Nội cấp",
+    title: "Giấy phép kinh doanh hợp lệ",
+    description: "MST: 0110328932 — Sở KH&ĐT Hà Nội cấp. Đăng ký ngành nghề diệt côn trùng, khử trùng",
   },
   {
     icon: "🧪",
-    title: "Hóa chất nhập ngoại",
-    description: "Sản phẩm chính hãng, có đầy đủ chứng nhận an toàn",
+    title: "Chứng nhận hóa chất an toàn",
+    description: "Thuốc diệt côn trùng nhập ngoại chính hãng, có phiếu kiểm nghiệm và chứng nhận Bộ Y tế",
   },
   {
     icon: "🏥",
-    title: "Năng lực Y tế dự phòng",
-    description: "Đội ngũ được đào tạo về dịch tễ và sức khỏe cộng đồng",
+    title: "Năng lực y tế dự phòng",
+    description: "Kỹ thuật viên được đào tạo bài bản về dịch tễ học, kiểm soát sinh vật gây hại",
   },
   {
     icon: "🌍",
-    title: "Tiêu chuẩn chất lượng",
-    description: "Quy trình làm việc chuyên nghiệp, đạt chuẩn quốc tế",
+    title: "Quy trình chuẩn quốc tế",
+    description: "Áp dụng phương pháp IPM theo tiêu chuẩn NPMA (Mỹ) trong mọi dự án diệt côn trùng",
   },
 ];
 
@@ -43,9 +43,9 @@ export default function CertificatesSection({ certificates }: CertificatesSectio
         <FadeUp>
           <div className="section-header">
             <span className="section-label">📜 Chứng chỉ &amp; Pháp lý</span>
-            <h2 className="section-title">Đầy Đủ Giấy Phép &amp; Chứng Nhận</h2>
+            <h2 className="section-title">Công Ty Diệt Côn Trùng Có Đầy Đủ Giấy Phép</h2>
             <p className="section-desc">
-              Chúng tôi cam kết hoạt động minh bạch, tuân thủ mọi quy định pháp luật về y tế dự phòng và an toàn hóa chất.
+              Lá Chắn Xanh hoạt động minh bạch, tuân thủ mọi quy định pháp luật về y tế dự phòng và an toàn hóa chất. Đây là cơ sở để bạn yên tâm lựa chọn dịch vụ diệt côn trùng uy tín.
             </p>
           </div>
         </FadeUp>

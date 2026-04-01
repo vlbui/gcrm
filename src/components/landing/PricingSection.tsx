@@ -69,10 +69,10 @@ export default function PricingSection({ pricing }: PricingSectionProps) {
       <div className="container">
         <FadeUp>
           <div className="section-header">
-            <span className="section-label">💰 Bảng giá tham khảo</span>
-            <h2 className="section-title">Các Gói Dịch Vụ</h2>
+            <span className="section-label">💰 Bảng giá diệt côn trùng</span>
+            <h2 className="section-title">Bảng Giá Dịch Vụ Diệt Côn Trùng Tại Hà Nội</h2>
             <p className="section-desc">
-              Minh bạch về chi phí — bạn biết chính xác mình đang trả cho điều gì. Giá cuối cùng tùy thuộc vào khảo sát thực tế.
+              Giá dịch vụ diệt côn trùng minh bạch, không phát sinh. Chi phí cuối cùng tùy thuộc vào diện tích và mức độ côn trùng sau khảo sát thực tế miễn phí.
             </p>
           </div>
         </FadeUp>

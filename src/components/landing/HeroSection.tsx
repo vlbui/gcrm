@@ -29,23 +29,23 @@ interface HeroSectionProps {
 }
 
 const defaultHero: HeroData = {
-  headline: "Kiểm Soát Côn Trùng",
-  sub_headline: "Chuẩn Chuyên Gia",
+  headline: "Dịch Vụ Diệt Côn Trùng",
+  sub_headline: "Chuyên Nghiệp Tại Hà Nội",
   description:
-    "Lá Chắn Xanh mang đến tư duy quản trị rủi ro hiện đại, bảo vệ an toàn sức khỏe và tài sản của bạn bằng tri thức khoa học và phương pháp IPM tiên tiến.",
-  cta_text: "Khảo sát miễn phí ngay",
+    "Lá Chắn Xanh — công ty diệt côn trùng hàng đầu Hà Nội. Chuyên diệt mối, gián, chuột, muỗi, kiến, ruồi cho gia đình và doanh nghiệp. Phương pháp IPM an toàn, hóa chất nhập ngoại không mùi. Khảo sát miễn phí — Bảo hành cam kết.",
+  cta_text: "Nhận báo giá miễn phí",
   cta_link: "#contact",
   cta2_text: "085 9955 969",
   cta2_link: "tel:0859955969",
   badges: [
-    { icon: "check", text: "Chuyên gia IPM" },
-    { icon: "shield", text: "An toàn sinh học" },
+    { icon: "check", text: "Phương pháp IPM quốc tế" },
+    { icon: "shield", text: "An toàn cho trẻ nhỏ & thú cưng" },
     { text: "Hóa chất nhập ngoại cao cấp" },
   ],
   stats: [
-    { value: "300+", label: "Khách hàng tin tưởng" },
-    { value: "10+", label: "Năm kinh nghiệm" },
-    { value: "100%", label: "Khách hài lòng" },
+    { value: "300+", label: "Gia đình & doanh nghiệp tin tưởng" },
+    { value: "10+", label: "Năm kinh nghiệm thực chiến" },
+    { value: "100%", label: "Cam kết hài lòng" },
   ],
 };
 
@@ -113,12 +113,12 @@ export default function HeroSection({ hero }: HeroSectionProps) {
                 <div className="hero-card-header">
                   <div className="hero-card-icon green">🔬</div>
                   <div>
-                    <div className="hero-card-title">Phương pháp IPM</div>
-                    <div className="hero-card-subtitle">Integrated Pest Management</div>
+                    <div className="hero-card-title">Phương pháp IPM tiên tiến</div>
+                    <div className="hero-card-subtitle">Quản trị dịch hại tổng hợp</div>
                   </div>
                 </div>
                 <div className="hero-card-body">
-                  Kiểm soát dựa trên khoa học — thấu hiểu đặc tính loài, chỉ can thiệp hóa chất khi cần thiết tại điểm nóng.
+                  Kiểm soát côn trùng dựa trên khoa học — phân tích đặc tính loài, chỉ dùng hóa chất tại điểm nóng. Hiệu quả lâu dài, an toàn tuyệt đối.
                 </div>
                 <div className="hero-card-tags">
                   <span className="hero-card-tag">Khảo sát</span>
@@ -132,23 +132,23 @@ export default function HeroSection({ hero }: HeroSectionProps) {
                   <div className="hero-card-icon blue">📋</div>
                   <div>
                     <div className="hero-card-title">Báo cáo chuyên nghiệp</div>
-                    <div className="hero-card-subtitle">Minh bạch · Định kỳ · Chi tiết</div>
+                    <div className="hero-card-subtitle">Minh bạch · Định kỳ · Đáp ứng kiểm toán</div>
                   </div>
                 </div>
                 <div className="hero-card-body">
-                  Hệ thống báo cáo &amp; hồ sơ chi tiết, minh bạch, đáp ứng yêu cầu kiểm toán của mọi doanh nghiệp.
+                  Hệ thống báo cáo diệt côn trùng chi tiết, đáp ứng yêu cầu kiểm toán VSATTP cho nhà hàng, khách sạn, nhà máy.
                 </div>
               </div>
               <div className="hero-card">
                 <div className="hero-card-header">
                   <div className="hero-card-icon amber">🛡️</div>
                   <div>
-                    <div className="hero-card-title">An toàn tuyệt đối</div>
-                    <div className="hero-card-subtitle">Hóa chất nhập ngoại cao cấp</div>
+                    <div className="hero-card-title">An toàn cho gia đình</div>
+                    <div className="hero-card-subtitle">Hóa chất không mùi, nhập ngoại</div>
                   </div>
                 </div>
                 <div className="hero-card-body">
-                  Hóa chất cao cấp không mùi, an toàn cho trẻ nhỏ và thú cưng. Bảo hành cam kết.
+                  Thuốc diệt côn trùng nhập khẩu cao cấp, không mùi, an toàn cho trẻ nhỏ và thú cưng. Bảo hành 30 ngày — 5 năm.
                 </div>
               </div>
             </div>

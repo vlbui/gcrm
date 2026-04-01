@@ -22,20 +22,20 @@ export default function Footer() {
               LÁ CHẮN XANH
             </div>
             <p className="footer-brand-desc">
-              Chuyên gia kiểm soát côn trùng IPM — Bảo vệ sức khỏe và tài sản bằng tri thức khoa học.
+              Công ty dịch vụ diệt côn trùng chuyên nghiệp tại Hà Nội. Diệt mối, gián, chuột, muỗi, kiến, ruồi bằng phương pháp IPM an toàn.
             </p>
             <p className="footer-mst">MST: 0110328932</p>
           </div>
 
           <div>
-            <h4>Dịch vụ</h4>
+            <h4>Dịch vụ diệt côn trùng</h4>
             <div className="footer-links">
-              <a href="#services">Kiểm soát Muỗi</a>
-              <a href="#services">Diệt Gián &amp; Kiến</a>
-              <a href="#services">Diệt Chuột</a>
-              <a href="#services">Xử lý Mối</a>
-              <a href="#services">Phun khử trùng</a>
-              <a href="#services">Kiểm soát Ruồi</a>
+              <a href="#services">Dịch vụ diệt muỗi</a>
+              <a href="#services">Dịch vụ diệt gián</a>
+              <a href="#services">Dịch vụ diệt chuột</a>
+              <a href="#services">Dịch vụ diệt mối</a>
+              <a href="#services">Dịch vụ diệt ruồi</a>
+              <a href="#services">Phun khử trùng, khử khuẩn</a>
             </div>
           </div>
 

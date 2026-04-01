@@ -1,10 +1,10 @@
 export default function TrustBar() {
   const items = [
-    { icon: "🏥", text: "Chuyên gia Dịch tễ" },
-    { icon: "🌍", text: "Hóa chất nhập ngoại" },
-    { icon: "📊", text: "Báo cáo định kỳ" },
-    { icon: "⏰", text: "Hỗ trợ 24/7" },
-    { icon: "✅", text: "Bảo hành cam kết" },
+    { icon: "🏥", text: "Chuyên gia diệt côn trùng" },
+    { icon: "🌍", text: "Hóa chất nhập ngoại không mùi" },
+    { icon: "📊", text: "Báo cáo & giám sát định kỳ" },
+    { icon: "⏰", text: "Hỗ trợ khẩn cấp 24/7" },
+    { icon: "✅", text: "Bảo hành lên đến 5 năm" },
   ];
 
   return (
