@@ -89,6 +89,15 @@ export default function ServicesSection({ services }: ServicesSectionProps) {
             </FadeUp>
           ))}
         </div>
+
+        <div style={{ textAlign: "center", marginTop: "40px" }}>
+          <button
+            className="btn-cta btn-accent btn-lg"
+            onClick={() => window.dispatchEvent(new Event("open-contact-popup"))}
+          >
+            Nhận tư vấn & báo giá miễn phí
+          </button>
+        </div>
       </div>
     </section>
   );

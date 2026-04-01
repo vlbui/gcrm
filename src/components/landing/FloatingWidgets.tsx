@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Phone, ArrowUp } from "lucide-react";
+import { Phone, ArrowUp, Send } from "lucide-react";
 
 export default function FloatingWidgets() {
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -56,6 +56,14 @@ export default function FloatingWidgets() {
             💬 Chat Zalo
           </a>
         </div>
+      </div>
+
+      {/* Floating CTA */}
+      <div className="floating-cta">
+        <button onClick={() => window.dispatchEvent(new Event("open-contact-popup"))}>
+          <Send size={16} />
+          Báo giá miễn phí
+        </button>
       </div>
 
       {/* Back to top */}

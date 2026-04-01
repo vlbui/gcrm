@@ -13,6 +13,7 @@ import {
   MapSection,
   Footer,
   FloatingWidgets,
+  ContactPopupProvider,
 } from "@/components/landing";
 import {
   fetchHeroServer,
@@ -37,7 +38,7 @@ export default async function Home() {
     ]);
 
   return (
-    <>
+    <ContactPopupProvider>
       <Navbar />
 
       <HeroSection
@@ -101,13 +102,11 @@ export default async function Home() {
         }))}
       />
 
-      <ContactSection companyInfo={companyInfo} />
-
       <MapSection />
 
       <Footer />
 
       <FloatingWidgets />
-    </>
+    </ContactPopupProvider>
   );
 }

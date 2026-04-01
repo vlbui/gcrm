@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Phone, Menu, X } from "lucide-react";
+import { Phone, Menu, X, Send } from "lucide-react";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -42,9 +42,13 @@ export default function Navbar() {
               <Phone size={18} />
               085 9955 969
             </a>
-            <a href="#contact" className="btn-cta btn-primary">
+            <button
+              className="btn-cta btn-primary"
+              onClick={() => window.dispatchEvent(new Event("open-contact-popup"))}
+            >
+              <Send size={16} />
               Báo giá miễn phí
-            </a>
+            </button>
           </div>
 
           <button
@@ -63,7 +67,7 @@ export default function Navbar() {
         <a href="#services" onClick={closeMobile}>Dịch vụ</a>
         <a href="#pricing" onClick={closeMobile}>Bảng giá</a>
         <a href="#faq" onClick={closeMobile}>FAQ</a>
-        <a href="#contact" onClick={closeMobile}>Liên hệ</a>
+        <button onClick={() => { closeMobile(); window.dispatchEvent(new Event("open-contact-popup")); }} style={{ background: "none", border: "none", color: "inherit", font: "inherit", cursor: "pointer", padding: 0, textAlign: "left" }}>Báo giá miễn phí</button>
         <div className="mobile-cta">
           <a
             href="tel:0859955969"

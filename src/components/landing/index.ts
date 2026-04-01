@@ -14,6 +14,7 @@ export { default as MapSection } from "./MapSection";
 export { default as Footer } from "./Footer";
 export { default as FloatingWidgets } from "./FloatingWidgets";
 export { default as FadeUp } from "./FadeUp";
+export { ContactPopupProvider, CTAButton, useContactPopup } from "./ContactPopup";
 
 export type { HeroData } from "./HeroSection";
 export type { CompanyInfo } from "./AboutSection";

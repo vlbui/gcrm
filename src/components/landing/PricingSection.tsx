@@ -92,13 +92,13 @@ export default function PricingSection({ pricing }: PricingSectionProps) {
                     </div>
                   ))}
                 </div>
-                <a
-                  href="#contact"
+                <button
                   className={`btn-cta ${plan.is_popular ? "btn-primary" : "btn-outline"}`}
                   style={{ width: "100%", justifyContent: "center" }}
+                  onClick={() => window.dispatchEvent(new Event("open-contact-popup"))}
                 >
                   {plan.cta_text ?? "Nhận báo giá"}
-                </a>
+                </button>
               </div>
             </FadeUp>
           ))}

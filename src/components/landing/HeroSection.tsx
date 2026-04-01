@@ -78,10 +78,13 @@ export default function HeroSection({ hero }: HeroSectionProps) {
             <p className="hero-desc">{data.description}</p>
 
             <div className="hero-actions">
-              <a href={data.cta_link} className="btn-cta btn-accent btn-lg">
+              <button
+                className="btn-cta btn-accent btn-lg"
+                onClick={() => window.dispatchEvent(new Event("open-contact-popup"))}
+              >
                 <Check size={18} />
                 {data.cta_text}
-              </a>
+              </button>
               <a
                 href={data.cta2_link}
                 className="btn-cta btn-outline btn-lg"
