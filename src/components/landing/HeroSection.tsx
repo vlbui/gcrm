@@ -1,3 +1,5 @@
+"use client";
+
 import { Check, Shield, Phone } from "lucide-react";
 
 interface HeroBadge {
