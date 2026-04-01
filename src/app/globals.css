@@ -2544,50 +2544,57 @@ ul { list-style: none; }
 .btn-add {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 20px;
+  gap: 7px;
+  padding: 10px 22px;
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--primary-700), var(--primary-500));
   color: white;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   font-family: 'Be Vietnam Pro', sans-serif;
   border: none;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(22,101,52,0.2);
+  box-shadow: 0 3px 8px rgba(22,101,52,0.25);
+  letter-spacing: 0.01em;
 }
 
 .btn-add:hover {
-  box-shadow: 0 4px 12px rgba(22,101,52,0.35);
+  box-shadow: 0 5px 16px rgba(22,101,52,0.4);
   transform: translateY(-1px);
+}
+
+.btn-add:active {
+  transform: scale(0.98);
 }
 
 .btn-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--neutral-200);
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--neutral-200);
   background: var(--white);
-  color: var(--neutral-500);
+  color: var(--neutral-600);
   cursor: pointer;
   transition: all 0.2s;
-  margin-right: 4px;
+  margin-right: 5px;
 }
 
 .btn-action:hover {
   background: var(--primary-50);
   color: var(--primary-700);
-  border-color: var(--primary-200);
+  border-color: var(--primary-300);
+  box-shadow: 0 2px 6px rgba(22,101,52,0.12);
 }
 
 .btn-action.danger:hover {
   color: var(--danger-500);
   border-color: #FCA5A5;
   background: #FEF2F2;
+  box-shadow: 0 2px 6px rgba(239,68,68,0.12);
 }
 
 /* Status badges */
