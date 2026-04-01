@@ -137,6 +137,17 @@ export default function FaqCmsPage() {
     }
   };
 
+  const handleToggleActive = async (item: CmsFaq, newValue: boolean) => {
+    try {
+      setData((prev) => prev.map((d) => d.id === item.id ? { ...d, is_active: newValue } : d));
+      await updateCmsRecord("cms_faq", item.id, { is_active: newValue });
+      toast.success(newValue ? "Đã bật hiển thị" : "Đã tắt hiển thị");
+    } catch {
+      setData((prev) => prev.map((d) => d.id === item.id ? { ...d, is_active: !newValue } : d));
+      toast.error("Không thể cập nhật trạng thái");
+    }
+  };
+
   const handleDelete = async (item: CmsFaq) => {
     if (!window.confirm(`Xác nhận xóa FAQ "${item.question}"?`)) return;
     try {
@@ -188,7 +199,7 @@ export default function FaqCmsPage() {
                 <TableHead>Câu hỏi</TableHead>
                 <TableHead>Danh mục</TableHead>
                 <TableHead>Thứ tự</TableHead>
-                <TableHead>Active</TableHead>
+                <TableHead>Hiển thị</TableHead>
                 <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -203,13 +214,11 @@ export default function FaqCmsPage() {
                   <TableCell>{item.category || "—"}</TableCell>
                   <TableCell>{item.sort_order}</TableCell>
                   <TableCell>
-                    <span
-                      className={`badge ${
-                        item.is_active ? "badge-success" : "badge-secondary"
-                      }`}
-                    >
-                      {item.is_active ? "Active" : "Inactive"}
-                    </span>
+                    <button
+                      className={`toggle-switch ${item.is_active ? "active" : ""}`}
+                      onClick={() => handleToggleActive(item, !item.is_active)}
+                      title={item.is_active ? "Đang hiển thị" : "Đang ẩn"}
+                    />
                   </TableCell>
                   <TableCell>
                     <button

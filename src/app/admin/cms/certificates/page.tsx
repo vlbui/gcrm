@@ -150,6 +150,17 @@ export default function CertificatesPage() {
     }
   };
 
+  const handleToggleActive = async (item: CmsCertificate, newValue: boolean) => {
+    try {
+      setData((prev) => prev.map((d) => d.id === item.id ? { ...d, is_active: newValue } : d));
+      await updateCmsRecord("cms_certificates", item.id, { is_active: newValue });
+      toast.success(newValue ? "Đã bật hiển thị" : "Đã tắt hiển thị");
+    } catch {
+      setData((prev) => prev.map((d) => d.id === item.id ? { ...d, is_active: !newValue } : d));
+      toast.error("Không thể cập nhật trạng thái");
+    }
+  };
+
   const handleDelete = async (item: CmsCertificate) => {
     if (!window.confirm(`Xác nhận xóa chứng nhận "${item.title}"?`)) return;
     try {
@@ -202,7 +213,7 @@ export default function CertificatesPage() {
                 <TableHead>Tiêu đề</TableHead>
                 <TableHead>Mô tả</TableHead>
                 <TableHead>Thứ tự</TableHead>
-                <TableHead>Active</TableHead>
+                <TableHead>Hiển thị</TableHead>
                 <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -220,13 +231,11 @@ export default function CertificatesPage() {
                   </TableCell>
                   <TableCell>{item.sort_order}</TableCell>
                   <TableCell>
-                    <span
-                      className={`status-badge ${
-                        item.is_active ? "hoan-thanh" : "inactive"
-                      }`}
-                    >
-                      {item.is_active ? "Active" : "Inactive"}
-                    </span>
+                    <button
+                      className={`toggle-switch ${item.is_active ? "active" : ""}`}
+                      onClick={() => handleToggleActive(item, !item.is_active)}
+                      title={item.is_active ? "Đang hiển thị" : "Đang ẩn"}
+                    />
                   </TableCell>
                   <TableCell>
                     <button

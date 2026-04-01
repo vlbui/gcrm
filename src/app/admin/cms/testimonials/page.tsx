@@ -149,6 +149,17 @@ export default function TestimonialsCmsPage() {
     }
   };
 
+  const handleToggleActive = async (item: CmsTestimonial, newValue: boolean) => {
+    try {
+      setData((prev) => prev.map((d) => d.id === item.id ? { ...d, is_active: newValue } : d));
+      await updateCmsRecord("cms_testimonials", item.id, { is_active: newValue });
+      toast.success(newValue ? "Đã bật hiển thị" : "Đã tắt hiển thị");
+    } catch {
+      setData((prev) => prev.map((d) => d.id === item.id ? { ...d, is_active: !newValue } : d));
+      toast.error("Không thể cập nhật trạng thái");
+    }
+  };
+
   const handleDelete = async (item: CmsTestimonial) => {
     if (!window.confirm(`Xác nhận xóa đánh giá của "${item.ten_kh}"?`)) return;
     try {
@@ -204,7 +215,7 @@ export default function TestimonialsCmsPage() {
                 <TableHead>Tên KH</TableHead>
                 <TableHead>Công ty</TableHead>
                 <TableHead>Rating</TableHead>
-                <TableHead>Active</TableHead>
+                <TableHead>Hiển thị</TableHead>
                 <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -217,13 +228,11 @@ export default function TestimonialsCmsPage() {
                     {renderStars(item.rating)}
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`badge ${
-                        item.is_active ? "badge-success" : "badge-secondary"
-                      }`}
-                    >
-                      {item.is_active ? "Active" : "Inactive"}
-                    </span>
+                    <button
+                      className={`toggle-switch ${item.is_active ? "active" : ""}`}
+                      onClick={() => handleToggleActive(item, !item.is_active)}
+                      title={item.is_active ? "Đang hiển thị" : "Đang ẩn"}
+                    />
                   </TableCell>
                   <TableCell>
                     <button

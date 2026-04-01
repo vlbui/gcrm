@@ -180,6 +180,17 @@ export default function HeroCmsPage() {
     }
   };
 
+  const handleToggleActive = async (item: CmsHero, newValue: boolean) => {
+    try {
+      setData((prev) => prev.map((d) => d.id === item.id ? { ...d, is_active: newValue } : d));
+      await updateCmsRecord("cms_hero", item.id, { is_active: newValue });
+      toast.success(newValue ? "Đã bật hiển thị" : "Đã tắt hiển thị");
+    } catch {
+      setData((prev) => prev.map((d) => d.id === item.id ? { ...d, is_active: !newValue } : d));
+      toast.error("Không thể cập nhật trạng thái");
+    }
+  };
+
   const handleDelete = async (item: CmsHero) => {
     if (!window.confirm(`Xác nhận xóa Hero Banner "${item.headline}"?`)) return;
     try {
@@ -231,8 +242,8 @@ export default function HeroCmsPage() {
                 <TableHead>Headline</TableHead>
                 <TableHead>Sub headline</TableHead>
                 <TableHead>CTA Text</TableHead>
-                <TableHead>Trạng thái</TableHead>
                 <TableHead>Thứ tự</TableHead>
+                <TableHead>Hiển thị</TableHead>
                 <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -242,16 +253,14 @@ export default function HeroCmsPage() {
                   <TableCell>{item.headline}</TableCell>
                   <TableCell>{item.sub_headline || "—"}</TableCell>
                   <TableCell>{item.cta_text || "—"}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`badge ${
-                        item.is_active ? "badge-success" : "badge-secondary"
-                      }`}
-                    >
-                      {item.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </TableCell>
                   <TableCell>{item.sort_order}</TableCell>
+                  <TableCell>
+                    <button
+                      className={`toggle-switch ${item.is_active ? "active" : ""}`}
+                      onClick={() => handleToggleActive(item, !item.is_active)}
+                      title={item.is_active ? "Đang hiển thị" : "Đang ẩn"}
+                    />
+                  </TableCell>
                   <TableCell>
                     <button
                       className="btn-action"
