@@ -16,6 +16,16 @@ interface FAQSectionProps {
 
 const defaultFaqs: FAQItem[] = [
   {
+    question: "Gián Đức khác gián thường như thế nào?",
+    answer:
+      "Gián Đức (Blattella germanica) có kích thước nhỏ 1.3–1.6cm, màu nâu vàng, sinh sản cực nhanh — mỗi con cái đẻ 30–40 trứng mỗi lần và sống được 6–9 tháng. Chúng thường ẩn nấp trong khe tủ bếp, thiết bị điện, hộp carton. Khác với gián Mỹ (gián bay, 3–4cm), gián Đức không bay được nhưng lây lan nhanh hơn nhiều và rất khó diệt bằng thuốc phun thông thường.",
+  },
+  {
+    question: "Tại sao phun thuốc không diệt được gián Đức?",
+    answer:
+      "Gián Đức đã kháng hầu hết thuốc phun truyền thống (pyrethroid). Khi phun, gián trốn sâu vào khe kẽ tủ bếp, thiết bị điện và quay lại sau 1–2 tuần. Phương pháp hiệu quả nhất là gel bả chuyên dụng Maxforce (Bayer) hoặc Advion (Syngenta) — gián ăn bả, về tổ chết, đồng loại ăn xác tiếp tục trúng độc. Đây gọi là hiệu ứng dây chuyền (cascade effect), diệt được cả tổ gián chỉ trong 3–5 ngày.",
+  },
+  {
     question: "Thuốc diệt côn trùng có an toàn cho trẻ nhỏ và thú cưng không?",
     answer:
       "Hoàn toàn an toàn. Lá Chắn Xanh sử dụng thuốc diệt côn trùng nhập ngoại cao cấp từ Đức, Nhật — dòng sản phẩm không mùi, được Bộ Y tế cấp phép. Kỹ thuật viên sẽ hướng dẫn thời gian cách ly phù hợp (thường chỉ 2–4 giờ). Sau đó gia đình có thể sinh hoạt bình thường.",

@@ -32,7 +32,7 @@ const defaultHero: HeroData = {
   headline: "Dịch Vụ Diệt Côn Trùng",
   sub_headline: "Chuyên Nghiệp Tại Hà Nội",
   description:
-    "Lá Chắn Xanh — công ty diệt côn trùng hàng đầu Hà Nội. Chuyên diệt mối, gián, chuột, muỗi, kiến, ruồi cho gia đình và doanh nghiệp. Phương pháp IPM an toàn, hóa chất nhập ngoại không mùi. Khảo sát miễn phí — Bảo hành cam kết.",
+    "Lá Chắn Xanh — công ty diệt côn trùng hàng đầu Hà Nội. Chuyên diệt gián Đức bằng gel bả nhập ngoại, diệt mối, chuột, muỗi cho gia đình và doanh nghiệp. Phương pháp IPM an toàn, hóa chất không mùi. Khảo sát miễn phí — Bảo hành cam kết.",
   cta_text: "Nhận báo giá miễn phí",
   cta_link: "#contact",
   cta2_text: "085 9955 969",

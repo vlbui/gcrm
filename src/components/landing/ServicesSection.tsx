@@ -24,9 +24,9 @@ const defaultServices: ServiceItem[] = [
   },
   {
     icon: "🪳",
-    title: "Dịch vụ diệt gián",
-    description: "Diệt gián Đức, gián Mỹ triệt để bằng gel bả nhập ngoại. Hiệu quả dây chuyền — một con ăn bả, cả tổ diệt. An toàn cho nhà bếp, nhà hàng, khách sạn.",
-    features: ["Gel bả diệt gián nhập Đức", "Không mùi, an toàn thực phẩm", "Diệt cả tổ — hiệu quả dây chuyền"],
+    title: "Dịch vụ diệt gián Đức & gián Mỹ",
+    description: "Chuyên diệt gián Đức (Blattella germanica) bằng gel bả nhập ngoại Maxforce, Advion. Hiệu quả dây chuyền — một con ăn bả, cả tổ diệt vì gián có tập tính ăn xác đồng loại. Diệt sạch gián trong 3–5 ngày, không mùi, an toàn thực phẩm.",
+    features: ["Gel bả Maxforce, Advion nhập ngoại chính hãng", "Diệt dây chuyền — 1 con trúng bả, cả tổ diệt", "Hiệu quả 3–5 ngày, bảo hành 30 ngày"],
   },
   {
     icon: "🐀",
