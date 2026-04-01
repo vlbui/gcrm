@@ -15,6 +15,11 @@ export interface ServiceRequest {
   trang_thai: string;
   ghi_chu_nv: string | null;
   xu_ly_boi: string | null;
+  loai_kh: string | null;
+  ten_cong_ty: string | null;
+  nguoi_lien_he: string | null;
+  so_chi_nhanh: number | null;
+  nhu_cau: string | null;
   created_at: string;
 }
 

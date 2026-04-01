@@ -223,6 +223,7 @@ export default function YeuCauPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Mã YC</TableHead>
+                <TableHead>Loại KH</TableHead>
                 <TableHead>Tên KH</TableHead>
                 <TableHead>SĐT</TableHead>
                 <TableHead>Loại hình</TableHead>
@@ -236,7 +237,12 @@ export default function YeuCauPage() {
               {paged.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.ma_yc}</TableCell>
-                  <TableCell>{item.ten_kh}</TableCell>
+                  <TableCell>
+                    <span className={`status-badge ${item.loai_kh === "Tổ chức" ? "active" : "moi"}`}>
+                      {item.loai_kh ?? "Cá nhân"}
+                    </span>
+                  </TableCell>
+                  <TableCell>{item.loai_kh === "Tổ chức" ? (item.ten_cong_ty ?? item.ten_kh) : item.ten_kh}</TableCell>
                   <TableCell>{item.sdt}</TableCell>
                   <TableCell>{item.loai_hinh ?? "—"}</TableCell>
                   <TableCell>{item.loai_con_trung ?? "—"}</TableCell>
@@ -333,9 +339,29 @@ export default function YeuCauPage() {
                 </p>
               </div>
               <div className="form-field">
+                <Label>Loại khách</Label>
+                <p>
+                  <span className={`status-badge ${selectedItem.loai_kh === "Tổ chức" ? "active" : "moi"}`}>
+                    {selectedItem.loai_kh ?? "Cá nhân"}
+                  </span>
+                </p>
+              </div>
+              <div className="form-field">
                 <Label>Tên khách hàng</Label>
                 <p>{selectedItem.ten_kh}</p>
               </div>
+              {selectedItem.ten_cong_ty && (
+                <div className="form-field">
+                  <Label>Tên công ty</Label>
+                  <p>{selectedItem.ten_cong_ty}</p>
+                </div>
+              )}
+              {selectedItem.nguoi_lien_he && (
+                <div className="form-field">
+                  <Label>Người liên hệ</Label>
+                  <p>{selectedItem.nguoi_lien_he}</p>
+                </div>
+              )}
               <div className="form-field">
                 <Label>Số điện thoại</Label>
                 <p>{selectedItem.sdt}</p>
@@ -352,6 +378,18 @@ export default function YeuCauPage() {
                 <Label>Loại hình</Label>
                 <p>{selectedItem.loai_hinh ?? "—"}</p>
               </div>
+              {selectedItem.nhu_cau && (
+                <div className="form-field">
+                  <Label>Nhu cầu</Label>
+                  <p>{selectedItem.nhu_cau}</p>
+                </div>
+              )}
+              {selectedItem.so_chi_nhanh && (
+                <div className="form-field">
+                  <Label>Số chi nhánh</Label>
+                  <p>{selectedItem.so_chi_nhanh}</p>
+                </div>
+              )}
               <div className="form-field">
                 <Label>Loại côn trùng</Label>
                 <p>{selectedItem.loai_con_trung ?? "—"}</p>
