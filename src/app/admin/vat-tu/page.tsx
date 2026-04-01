@@ -250,32 +250,32 @@ export default function VatTuPage() {
             <div className="form-grid">
               <div className="form-field">
                 <Label>Tên vật tư *</Label>
-                <Input {...register("ten_vat_tu")} />
+                <Input placeholder="VD: Bẫy dính chuột" {...register("ten_vat_tu")} />
                 {errors.ten_vat_tu && (
                   <span className="error">{errors.ten_vat_tu.message}</span>
                 )}
               </div>
               <div className="form-field">
                 <Label>Loại vật tư *</Label>
-                <Input {...register("loai_vt")} />
+                <Input placeholder="VD: Bẫy, Thuốc, Dụng cụ" {...register("loai_vt")} />
                 {errors.loai_vt && (
                   <span className="error">{errors.loai_vt.message}</span>
                 )}
               </div>
               <div className="form-field">
                 <Label>Đơn vị tính *</Label>
-                <Input {...register("don_vi_tinh")} />
+                <Input placeholder="VD: Cái, Hộp, Kg" {...register("don_vi_tinh")} />
                 {errors.don_vi_tinh && (
                   <span className="error">{errors.don_vi_tinh.message}</span>
                 )}
               </div>
               <div className="form-field">
                 <Label>Nhà cung cấp</Label>
-                <Input {...register("nha_cung_cap")} />
+                <Input placeholder="Tên nhà cung cấp" {...register("nha_cung_cap")} />
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>
-                <Textarea {...register("ghi_chu")} />
+                <Textarea placeholder="Thêm ghi chú nếu cần..." {...register("ghi_chu")} />
               </div>
             </div>
             <div className="form-actions">

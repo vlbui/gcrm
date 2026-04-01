@@ -261,7 +261,7 @@ export default function HoaChatPage() {
             <div className="form-grid">
               <div className="form-field">
                 <Label>Tên thương mại *</Label>
-                <Input {...register("ten_thuong_mai")} />
+                <Input placeholder="VD: Fendona 10SC" {...register("ten_thuong_mai")} />
                 {errors.ten_thuong_mai && (
                   <span className="error">
                     {errors.ten_thuong_mai.message}
@@ -270,33 +270,33 @@ export default function HoaChatPage() {
               </div>
               <div className="form-field">
                 <Label>Hoạt chất *</Label>
-                <Input {...register("hoat_chat")} />
+                <Input placeholder="VD: Alpha-cypermethrin" {...register("hoat_chat")} />
                 {errors.hoat_chat && (
                   <span className="error">{errors.hoat_chat.message}</span>
                 )}
               </div>
               <div className="form-field">
                 <Label>Đối tượng</Label>
-                <Input {...register("doi_tuong")} />
+                <Input placeholder="VD: Gián, Muỗi, Kiến" {...register("doi_tuong")} />
               </div>
               <div className="form-field">
                 <Label>Dạng sử dụng</Label>
-                <Input {...register("dang_su_dung")} />
+                <Input placeholder="VD: Phun, Gel, Bả" {...register("dang_su_dung")} />
               </div>
               <div className="form-field">
                 <Label>Đơn vị tính *</Label>
-                <Input {...register("don_vi_tinh")} />
+                <Input placeholder="VD: Lít, Kg, Chai" {...register("don_vi_tinh")} />
                 {errors.don_vi_tinh && (
                   <span className="error">{errors.don_vi_tinh.message}</span>
                 )}
               </div>
               <div className="form-field">
                 <Label>Nhà cung cấp</Label>
-                <Input {...register("nha_cung_cap")} />
+                <Input placeholder="Tên nhà cung cấp" {...register("nha_cung_cap")} />
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>
-                <Textarea {...register("ghi_chu")} />
+                <Textarea placeholder="Thêm ghi chú nếu cần..." {...register("ghi_chu")} />
               </div>
             </div>
             <div className="form-actions">

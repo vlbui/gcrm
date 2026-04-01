@@ -282,21 +282,21 @@ export default function KhachHangPage() {
             <div className="form-grid">
               <div className="form-field">
                 <Label>Tên khách hàng *</Label>
-                <Input {...register("ten_kh")} />
+                <Input placeholder="Nhập tên khách hàng" {...register("ten_kh")} />
                 {errors.ten_kh && (
                   <span className="error">{errors.ten_kh.message}</span>
                 )}
               </div>
               <div className="form-field">
                 <Label>Số điện thoại *</Label>
-                <Input {...register("sdt")} />
+                <Input placeholder="VD: 0859955969" {...register("sdt")} />
                 {errors.sdt && (
                   <span className="error">{errors.sdt.message}</span>
                 )}
               </div>
               <div className="form-field">
                 <Label>Email</Label>
-                <Input {...register("email")} />
+                <Input placeholder="VD: email@gmail.com" {...register("email")} />
                 {errors.email && (
                   <span className="error">{errors.email.message}</span>
                 )}
@@ -334,14 +334,14 @@ export default function KhachHangPage() {
               </div>
               <div className="form-field full-width">
                 <Label>Địa chỉ *</Label>
-                <Textarea {...register("dia_chi")} />
+                <Textarea placeholder="Nhập địa chỉ đầy đủ" {...register("dia_chi")} />
                 {errors.dia_chi && (
                   <span className="error">{errors.dia_chi.message}</span>
                 )}
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>
-                <Textarea {...register("ghi_chu")} />
+                <Textarea placeholder="Thêm ghi chú nếu cần..." {...register("ghi_chu")} />
               </div>
             </div>
             <div className="form-actions">

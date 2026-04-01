@@ -1428,48 +1428,61 @@ ul { list-style: none; }
 .contact-form-card {
   background: var(--white);
   border-radius: var(--radius-lg);
-  padding: 36px;
+  padding: 40px;
   box-shadow: 0 25px 50px rgba(0,0,0,0.2);
 }
 
 .contact-form-card h3 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   margin-bottom: 6px;
   color: var(--primary-800);
 }
 
 .form-subtitle {
-  font-size: 14px;
+  font-size: 14.5px;
   color: var(--neutral-500);
-  margin-bottom: 28px;
+  margin-bottom: 30px;
 }
 
 .form-group {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .form-label {
   display: block;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--neutral-700);
-  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--neutral-800);
+  margin-bottom: 8px;
+  letter-spacing: 0.01em;
 }
 
 .form-input,
 .form-select,
 .form-textarea {
   width: 100%;
-  padding: 12px 16px;
-  border: 1.5px solid var(--neutral-200);
-  border-radius: var(--radius-sm);
+  padding: 13px 16px;
+  border: 1.5px solid var(--neutral-300);
+  border-radius: var(--radius-md);
   font-family: 'Be Vietnam Pro', sans-serif;
-  font-size: 14px;
-  color: var(--neutral-800);
+  font-size: 15px;
+  color: var(--neutral-900);
   transition: all 0.25s ease;
   background: var(--white);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--neutral-400);
+  font-size: 14px;
+}
+
+.form-input:hover,
+.form-select:hover,
+.form-textarea:hover {
+  border-color: var(--neutral-400);
 }
 
 .form-input:focus,
@@ -1477,45 +1490,62 @@ ul { list-style: none; }
 .form-textarea:focus {
   outline: none;
   border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(34,197,94,0.1);
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
 }
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 90px;
+}
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--danger-500);
+  margin-top: 6px;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
 }
 
 .form-submit {
   width: 100%;
-  padding: 14px 24px;
+  padding: 16px 24px;
   background: linear-gradient(135deg, var(--primary-700), var(--primary-600));
   color: white;
   font-family: 'Be Vietnam Pro', sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 8px;
+  margin-top: 10px;
+  letter-spacing: 0.02em;
 }
 
 .form-submit:hover {
   background: linear-gradient(135deg, var(--primary-800), var(--primary-700));
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(22,101,52,0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(22,101,52,0.35);
+}
+
+.form-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .form-note {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--neutral-400);
-  margin-top: 12px;
+  margin-top: 14px;
   text-align: center;
 }
 
@@ -2603,7 +2633,8 @@ ul { list-style: none; }
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  gap: 20px 18px;
+  padding: 20px 24px 0;
 }
 
 .form-grid .full-width {
@@ -2613,20 +2644,69 @@ ul { list-style: none; }
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
 .form-field label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--neutral-700);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--neutral-800);
+  letter-spacing: 0.01em;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field [data-slot="select-trigger"] {
+  height: auto;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 14.5px;
+  border: 1.5px solid var(--neutral-300);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  color: var(--neutral-900);
+  transition: all 0.2s ease;
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: var(--neutral-400);
+  font-size: 13.5px;
+}
+
+.form-field input:hover,
+.form-field textarea:hover,
+.form-field [data-slot="select-trigger"]:hover {
+  border-color: var(--neutral-400);
+}
+
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field [data-slot="select-trigger"]:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(61,181,101,0.15);
+  background: var(--white);
 }
 
 .form-field .error {
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 500;
   color: var(--danger-500);
-  margin-top: 2px;
-  animation: fadeIn 0.15s ease;
+  margin-top: 1px;
+  animation: fadeIn 0.2s ease;
+}
+
+.form-field .error::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background: var(--danger-500);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' clip-rule='evenodd'/%3E%3C/svg%3E") center / contain no-repeat;
+  flex-shrink: 0;
 }
 
 @keyframes fadeIn {
@@ -2634,10 +2714,38 @@ ul { list-style: none; }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.form-field input:focus,
-.form-field textarea:focus {
-  border-color: var(--primary-400);
-  box-shadow: 0 0 0 3px rgba(61,181,101,0.1);
+/* Checkbox field styling */
+.form-field label.checkbox-label,
+.form-field .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--neutral-700);
+  cursor: pointer;
+}
+
+.form-field input[type="checkbox"] {
+  min-height: unset;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  accent-color: var(--primary-600);
+  cursor: pointer;
+}
+
+/* Read-only display values inside form-field */
+.form-field p {
+  font-size: 14.5px;
+  color: var(--neutral-800);
+  padding: 10px 14px;
+  background: var(--neutral-50);
+  border: 1.5px solid var(--neutral-100);
+  border-radius: var(--radius-md);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
 .form-actions {
@@ -2645,7 +2753,7 @@ ul { list-style: none; }
   justify-content: flex-end;
   gap: 10px;
   margin-top: 24px;
-  padding-top: 20px;
+  padding: 20px 24px 24px;
   border-top: 1px solid var(--neutral-100);
 }
 

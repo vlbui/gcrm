@@ -336,18 +336,18 @@ export default function HopDongPage() {
               </div>
               <div className="form-field">
                 <Label>Dịch vụ *</Label>
-                <Input {...register("dich_vu")} />
+                <Input placeholder="VD: Kiểm soát côn trùng" {...register("dich_vu")} />
                 {errors.dich_vu && (
                   <span className="error">{errors.dich_vu.message}</span>
                 )}
               </div>
               <div className="form-field">
                 <Label>Diện tích</Label>
-                <Input {...register("dien_tich")} />
+                <Input placeholder="VD: 100m²" {...register("dien_tich")} />
               </div>
               <div className="form-field">
                 <Label>Giá trị (VNĐ)</Label>
-                <Input type="number" {...register("gia_tri")} />
+                <Input type="number" placeholder="VD: 2000000" {...register("gia_tri")} />
                 {errors.gia_tri && (
                   <span className="error">{errors.gia_tri.message}</span>
                 )}
@@ -384,7 +384,7 @@ export default function HopDongPage() {
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>
-                <Textarea {...register("ghi_chu")} />
+                <Textarea placeholder="Thêm ghi chú nếu cần..." {...register("ghi_chu")} />
               </div>
             </div>
             <div className="form-actions">
