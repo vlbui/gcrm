@@ -33,6 +33,7 @@ import {
   type CreateChemicalInput,
 } from "@/lib/api/chemicals.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import Pagination from "@/components/admin/Pagination";
 
 const chemicalSchema = z.object({
   ten_thuong_mai: z.string().min(2, "Tên thương mại tối thiểu 2 ký tự"),
@@ -53,6 +54,8 @@ export default function HoaChatPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Chemical | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const {
     register,
@@ -96,6 +99,8 @@ export default function HoaChatPage() {
       (item.doi_tuong?.toLowerCase().includes(q) ?? false)
     );
   });
+
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const openAdd = () => {
     setEditing(null);
@@ -185,7 +190,7 @@ export default function HoaChatPage() {
             <Input
               placeholder="Tìm kiếm theo tên, mã HC, hoạt chất, đối tượng..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
           <div className="data-table-actions">
@@ -206,6 +211,7 @@ export default function HoaChatPage() {
             <p>Không có dữ liệu</p>
           </div>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -218,7 +224,7 @@ export default function HoaChatPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => (
+              {paged.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.ma_hc}</TableCell>
                   <TableCell>{item.ten_thuong_mai}</TableCell>
@@ -247,6 +253,8 @@ export default function HoaChatPage() {
               ))}
             </TableBody>
           </Table>
+          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
         )}
       </div>
 

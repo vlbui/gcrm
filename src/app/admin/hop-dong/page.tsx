@@ -44,6 +44,7 @@ import {
   type Customer,
 } from "@/lib/api/customers.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import Pagination from "@/components/admin/Pagination";
 
 const contractSchema = z.object({
   customer_id: z.string().min(1, "Vui lòng chọn khách hàng"),
@@ -71,6 +72,8 @@ export default function HopDongPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Contract | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const {
     register,
@@ -119,6 +122,8 @@ export default function HopDongPage() {
       (item.customers?.ten_kh.toLowerCase().includes(q) ?? false)
     );
   });
+
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const openAdd = () => {
     setEditing(null);
@@ -225,7 +230,7 @@ export default function HopDongPage() {
             <Input
               placeholder="Tìm kiếm theo mã HĐ, dịch vụ, khách hàng..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
           <div className="data-table-actions">
@@ -246,6 +251,7 @@ export default function HopDongPage() {
             <p>Không có dữ liệu</p>
           </div>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -259,7 +265,7 @@ export default function HopDongPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => (
+              {paged.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.ma_hd}</TableCell>
                   <TableCell>
@@ -301,6 +307,8 @@ export default function HopDongPage() {
               ))}
             </TableBody>
           </Table>
+          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
         )}
       </div>
 

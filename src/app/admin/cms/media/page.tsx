@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Upload, Pencil, Trash2, Image } from "lucide-react";
+import Pagination from "@/components/admin/Pagination";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,8 @@ export default function MediaPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CmsMedia | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -93,6 +96,8 @@ export default function MediaPage() {
     filterCategory === "all"
       ? data
       : data.filter((item) => item.category === filterCategory);
+
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -188,7 +193,7 @@ export default function MediaPage() {
             {categories.length > 0 && (
               <Select
                 value={filterCategory}
-                onValueChange={setFilterCategory}
+                onValueChange={(val) => { setFilterCategory(val); setPage(1); }}
               >
                 <SelectTrigger style={{ width: 180 }}>
                   <SelectValue placeholder="Lọc danh mục" />
@@ -240,7 +245,7 @@ export default function MediaPage() {
               padding: "1rem",
             }}
           >
-            {filtered.map((item) => (
+            {paged.map((item) => (
               <div
                 key={item.id}
                 style={{
@@ -336,6 +341,7 @@ export default function MediaPage() {
             ))}
           </div>
         )}
+        <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

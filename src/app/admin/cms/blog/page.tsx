@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Search, Plus, Pencil, Trash2, Eye } from "lucide-react";
+import Pagination from "@/components/admin/Pagination";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +77,8 @@ export default function BlogPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CmsBlog | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const {
     register,
@@ -127,6 +130,8 @@ export default function BlogPage() {
       (item.category?.toLowerCase().includes(q) ?? false)
     );
   });
+
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const openAdd = () => {
     setEditing(null);
@@ -231,7 +236,7 @@ export default function BlogPage() {
             <Input
               placeholder="Tìm kiếm theo tiêu đề, slug, danh mục..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
           <div className="data-table-actions">
@@ -263,7 +268,7 @@ export default function BlogPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => (
+              {paged.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.title}</TableCell>
                   <TableCell>{item.slug}</TableCell>
@@ -310,6 +315,7 @@ export default function BlogPage() {
             </TableBody>
           </Table>
         )}
+        <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

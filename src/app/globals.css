@@ -2551,6 +2551,102 @@ ul { list-style: none; }
 .activity-text strong { font-weight: 700; }
 .activity-time { font-size: 12.5px; color: var(--neutral-400); white-space: nowrap; font-weight: 500; }
 
+/* ---- Pagination ---- */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-top: 1px solid var(--neutral-100);
+  font-size: 13.5px;
+  color: #1A1A2E;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: var(--neutral-500);
+}
+
+.pagination-info strong {
+  color: #1A1A2E;
+  font-weight: 700;
+}
+
+.pagination-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-size label {
+  font-size: 13px;
+  color: var(--neutral-500);
+  font-weight: 500;
+}
+
+.pagination-size select {
+  padding: 5px 10px;
+  border: 1.5px solid var(--neutral-200);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 13px;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  color: #1A1A2E;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.pagination-size select:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pagination-page {
+  font-size: 13px;
+  color: var(--neutral-500);
+  padding: 0 8px;
+}
+
+.pagination-page strong {
+  color: #1A1A2E;
+  font-weight: 700;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--neutral-200);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--neutral-600);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border-color: #A5D6A7;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /* ---- Toast customization ---- */
 [data-sonner-toaster] [data-sonner-toast][data-type="success"] {
   --normal-bg: #E8F5E9 !important;

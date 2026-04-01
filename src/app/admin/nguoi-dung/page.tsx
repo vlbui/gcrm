@@ -39,6 +39,7 @@ import {
   type User,
 } from "@/lib/api/users.api";
 import type { UserRole } from "@/lib/api/auth.api";
+import Pagination from "@/components/admin/Pagination";
 
 const formSchema = z.object({
   email: z.string().min(1, "Vui lòng nhập email").email("Email không hợp lệ"),
@@ -66,6 +67,8 @@ export default function NguoiDungPage() {
   const [data, setData] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<User | null>(null);
@@ -172,6 +175,8 @@ export default function NguoiDungPage() {
     );
   });
 
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+
   return (
     <div>
       <div className="admin-page-header">
@@ -194,7 +199,7 @@ export default function NguoiDungPage() {
             <Input
               placeholder="Tìm kiếm người dùng..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
         </div>
@@ -208,6 +213,7 @@ export default function NguoiDungPage() {
             <p>Không có dữ liệu</p>
           </div>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -220,7 +226,7 @@ export default function NguoiDungPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => (
+              {paged.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.email}</TableCell>
                   <TableCell>{item.ho_ten}</TableCell>
@@ -262,6 +268,8 @@ export default function NguoiDungPage() {
               ))}
             </TableBody>
           </Table>
+          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
         )}
       </div>
 

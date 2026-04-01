@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Search, Plus, Pencil, Trash2 } from "lucide-react";
+import Pagination from "@/components/admin/Pagination";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,8 @@ export default function TestimonialsCmsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CmsTestimonial | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const {
     register,
@@ -86,6 +89,8 @@ export default function TestimonialsCmsPage() {
       item.noi_dung?.toLowerCase().includes(q)
     );
   });
+
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const openAdd = () => {
     setEditing(null);
@@ -174,7 +179,7 @@ export default function TestimonialsCmsPage() {
             <Input
               placeholder="Tìm kiếm theo tên, công ty..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
           <div className="data-table-actions">
@@ -204,7 +209,7 @@ export default function TestimonialsCmsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => (
+              {paged.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.ten_kh}</TableCell>
                   <TableCell>{item.cong_ty || "—"}</TableCell>
@@ -239,6 +244,7 @@ export default function TestimonialsCmsPage() {
             </TableBody>
           </Table>
         )}
+        <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

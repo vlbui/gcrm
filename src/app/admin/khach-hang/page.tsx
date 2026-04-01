@@ -40,6 +40,7 @@ import {
   type CreateCustomerInput,
 } from "@/lib/api/customers.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import Pagination from "@/components/admin/Pagination";
 
 const customerSchema = z.object({
   ten_kh: z.string().min(2, "Tên khách hàng tối thiểu 2 ký tự"),
@@ -60,6 +61,8 @@ export default function KhachHangPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const {
     register,
@@ -104,6 +107,8 @@ export default function KhachHangPage() {
       item.ma_kh.toLowerCase().includes(q)
     );
   });
+
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const openAdd = () => {
     setEditing(null);
@@ -192,7 +197,7 @@ export default function KhachHangPage() {
             <Input
               placeholder="Tìm kiếm theo tên, SĐT, email, mã KH..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
           <div className="data-table-actions">
@@ -213,6 +218,7 @@ export default function KhachHangPage() {
             <p>Không có dữ liệu</p>
           </div>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -226,7 +232,7 @@ export default function KhachHangPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => (
+              {paged.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.ma_kh}</TableCell>
                   <TableCell>{item.ten_kh}</TableCell>
@@ -268,6 +274,8 @@ export default function KhachHangPage() {
               ))}
             </TableBody>
           </Table>
+          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
         )}
       </div>
 

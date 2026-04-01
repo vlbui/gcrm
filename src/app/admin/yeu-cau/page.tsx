@@ -37,6 +37,7 @@ import {
 import { createCustomer } from "@/lib/api/customers.api";
 import { createContract } from "@/lib/api/contracts.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import Pagination from "@/components/admin/Pagination";
 
 const statusLabels: Record<string, string> = {
   "Mới": "Mới",
@@ -57,6 +58,8 @@ export default function YeuCauPage() {
   const [data, setData] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ServiceRequest | null>(null);
@@ -179,6 +182,8 @@ export default function YeuCauPage() {
     );
   });
 
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+
   const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Nhân viên";
 
   return (
@@ -199,7 +204,7 @@ export default function YeuCauPage() {
             <Input
               placeholder="Tìm kiếm yêu cầu..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
         </div>
@@ -213,6 +218,7 @@ export default function YeuCauPage() {
             <p>Không có dữ liệu</p>
           </div>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -227,7 +233,7 @@ export default function YeuCauPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => (
+              {paged.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.ma_yc}</TableCell>
                   <TableCell>{item.ten_kh}</TableCell>
@@ -290,6 +296,8 @@ export default function YeuCauPage() {
               ))}
             </TableBody>
           </Table>
+          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
         )}
       </div>
 

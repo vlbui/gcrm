@@ -33,6 +33,7 @@ import {
   type CreateSupplyInput,
 } from "@/lib/api/supplies.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import Pagination from "@/components/admin/Pagination";
 
 const supplySchema = z.object({
   ten_vat_tu: z.string().min(2, "Tên vật tư tối thiểu 2 ký tự"),
@@ -51,6 +52,8 @@ export default function VatTuPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Supply | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const {
     register,
@@ -92,6 +95,8 @@ export default function VatTuPage() {
       (item.nha_cung_cap?.toLowerCase().includes(q) ?? false)
     );
   });
+
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const openAdd = () => {
     setEditing(null);
@@ -174,7 +179,7 @@ export default function VatTuPage() {
             <Input
               placeholder="Tìm kiếm theo tên, mã VT, loại, nhà cung cấp..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
           <div className="data-table-actions">
@@ -195,6 +200,7 @@ export default function VatTuPage() {
             <p>Không có dữ liệu</p>
           </div>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -207,7 +213,7 @@ export default function VatTuPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => (
+              {paged.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.ma_vt}</TableCell>
                   <TableCell>{item.ten_vat_tu}</TableCell>
@@ -236,6 +242,8 @@ export default function VatTuPage() {
               ))}
             </TableBody>
           </Table>
+          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
         )}
       </div>
 

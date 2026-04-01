@@ -42,6 +42,7 @@ import {
 import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
 import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import Pagination from "@/components/admin/Pagination";
 
 const formSchema = z.object({
   contract_id: z.string().min(1, "Vui lòng chọn hợp đồng"),
@@ -63,6 +64,8 @@ export default function LichSuDichVuPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ServiceHistory | null>(null);
@@ -226,6 +229,8 @@ export default function LichSuDichVuPage() {
     );
   });
 
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+
   const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Nhân viên";
 
   return (
@@ -252,7 +257,7 @@ export default function LichSuDichVuPage() {
             <Input
               placeholder="Tìm kiếm lịch sử dịch vụ..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
         </div>
@@ -266,6 +271,7 @@ export default function LichSuDichVuPage() {
             <p>Không có dữ liệu</p>
           </div>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -279,7 +285,7 @@ export default function LichSuDichVuPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => (
+              {paged.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.ma_lsdv}</TableCell>
                   <TableCell>{item.customers?.ten_kh ?? "—"}</TableCell>
@@ -320,6 +326,8 @@ export default function LichSuDichVuPage() {
               ))}
             </TableBody>
           </Table>
+          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
         )}
       </div>
 
