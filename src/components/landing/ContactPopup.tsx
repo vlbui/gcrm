@@ -122,6 +122,8 @@ function SmartFormPopup({ onClose }: { onClose: () => void }) {
         ma_yc,
         ten_kh: isPersonal ? tenKh : nguoiLienHe,
         sdt: isPersonal ? sdt : sdtOrg,
+        email: (isPersonal ? email : emailCty) || null,
+        dia_chi: (isPersonal ? diaChi : diaChiCty) || null,
         loai_hinh: isPersonal ? null : (loaiHinh || null),
         loai_con_trung: (isPersonal ? bugs : bugsOrg).join(", ") || null,
         dien_tich: (isPersonal ? dienTich : dienTichOrg) || null,
