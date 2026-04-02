@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Search, Eye, ArrowRightLeft } from "lucide-react";
+import { Search, Eye, ArrowRightLeft, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +34,7 @@ import {
   updateServiceRequest,
   type ServiceRequest,
 } from "@/lib/api/serviceRequests.api";
-import { createCustomer } from "@/lib/api/customers.api";
+import { createCustomer, fetchCustomers, type Customer } from "@/lib/api/customers.api";
 import { createContract } from "@/lib/api/contracts.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import Pagination from "@/components/admin/Pagination";
@@ -70,7 +70,13 @@ export default function YeuCauPage() {
   const [convertSDT, setConvertSDT] = useState("");
   const [convertEmail, setConvertEmail] = useState("");
   const [convertDiaChi, setConvertDiaChi] = useState("");
+  const [convertLoaiKH, setConvertLoaiKH] = useState("Hộ gia đình");
   const [convertDichVu, setConvertDichVu] = useState("");
+  const [convertGhiChu, setConvertGhiChu] = useState("");
+
+  // Duplicate customer check
+  const [duplicateCustomer, setDuplicateCustomer] = useState<Customer | null>(null);
+  const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
 
   const loadData = async () => {
     try {
@@ -94,11 +100,29 @@ export default function YeuCauPage() {
 
   const openConvertDialog = (item: ServiceRequest) => {
     setSelectedItem(item);
-    setConvertTenKH(item.ten_kh);
+    const isOrg = item.loai_kh === "Tổ chức";
+
+    setConvertTenKH(isOrg ? (item.ten_cong_ty ?? item.ten_kh) : item.ten_kh);
     setConvertSDT(item.sdt);
     setConvertEmail(item.email ?? "");
     setConvertDiaChi(item.dia_chi ?? "");
+    setConvertLoaiKH(isOrg ? "Doanh nghiệp" : "Hộ gia đình");
     setConvertDichVu(item.loai_con_trung ?? "");
+
+    // Build ghi_chu from all request details
+    const notes: string[] = [];
+    if (isOrg && item.nguoi_lien_he) notes.push(`Người liên hệ: ${item.nguoi_lien_he}`);
+    if (item.loai_con_trung) notes.push(`Côn trùng: ${item.loai_con_trung}`);
+    if (item.dien_tich) notes.push(`Diện tích: ${item.dien_tich} m²`);
+    if (item.loai_hinh) notes.push(`Loại hình: ${item.loai_hinh}`);
+    if (isOrg && item.so_chi_nhanh) notes.push(`Số chi nhánh: ${item.so_chi_nhanh}`);
+    if (isOrg && item.nhu_cau) notes.push(`Nhu cầu: ${item.nhu_cau}`);
+    if (item.mo_ta) notes.push(`Ghi chú: ${item.mo_ta}`);
+    notes.push(`Từ yêu cầu ${item.ma_yc}`);
+    setConvertGhiChu(notes.join("\n"));
+
+    setDuplicateCustomer(null);
+    setShowDuplicateConfirm(false);
     setConvertDialogOpen(true);
   };
 
@@ -128,40 +152,68 @@ export default function YeuCauPage() {
     }
   };
 
-  const handleConvert = async () => {
+  const checkDuplicateAndConvert = async () => {
+    if (!selectedItem) return;
+
+    try {
+      const customers = await fetchCustomers();
+      const existing = customers.find((c) => c.sdt === convertSDT.trim());
+
+      if (existing) {
+        setDuplicateCustomer(existing);
+        setShowDuplicateConfirm(true);
+        return;
+      }
+
+      await doConvert(null);
+    } catch {
+      toast.error("Có lỗi xảy ra khi kiểm tra");
+    }
+  };
+
+  const doConvert = async (existingCustomer: Customer | null) => {
     if (!selectedItem) return;
     setConverting(true);
-    try {
-      // Create customer
-      const customer = await createCustomer({
-        ten_kh: convertTenKH,
-        sdt: convertSDT,
-        email: convertEmail || null,
-        dia_chi: convertDiaChi || null,
-        loai_kh: "Hộ gia đình",
-        trang_thai: "Mới",
-        ghi_chu: `Chuyển đổi từ yêu cầu ${selectedItem.ma_yc}`,
-      });
+    setShowDuplicateConfirm(false);
 
-      // Create contract
+    try {
+      let customerId: string;
+
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+      } else {
+        const customer = await createCustomer({
+          ten_kh: convertTenKH,
+          sdt: convertSDT,
+          email: convertEmail || null,
+          dia_chi: convertDiaChi || null,
+          loai_kh: convertLoaiKH,
+          trang_thai: "Mới",
+          ghi_chu: convertGhiChu || null,
+        });
+        customerId = customer.id;
+      }
+
       await createContract({
-        customer_id: customer.id,
+        customer_id: customerId,
         dich_vu: convertDichVu || "Kiểm soát côn trùng",
         dien_tich: selectedItem.dien_tich ?? null,
         gia_tri: null,
         trang_thai: "Mới",
         ngay_bat_dau: new Date().toISOString().split("T")[0],
         ngay_ket_thuc: null,
-        ghi_chu: `Từ yêu cầu ${selectedItem.ma_yc}. ${selectedItem.mo_ta ?? ""}`,
+        ghi_chu: convertGhiChu || null,
       });
 
-      // Update request status
       await updateServiceRequest(selectedItem.id, {
         trang_thai: "Đã tạo HĐ",
         xu_ly_boi: user?.id ?? null,
       });
 
-      toast.success("Chuyển đổi thành công! Đã tạo khách hàng và hợp đồng mới.");
+      const msg = existingCustomer
+        ? `Đã tạo hợp đồng mới cho khách hàng ${existingCustomer.ma_kh} - ${existingCustomer.ten_kh}`
+        : "Chuyển đổi thành công! Đã tạo khách hàng và hợp đồng mới.";
+      toast.success(msg);
       setConvertDialogOpen(false);
       loadData();
     } catch {
@@ -287,7 +339,7 @@ export default function YeuCauPage() {
                       >
                         <Eye size={14} />
                       </button>
-                      {canEdit && item.trang_thai === "Mới" && (
+                      {canEdit && item.trang_thai !== "Đã tạo HĐ" && (
                         <button
                           className="btn-action"
                           onClick={() => openConvertDialog(item)}
@@ -438,7 +490,7 @@ export default function YeuCauPage() {
             </Button>
             {canEdit &&
               selectedItem &&
-              selectedItem.trang_thai === "Mới" && (
+              selectedItem.trang_thai !== "Đã tạo HĐ" && (
                 <Button
                   onClick={() => {
                     setDetailDialogOpen(false);
@@ -465,56 +517,105 @@ export default function YeuCauPage() {
               sửa thông tin trước khi chuyển đổi.
             </DialogDescription>
           </DialogHeader>
-          <div className="form-grid">
-            <div className="form-field">
-              <Label>Tên khách hàng *</Label>
-              <Input
-                value={convertTenKH}
-                onChange={(e) => setConvertTenKH(e.target.value)}
-              />
+
+          {showDuplicateConfirm && duplicateCustomer ? (
+            <div className="form-grid">
+              <div className="form-field full-width" style={{ background: "#FFF8E1", border: "1px solid #FFE082", borderRadius: 8, padding: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <AlertTriangle size={20} color="#F57C00" />
+                  <strong style={{ color: "#E65100" }}>Khách hàng đã tồn tại</strong>
+                </div>
+                <p style={{ fontSize: 14, color: "#424242", margin: 0 }}>
+                  SĐT <strong>{convertSDT}</strong> đã thuộc về khách hàng{" "}
+                  <strong>{duplicateCustomer.ma_kh} - {duplicateCustomer.ten_kh}</strong>.
+                  <br />
+                  Bạn có muốn tạo hợp đồng mới cho khách hàng này?
+                </p>
+              </div>
+              <div className="form-actions" style={{ width: "100%" }}>
+                <Button variant="outline" onClick={() => setShowDuplicateConfirm(false)}>
+                  Quay lại
+                </Button>
+                <Button onClick={() => doConvert(duplicateCustomer)} disabled={converting}>
+                  {converting ? "Đang xử lý..." : "Tạo HĐ cho KH cũ"}
+                </Button>
+              </div>
             </div>
-            <div className="form-field">
-              <Label>Số điện thoại *</Label>
-              <Input
-                value={convertSDT}
-                onChange={(e) => setConvertSDT(e.target.value)}
-              />
-            </div>
-            <div className="form-field">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={convertEmail}
-                onChange={(e) => setConvertEmail(e.target.value)}
-              />
-            </div>
-            <div className="form-field">
-              <Label>Địa chỉ</Label>
-              <Input
-                value={convertDiaChi}
-                onChange={(e) => setConvertDiaChi(e.target.value)}
-              />
-            </div>
-            <div className="form-field full-width">
-              <Label>Dịch vụ (hợp đồng)</Label>
-              <Input
-                value={convertDichVu}
-                onChange={(e) => setConvertDichVu(e.target.value)}
-                placeholder="Kiểm soát côn trùng"
-              />
-            </div>
-          </div>
-          <div className="form-actions">
-            <Button
-              variant="outline"
-              onClick={() => setConvertDialogOpen(false)}
-            >
-              Hủy
-            </Button>
-            <Button onClick={handleConvert} disabled={converting}>
-              {converting ? "Đang xử lý..." : "Chuyển đổi"}
-            </Button>
-          </div>
+          ) : (
+            <>
+              <div className="form-grid">
+                <div className="form-field">
+                  <Label>Tên khách hàng *</Label>
+                  <Input
+                    value={convertTenKH}
+                    onChange={(e) => setConvertTenKH(e.target.value)}
+                  />
+                </div>
+                <div className="form-field">
+                  <Label>Số điện thoại *</Label>
+                  <Input
+                    value={convertSDT}
+                    onChange={(e) => setConvertSDT(e.target.value)}
+                  />
+                </div>
+                <div className="form-field">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={convertEmail}
+                    onChange={(e) => setConvertEmail(e.target.value)}
+                  />
+                </div>
+                <div className="form-field">
+                  <Label>Địa chỉ</Label>
+                  <Input
+                    value={convertDiaChi}
+                    onChange={(e) => setConvertDiaChi(e.target.value)}
+                  />
+                </div>
+                <div className="form-field">
+                  <Label>Loại khách hàng</Label>
+                  <Select value={convertLoaiKH} onValueChange={setConvertLoaiKH}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Hộ gia đình">Hộ gia đình</SelectItem>
+                      <SelectItem value="Doanh nghiệp">Doanh nghiệp</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="form-field">
+                  <Label>Dịch vụ (hợp đồng)</Label>
+                  <Input
+                    value={convertDichVu}
+                    onChange={(e) => setConvertDichVu(e.target.value)}
+                    placeholder="Kiểm soát côn trùng"
+                  />
+                </div>
+                <div className="form-field full-width">
+                  <Label>Ghi chú</Label>
+                  <Textarea
+                    rows={4}
+                    value={convertGhiChu}
+                    onChange={(e) => setConvertGhiChu(e.target.value)}
+                    placeholder="Thông tin bổ sung..."
+                  />
+                </div>
+              </div>
+              <div className="form-actions">
+                <Button
+                  variant="outline"
+                  onClick={() => setConvertDialogOpen(false)}
+                >
+                  Hủy
+                </Button>
+                <Button onClick={checkDuplicateAndConvert} disabled={converting}>
+                  {converting ? "Đang xử lý..." : "Chuyển đổi"}
+                </Button>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

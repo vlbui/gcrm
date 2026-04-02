@@ -1553,6 +1553,7 @@ ul { list-style: none; }
 /* ============================================
    CONTACT POPUP — MULTI-STEP
    ============================================ */
+/* ── Popup / Quote Form ── */
 .popup-overlay {
   position: fixed; inset: 0; z-index: 9999;
   background: rgba(0,0,0,0.6);
@@ -1565,20 +1566,22 @@ ul { list-style: none; }
 .popup-modal {
   background: #fff; border-radius: 16px; width: 100%; max-width: 540px;
   max-height: 90vh; overflow-y: auto; position: relative;
+  margin: auto;
   animation: popupSlideUp 0.25s var(--ease-out);
   box-shadow: 0 25px 60px rgba(0,0,0,0.25);
 }
 .popup-close {
-  position: absolute; top: 14px; right: 14px; width: 34px; height: 34px;
-  border-radius: 50%; border: none; background: rgba(255,255,255,0.9);
+  position: absolute; top: 12px; right: 12px; width: 36px; height: 36px;
+  border-radius: 50%; border: none; background: rgba(255,255,255,0.95);
   color: var(--neutral-600); cursor: pointer; display: flex;
   align-items: center; justify-content: center; transition: all 0.2s; z-index: 2;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
-.popup-close:hover { background: #fff; color: #1A1A2E; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+.popup-close:hover { background: #fff; color: #1A1A2E; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
 .popup-header {
   background: linear-gradient(135deg, #2E7D32, #1B5E20); color: white;
-  padding: 24px 28px 20px; border-radius: 16px 16px 0 0; text-align: center;
+  padding: 24px 24px 20px; border-radius: 16px 16px 0 0; text-align: center;
 }
 .popup-header-icon {
   width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.2);
@@ -1588,14 +1591,14 @@ ul { list-style: none; }
 
 .popup-steps { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .popup-step-dot {
-  width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 700;
+  width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.5); font-size: 13px; font-weight: 700;
   display: flex; align-items: center; justify-content: center; transition: all 0.25s;
 }
 .popup-step-dot.active { background: rgba(255,255,255,0.35); color: #fff; }
 .popup-step-dot.current { background: #fff; color: #2E7D32; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
-.popup-body { padding: 24px 28px 28px; }
+.popup-body { padding: 24px; }
 .popup-step-content { animation: popupSlideIn 0.2s ease; }
 @keyframes popupSlideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
 
@@ -1608,7 +1611,7 @@ ul { list-style: none; }
 }
 .popup-back:hover { color: #2E7D32; }
 
-.popup-type-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.popup-type-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .popup-type-card {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
   padding: 28px 16px; border: 2px solid var(--neutral-200); border-radius: 14px;
@@ -1621,20 +1624,27 @@ ul { list-style: none; }
 .popup-type-title { font-size: 15px; font-weight: 700; color: #1A1A2E; }
 .popup-type-desc { font-size: 12.5px; color: var(--neutral-500); }
 
-.popup-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.popup-field { margin-bottom: 14px; }
-.popup-field label { display: block; font-size: 13px; font-weight: 700; color: #1A1A2E; margin-bottom: 5px; }
+.popup-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.popup-field { margin-bottom: 16px; }
+.popup-field label {
+  display: block; font-size: 14px; font-weight: 600; color: #1A1A2E; margin-bottom: 6px;
+}
 .popup-field input, .popup-field select {
-  width: 100%; padding: 10px 12px; border: 1.5px solid var(--neutral-300); border-radius: 10px;
-  font-family: 'Be Vietnam Pro', sans-serif; font-size: 14px; color: #1A1A2E; background: #fff; transition: border-color 0.2s;
+  width: 100%; height: 44px; padding: 0 12px;
+  border: 1px solid #d1d5db; border-radius: 10px;
+  font-family: 'Be Vietnam Pro', sans-serif; font-size: 14px; color: #1A1A2E;
+  background: #fff; transition: border-color 0.2s;
+  box-sizing: border-box;
 }
 .popup-field input::placeholder { color: var(--neutral-400); }
-.popup-field input:focus, .popup-field select:focus { outline: none; border-color: #4CAF50; box-shadow: 0 0 0 3px rgba(76,175,80,0.12); }
-.popup-error { font-size: 12px; font-weight: 600; color: #C62828; margin-top: 3px; display: block; }
+.popup-field input:focus, .popup-field select:focus {
+  outline: none; border-color: #2E7D32; box-shadow: 0 0 0 3px rgba(46,125,50,0.1);
+}
+.popup-error { font-size: 12px; font-weight: 600; color: #C62828; margin-top: 4px; display: block; }
 
 .popup-bug-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .popup-chip {
-  display: inline-flex; align-items: center; gap: 4px; padding: 7px 14px;
+  display: inline-flex; align-items: center; gap: 4px; padding: 8px 14px;
   border: 1.5px solid var(--neutral-200); border-radius: 20px; font-size: 13px;
   font-weight: 600; font-family: 'Be Vietnam Pro', sans-serif; color: var(--neutral-600);
   background: #fff; cursor: pointer; transition: all 0.2s;
@@ -1643,13 +1653,13 @@ ul { list-style: none; }
 .popup-chip.active { border-color: #4CAF50; background: #E8F5E9; color: #2E7D32; }
 
 .popup-submit {
-  width: 100%; padding: 13px 24px;
-  background: linear-gradient(135deg, #2E7D32, #4CAF50); color: white;
+  width: 100%; height: 48px; padding: 0 24px;
+  background: #2E7D32; color: white;
   font-family: 'Be Vietnam Pro', sans-serif; font-size: 15px; font-weight: 700;
   border: none; border-radius: 12px; cursor: pointer; transition: all 0.25s;
-  box-shadow: 0 4px 12px rgba(46,125,50,0.3); margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(46,125,50,0.3); margin-top: 8px;
 }
-.popup-submit:hover { box-shadow: 0 6px 20px rgba(46,125,50,0.45); transform: translateY(-1px); }
+.popup-submit:hover { background: #256b29; box-shadow: 0 6px 20px rgba(46,125,50,0.45); transform: translateY(-1px); }
 .popup-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
 .popup-note { font-size: 12px; color: var(--neutral-400); text-align: center; margin-top: 10px; }
 
@@ -1660,23 +1670,31 @@ ul { list-style: none; }
 }
 .popup-success h4 { font-size: 18px; font-weight: 800; color: #1A1A2E; margin-bottom: 6px; }
 .popup-success p { font-size: 14px; color: var(--neutral-500); margin-bottom: 20px; }
-.popup-success-btn { padding: 10px 28px; background: #2E7D32; color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; }
+.popup-success-btn {
+  padding: 12px 28px; background: #2E7D32; color: white; border: none;
+  border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer;
+}
 
 .popup-summary { margin-bottom: 16px; }
 .popup-summary h4 { font-size: 15px; font-weight: 700; color: #1A1A2E; margin-bottom: 12px; }
 .popup-summary-grid { background: #F5F7FA; border-radius: 12px; padding: 16px; }
-.popup-summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13.5px; border-bottom: 1px solid var(--neutral-100); }
+.popup-summary-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13.5px; border-bottom: 1px solid var(--neutral-100); }
 .popup-summary-row:last-child { border-bottom: none; }
 .popup-summary-label { color: var(--neutral-500); font-weight: 500; }
 .popup-summary-value { color: #1A1A2E; font-weight: 600; text-align: right; max-width: 60%; }
 
 @media (max-width: 768px) {
-  .popup-modal { max-height: 100vh; border-radius: 0; height: 100%; }
+  .popup-overlay { padding: 0; }
+  .popup-modal {
+    max-width: 100%; width: 100%; height: 100vh; max-height: 100vh;
+    border-radius: 0; margin: 0;
+  }
   .popup-header { border-radius: 0; padding: 20px 16px 16px; }
   .popup-body { padding: 20px 16px; }
   .popup-form-row { grid-template-columns: 1fr; gap: 0; }
-  .popup-type-cards { grid-template-columns: 1fr; }
-  .popup-overlay { padding: 0; }
+  .popup-type-cards { grid-template-columns: 1fr; gap: 12px; }
+  .popup-type-card { padding: 20px 16px; }
+  .popup-close { top: 10px; right: 10px; }
 }
 
 /* ============================================
