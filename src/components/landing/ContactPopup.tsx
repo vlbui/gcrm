@@ -185,7 +185,7 @@ function SmartFormPopup({ onClose }: { onClose: () => void }) {
                 <button className="popup-type-card" onClick={() => selectType("org")}>
                   <Building2 size={32} />
                   <span className="popup-type-title">Doanh nghiệp / Tổ chức</span>
-                  <span className="popup-type-desc">Nhà hàng, văn phòng, nhà máy</span>
+                  <span className="popup-type-desc">Nhà hàng, văn phòng, nhà máy, trang trại</span>
                 </button>
               </div>
             </div>
@@ -251,6 +251,7 @@ function SmartFormPopup({ onClose }: { onClose: () => void }) {
                     <option>Văn phòng / Tòa nhà</option>
                     <option>Nhà máy / Kho bãi</option>
                     <option>Trường học / Bệnh viện</option>
+                    <option>Trang trại / Nông nghiệp</option>
                     <option>Khác</option>
                   </select>
                 </Field>

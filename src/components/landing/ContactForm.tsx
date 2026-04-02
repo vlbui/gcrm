@@ -10,6 +10,8 @@ import { useState } from "react";
 const contactSchema = z.object({
   ten_kh: z.string().min(1, "Vui lòng nhập họ tên"),
   sdt: z.string().min(8, "Vui lòng nhập số điện thoại hợp lệ"),
+  email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),
+  dia_chi: z.string().optional(),
   loai_hinh: z.string().optional(),
   loai_con_trung: z.string().optional(),
   dien_tich: z.string().optional(),
@@ -37,6 +39,8 @@ export default function ContactForm() {
       const { error } = await supabase.from("service_requests").insert({
         ten_kh: data.ten_kh,
         sdt: data.sdt,
+        email: data.email || null,
+        dia_chi: data.dia_chi || null,
         loai_hinh: data.loai_hinh || null,
         loai_con_trung: data.loai_con_trung || null,
         dien_tich: data.dien_tich ? Number(data.dien_tich) : null,
@@ -83,6 +87,28 @@ export default function ContactForm() {
         </div>
       </div>
 
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">Email</label>
+          <input
+            type="email"
+            className="form-input"
+            placeholder="email@example.com"
+            {...register("email")}
+          />
+          {errors.email && <span className="form-error">{errors.email.message}</span>}
+        </div>
+        <div className="form-group">
+          <label className="form-label">Địa chỉ</label>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Số nhà, đường, phường, quận..."
+            {...register("dia_chi")}
+          />
+        </div>
+      </div>
+
       <div className="form-group">
         <label className="form-label">Loại hình cần bảo vệ</label>
         <select className="form-select" {...register("loai_hinh")}>
@@ -92,6 +118,7 @@ export default function ContactForm() {
           <option>Văn phòng / Tòa nhà</option>
           <option>Nhà máy / Kho bãi</option>
           <option>Trường học / Bệnh viện</option>
+          <option>Trang trại / Nông nghiệp</option>
           <option>Khác</option>
         </select>
       </div>
