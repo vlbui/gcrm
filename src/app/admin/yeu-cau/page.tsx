@@ -108,7 +108,7 @@ export default function YeuCauPage() {
     setConvertSDT(item.sdt);
     setConvertEmail(item.email ?? "");
     setConvertDiaChi(item.dia_chi ?? "");
-    setConvertLoaiKH(isOrg ? "Doanh nghiệp" : "Hộ gia đình");
+    setConvertLoaiKH(isOrg ? "Doanh nghiệp" : "Cá nhân");
     setConvertDichVu(item.loai_con_trung ?? "");
     setConvertDienTich(item.dien_tich ?? "");
     setConvertLoaiHinh(item.loai_hinh ?? "");
@@ -191,7 +191,7 @@ export default function YeuCauPage() {
           sdt: convertSDT,
           email: convertEmail || null,
           dia_chi: convertDiaChi || null,
-          loai_kh: convertLoaiKH,
+          loai_kh: convertLoaiKH === "Cá nhân" ? "Hộ gia đình" : "Doanh nghiệp",
           trang_thai: "Mới",
           ghi_chu: convertGhiChu || null,
         });
@@ -584,7 +584,7 @@ export default function YeuCauPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Hộ gia đình">Hộ gia đình</SelectItem>
+                      <SelectItem value="Cá nhân">Cá nhân</SelectItem>
                       <SelectItem value="Doanh nghiệp">Doanh nghiệp</SelectItem>
                     </SelectContent>
                   </Select>

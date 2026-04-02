@@ -41,6 +41,7 @@ export default function ContactForm() {
         sdt: data.sdt,
         email: data.email || null,
         dia_chi: data.dia_chi || null,
+        loai_kh: "Cá nhân",
         loai_hinh: data.loai_hinh || null,
         loai_con_trung: data.loai_con_trung || null,
         dien_tich: data.dien_tich ? Number(data.dien_tich) : null,
