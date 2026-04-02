@@ -54,21 +54,13 @@ const statusBadgeClass: Record<string, string> = {
   "Từ chối": "status-badge huy",
 };
 
-function getLoaiHinhBadgeClass(loaiHinh: string | null, loaiKh: string | null): string {
-  const val = loaiHinh ?? (loaiKh === "Cá nhân" ? "Cá nhân" : "");
+function getLoaiHinhBadgeClass(loaiHinh: string | null): string {
+  const val = loaiHinh ?? "";
+  if (val.includes("Doanh nghiệp")) return "loai-hinh-badge nha-hang";
+  if (val.includes("Văn phòng") || val.includes("Trường học")) return "loai-hinh-badge van-phong";
+  if (val.includes("Trang trại")) return "loai-hinh-badge trang-trai";
   if (val.includes("Cá nhân")) return "loai-hinh-badge ca-nhan";
-  if (val.includes("Hộ gia đình")) return "loai-hinh-badge ho-gia-dinh";
-  if (val.includes("Nhà hàng") || val.includes("Khách sạn")) return "loai-hinh-badge nha-hang";
-  if (val.includes("Văn phòng") || val.includes("Tòa nhà")) return "loai-hinh-badge van-phong";
-  if (val.includes("Nhà máy") || val.includes("Kho bãi")) return "loai-hinh-badge nha-may";
-  if (val.includes("Trường học") || val.includes("Bệnh viện")) return "loai-hinh-badge truong-hoc";
-  if (val.includes("Trang trại") || val.includes("Nông nghiệp")) return "loai-hinh-badge trang-trai";
-  if (val) return "loai-hinh-badge khac";
   return "loai-hinh-badge khac";
-}
-
-function getLoaiHinhLabel(loaiHinh: string | null, loaiKh: string | null): string {
-  return loaiHinh ?? (loaiKh === "Cá nhân" ? "Cá nhân" : "—");
 }
 
 export default function YeuCauPage() {
@@ -128,10 +120,9 @@ export default function YeuCauPage() {
     setConvertSDT(item.sdt);
     setConvertEmail(item.email ?? "");
     setConvertDiaChi(item.dia_chi ?? "");
-    setConvertLoaiKH(isOrg ? "Doanh nghiệp" : "Cá nhân");
     setConvertDichVu(item.loai_con_trung ?? "");
     setConvertDienTich(item.dien_tich ?? "");
-    setConvertLoaiHinh(item.loai_hinh ?? "");
+    setConvertLoaiHinh(item.loai_hinh ?? (isOrg ? "Doanh nghiệp" : "Cá nhân"));
 
     // Build ghi_chu from all request details
     const notes: string[] = [];
@@ -272,9 +263,8 @@ export default function YeuCauPage() {
 
     // Loại hình filter
     if (filterLoaiHinh !== "all") {
-      const label = getLoaiHinhLabel(item.loai_hinh, item.loai_kh);
-      if (filterLoaiHinh === "Cá nhân" && label !== "Cá nhân") return false;
-      if (filterLoaiHinh !== "Cá nhân" && !label.includes(filterLoaiHinh)) return false;
+      const val = item.loai_hinh ?? "Cá nhân";
+      if (!val.includes(filterLoaiHinh)) return false;
     }
 
     // Search
@@ -342,12 +332,9 @@ export default function YeuCauPage() {
               <SelectContent>
                 <SelectItem value="all">Tất cả loại hình</SelectItem>
                 <SelectItem value="Cá nhân">Cá nhân</SelectItem>
-                <SelectItem value="Hộ gia đình">Hộ gia đình</SelectItem>
-                <SelectItem value="Nhà hàng">Nhà hàng / Khách sạn</SelectItem>
-                <SelectItem value="Văn phòng">Văn phòng / Tòa nhà</SelectItem>
-                <SelectItem value="Nhà máy">Nhà máy / Kho bãi</SelectItem>
-                <SelectItem value="Trường học">Trường học / Bệnh viện</SelectItem>
-                <SelectItem value="Trang trại">Trang trại / Nông nghiệp</SelectItem>
+                <SelectItem value="Doanh nghiệp">Doanh nghiệp</SelectItem>
+                <SelectItem value="Văn phòng">Văn phòng / Trường học</SelectItem>
+                <SelectItem value="Trang trại">Trang trại</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -388,8 +375,8 @@ export default function YeuCauPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className={getLoaiHinhBadgeClass(item.loai_hinh, item.loai_kh)}>
-                      {getLoaiHinhLabel(item.loai_hinh, item.loai_kh)}
+                    <span className={getLoaiHinhBadgeClass(item.loai_hinh)}>
+                      {item.loai_hinh ?? "Cá nhân"}
                     </span>
                   </TableCell>
                   <TableCell>{item.loai_con_trung ?? "—"}</TableCell>
@@ -515,7 +502,7 @@ export default function YeuCauPage() {
               </div>
               <div className="form-field">
                 <Label>Loại hình</Label>
-                <p>{selectedItem.loai_hinh ?? selectedItem.loai_kh ?? "Cá nhân"}</p>
+                <p>{selectedItem.loai_hinh ?? "Cá nhân"}</p>
               </div>
               {selectedItem.nhu_cau && (
                 <div className="form-field">
@@ -691,7 +678,7 @@ export default function YeuCauPage() {
                   />
                 </div>
                 <div className="form-field">
-                  <Label>Loại hình khách hàng</Label>
+                  <Label>Loại hình</Label>
                   <p>{convertLoaiHinh || "Cá nhân"}</p>
                 </div>
                 <div className="form-field">

@@ -156,8 +156,7 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
         sdt: phone,
         email: emailVal || null,
         dia_chi: (isPersonal ? diaChi : diaChiCty)?.trim() || null,
-        loai_kh: isPersonal ? "Cá nhân" : "Tổ chức",
-        loai_hinh: loaiHinh || null,
+        loai_hinh: loaiHinh || (isPersonal ? "Cá nhân" : "Doanh nghiệp"),
         loai_con_trung: (isPersonal ? bugs : bugsOrg).join(", ") || null,
         dien_tich: (isPersonal ? dienTich : dienTichOrg) || null,
         mo_ta: isPersonal ? (moTa?.trim() || null) : (orgParts || null),
@@ -219,7 +218,7 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
                 <button className="popup-type-card" onClick={() => selectType("org")}>
                   <Building2 size={32} />
                   <span className="popup-type-title">Doanh nghiệp / Tổ chức</span>
-                  <span className="popup-type-desc">Nhà hàng, văn phòng, nhà máy, trang trại</span>
+                  <span className="popup-type-desc">Doanh nghiệp, văn phòng, trường học, trang trại</span>
                 </button>
               </div>
             </div>
@@ -281,12 +280,9 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
                 <Field label="Loại hình">
                   <select value={loaiHinh} onChange={(e) => setLoaiHinh(e.target.value)}>
                     <option value="">— Chọn —</option>
-                    <option>Nhà hàng / Khách sạn</option>
-                    <option>Văn phòng / Tòa nhà</option>
-                    <option>Nhà máy / Kho bãi</option>
-                    <option>Trường học / Bệnh viện</option>
-                    <option>Trang trại / Nông nghiệp</option>
-                    <option>Khác</option>
+                    <option>Doanh nghiệp</option>
+                    <option>Văn phòng / Trường học</option>
+                    <option>Trang trại</option>
                   </select>
                 </Field>
               </div>

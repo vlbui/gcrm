@@ -224,10 +224,10 @@ export default function KhachHangPage() {
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <Select value={filterLoaiKH} onValueChange={(v) => { setFilterLoaiKH(v); setPage(1); }}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Loại KH" />
+                <SelectValue placeholder="Loại hình" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tất cả loại KH</SelectItem>
+                <SelectItem value="all">Tất cả loại hình</SelectItem>
                 <SelectItem value="Cá nhân">Cá nhân</SelectItem>
                 <SelectItem value="Doanh nghiệp">Doanh nghiệp</SelectItem>
                 <SelectItem value="Văn phòng / Trường học">Văn phòng / Trường học</SelectItem>
@@ -270,7 +270,7 @@ export default function KhachHangPage() {
                 <TableHead>Tên KH</TableHead>
                 <TableHead>SĐT</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Loại KH</TableHead>
+                <TableHead>Loại hình</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Thao tác</TableHead>
               </TableRow>
@@ -359,7 +359,7 @@ export default function KhachHangPage() {
                 )}
               </div>
               <div className="form-field">
-                <Label>Loại khách hàng</Label>
+                <Label>Loại hình</Label>
                 <Select
                   value={watch("loai_kh")}
                   onValueChange={(val) => setValue("loai_kh", val)}
