@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Search, Plus, Pencil, Trash2, Home, Building2, UtensilsCrossed, Landmark, Factory, GraduationCap, Tractor, HelpCircle, User } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Building2, Landmark, Tractor, User } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,27 +55,17 @@ const customerSchema = z.object({
 type CustomerFormData = z.infer<typeof customerSchema>;
 
 function getLoaiKHIcon(loaiKh: string) {
-  if (loaiKh.includes("Cá nhân")) return <User size={13} />;
-  if (loaiKh.includes("Hộ gia đình")) return <Home size={13} />;
-  if (loaiKh.includes("Nhà hàng") || loaiKh.includes("Khách sạn")) return <UtensilsCrossed size={13} />;
-  if (loaiKh.includes("Văn phòng") || loaiKh.includes("Tòa nhà")) return <Landmark size={13} />;
-  if (loaiKh.includes("Nhà máy") || loaiKh.includes("Kho bãi")) return <Factory size={13} />;
-  if (loaiKh.includes("Trường học") || loaiKh.includes("Bệnh viện")) return <GraduationCap size={13} />;
-  if (loaiKh.includes("Trang trại") || loaiKh.includes("Nông nghiệp")) return <Tractor size={13} />;
   if (loaiKh.includes("Doanh nghiệp")) return <Building2 size={13} />;
-  return <HelpCircle size={13} />;
+  if (loaiKh.includes("Văn phòng") || loaiKh.includes("Trường học")) return <Landmark size={13} />;
+  if (loaiKh.includes("Trang trại")) return <Tractor size={13} />;
+  return <User size={13} />;
 }
 
 function getLoaiKHBadgeClass(loaiKh: string): string {
-  if (loaiKh.includes("Cá nhân")) return "loai-hinh-badge ca-nhan";
-  if (loaiKh.includes("Hộ gia đình")) return "loai-hinh-badge ho-gia-dinh";
-  if (loaiKh.includes("Nhà hàng") || loaiKh.includes("Khách sạn")) return "loai-hinh-badge nha-hang";
-  if (loaiKh.includes("Văn phòng") || loaiKh.includes("Tòa nhà")) return "loai-hinh-badge van-phong";
-  if (loaiKh.includes("Nhà máy") || loaiKh.includes("Kho bãi")) return "loai-hinh-badge nha-may";
-  if (loaiKh.includes("Trường học") || loaiKh.includes("Bệnh viện")) return "loai-hinh-badge truong-hoc";
-  if (loaiKh.includes("Trang trại") || loaiKh.includes("Nông nghiệp")) return "loai-hinh-badge trang-trai";
   if (loaiKh.includes("Doanh nghiệp")) return "loai-hinh-badge nha-hang";
-  return "loai-hinh-badge khac";
+  if (loaiKh.includes("Văn phòng") || loaiKh.includes("Trường học")) return "loai-hinh-badge van-phong";
+  if (loaiKh.includes("Trang trại")) return "loai-hinh-badge trang-trai";
+  return "loai-hinh-badge ca-nhan";
 }
 
 export default function KhachHangPage() {
@@ -104,7 +94,7 @@ export default function KhachHangPage() {
       sdt: "",
       email: "",
       dia_chi: "",
-      loai_kh: "Hộ gia đình",
+      loai_kh: "Cá nhân",
       trang_thai: "Mới",
       ghi_chu: "",
     },
@@ -126,7 +116,7 @@ export default function KhachHangPage() {
   }, []);
 
   const filtered = data.filter((item) => {
-    if (filterLoaiKH !== "all" && item.loai_kh !== filterLoaiKH) return false;
+    if (filterLoaiKH !== "all" && !item.loai_kh.includes(filterLoaiKH)) return false;
     if (filterTrangThai !== "all" && item.trang_thai !== filterTrangThai) return false;
 
     const q = search.toLowerCase();
@@ -148,7 +138,7 @@ export default function KhachHangPage() {
       sdt: "",
       email: "",
       dia_chi: "",
-      loai_kh: "Hộ gia đình",
+      loai_kh: "Cá nhân",
       trang_thai: "Mới",
       ghi_chu: "",
     });
@@ -239,13 +229,9 @@ export default function KhachHangPage() {
               <SelectContent>
                 <SelectItem value="all">Tất cả loại KH</SelectItem>
                 <SelectItem value="Cá nhân">Cá nhân</SelectItem>
-                <SelectItem value="Hộ gia đình">Hộ gia đình</SelectItem>
-                <SelectItem value="Nhà hàng / Khách sạn">Nhà hàng / Khách sạn</SelectItem>
-                <SelectItem value="Văn phòng / Tòa nhà">Văn phòng / Tòa nhà</SelectItem>
-                <SelectItem value="Nhà máy / Kho bãi">Nhà máy / Kho bãi</SelectItem>
-                <SelectItem value="Trường học / Bệnh viện">Trường học / Bệnh viện</SelectItem>
-                <SelectItem value="Trang trại / Nông nghiệp">Trang trại / Nông nghiệp</SelectItem>
                 <SelectItem value="Doanh nghiệp">Doanh nghiệp</SelectItem>
+                <SelectItem value="Văn phòng / Trường học">Văn phòng / Trường học</SelectItem>
+                <SelectItem value="Trang trại">Trang trại</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterTrangThai} onValueChange={(v) => { setFilterTrangThai(v); setPage(1); }}>
@@ -383,14 +369,9 @@ export default function KhachHangPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Cá nhân">Cá nhân</SelectItem>
-                    <SelectItem value="Hộ gia đình">Hộ gia đình</SelectItem>
-                    <SelectItem value="Nhà hàng / Khách sạn">Nhà hàng / Khách sạn</SelectItem>
-                    <SelectItem value="Văn phòng / Tòa nhà">Văn phòng / Tòa nhà</SelectItem>
-                    <SelectItem value="Nhà máy / Kho bãi">Nhà máy / Kho bãi</SelectItem>
-                    <SelectItem value="Trường học / Bệnh viện">Trường học / Bệnh viện</SelectItem>
-                    <SelectItem value="Trang trại / Nông nghiệp">Trang trại / Nông nghiệp</SelectItem>
                     <SelectItem value="Doanh nghiệp">Doanh nghiệp</SelectItem>
-                    <SelectItem value="Khác">Khác</SelectItem>
+                    <SelectItem value="Văn phòng / Trường học">Văn phòng / Trường học</SelectItem>
+                    <SelectItem value="Trang trại">Trang trại</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
