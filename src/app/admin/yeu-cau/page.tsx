@@ -42,7 +42,7 @@ import Pagination from "@/components/admin/Pagination";
 const statusLabels: Record<string, string> = {
   "Mới": "Mới",
   "Đã liên hệ": "Đã liên hệ",
-  "Đã tạo HĐ": "Đã tạo HĐ",
+  "Đã tạo HĐ": "Đã chuyển đổi",
   "Từ chối": "Từ chối",
 };
 
@@ -53,11 +53,30 @@ const statusBadgeClass: Record<string, string> = {
   "Từ chối": "status-badge huy",
 };
 
+function getLoaiHinhBadgeClass(loaiHinh: string | null, loaiKh: string | null): string {
+  const val = loaiHinh ?? (loaiKh === "Cá nhân" ? "Cá nhân" : "");
+  if (val.includes("Cá nhân")) return "loai-hinh-badge ca-nhan";
+  if (val.includes("Hộ gia đình")) return "loai-hinh-badge ho-gia-dinh";
+  if (val.includes("Nhà hàng") || val.includes("Khách sạn")) return "loai-hinh-badge nha-hang";
+  if (val.includes("Văn phòng") || val.includes("Tòa nhà")) return "loai-hinh-badge van-phong";
+  if (val.includes("Nhà máy") || val.includes("Kho bãi")) return "loai-hinh-badge nha-may";
+  if (val.includes("Trường học") || val.includes("Bệnh viện")) return "loai-hinh-badge truong-hoc";
+  if (val.includes("Trang trại") || val.includes("Nông nghiệp")) return "loai-hinh-badge trang-trai";
+  if (val) return "loai-hinh-badge khac";
+  return "loai-hinh-badge khac";
+}
+
+function getLoaiHinhLabel(loaiHinh: string | null, loaiKh: string | null): string {
+  return loaiHinh ?? (loaiKh === "Cá nhân" ? "Cá nhân" : "—");
+}
+
 export default function YeuCauPage() {
   const { user } = useCurrentUser();
   const [data, setData] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("active");
+  const [filterLoaiHinh, setFilterLoaiHinh] = useState("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -228,7 +247,20 @@ export default function YeuCauPage() {
   };
 
   const filtered = data.filter((item) => {
+    // Status filter: "active" hides converted/rejected
+    if (filterStatus === "active" && (item.trang_thai === "Đã tạo HĐ" || item.trang_thai === "Từ chối")) return false;
+    if (filterStatus !== "active" && filterStatus !== "all" && item.trang_thai !== filterStatus) return false;
+
+    // Loại hình filter
+    if (filterLoaiHinh !== "all") {
+      const label = getLoaiHinhLabel(item.loai_hinh, item.loai_kh);
+      if (filterLoaiHinh === "Cá nhân" && label !== "Cá nhân") return false;
+      if (filterLoaiHinh !== "Cá nhân" && !label.includes(filterLoaiHinh)) return false;
+    }
+
+    // Search
     const q = search.toLowerCase();
+    if (!q) return true;
     return (
       item.ma_yc.toLowerCase().includes(q) ||
       item.ten_kh.toLowerCase().includes(q) ||
@@ -263,6 +295,36 @@ export default function YeuCauPage() {
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setPage(1); }}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Đang xử lý</SelectItem>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="Mới">Mới</SelectItem>
+                <SelectItem value="Đã liên hệ">Đã liên hệ</SelectItem>
+                <SelectItem value="Đã tạo HĐ">Đã chuyển đổi</SelectItem>
+                <SelectItem value="Từ chối">Từ chối</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterLoaiHinh} onValueChange={(v) => { setFilterLoaiHinh(v); setPage(1); }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Loại hình" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả loại hình</SelectItem>
+                <SelectItem value="Cá nhân">Cá nhân</SelectItem>
+                <SelectItem value="Hộ gia đình">Hộ gia đình</SelectItem>
+                <SelectItem value="Nhà hàng">Nhà hàng / Khách sạn</SelectItem>
+                <SelectItem value="Văn phòng">Văn phòng / Tòa nhà</SelectItem>
+                <SelectItem value="Nhà máy">Nhà máy / Kho bãi</SelectItem>
+                <SelectItem value="Trường học">Trường học / Bệnh viện</SelectItem>
+                <SelectItem value="Trang trại">Trang trại / Nông nghiệp</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {loading ? (
@@ -294,7 +356,11 @@ export default function YeuCauPage() {
                   <TableCell>{item.ma_yc}</TableCell>
                   <TableCell>{item.loai_kh === "Tổ chức" ? (item.ten_cong_ty ?? item.ten_kh) : item.ten_kh}</TableCell>
                   <TableCell>{item.sdt}</TableCell>
-                  <TableCell>{item.loai_hinh ?? (item.loai_kh === "Cá nhân" ? "Cá nhân" : "—")}</TableCell>
+                  <TableCell>
+                    <span className={getLoaiHinhBadgeClass(item.loai_hinh, item.loai_kh)}>
+                      {getLoaiHinhLabel(item.loai_hinh, item.loai_kh)}
+                    </span>
+                  </TableCell>
                   <TableCell>{item.loai_con_trung ?? "—"}</TableCell>
                   <TableCell>
                     {canEdit ? (
@@ -311,7 +377,7 @@ export default function YeuCauPage() {
                             Đã liên hệ
                           </SelectItem>
                           <SelectItem value="Đã tạo HĐ">
-                            Đã tạo HĐ
+                            Đã chuyển đổi
                           </SelectItem>
                           <SelectItem value="Từ chối">Từ chối</SelectItem>
                         </SelectContent>
