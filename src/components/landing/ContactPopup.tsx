@@ -6,15 +6,23 @@ import { useState, useEffect, createContext, useContext, useCallback } from "rea
 import { X, Shield, ArrowLeft, Building2, Home, Check } from "lucide-react";
 
 /* ── Context ── */
-const PopupContext = createContext<{ open: () => void }>({ open: () => {} });
+const PopupContext = createContext<{ open: (loaiHinh?: string) => void }>({ open: () => {} });
 export const useContactPopup = () => useContext(PopupContext);
 
 export function ContactPopupProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const open = useCallback(() => setIsOpen(true), []);
+  const [initialLoaiHinh, setInitialLoaiHinh] = useState("");
+  const open = useCallback((loaiHinh?: string) => {
+    setInitialLoaiHinh(loaiHinh ?? "");
+    setIsOpen(true);
+  }, []);
 
   useEffect(() => {
-    const handler = () => setIsOpen(true);
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setInitialLoaiHinh(detail?.loai_hinh ?? "");
+      setIsOpen(true);
+    };
     window.addEventListener("open-contact-popup", handler);
     return () => window.removeEventListener("open-contact-popup", handler);
   }, []);
@@ -27,7 +35,7 @@ export function ContactPopupProvider({ children }: { children: React.ReactNode }
   return (
     <PopupContext.Provider value={{ open }}>
       {children}
-      {isOpen && <SmartFormPopup onClose={() => setIsOpen(false)} />}
+      {isOpen && <SmartFormPopup onClose={() => setIsOpen(false)} initialLoaiHinh={initialLoaiHinh} />}
     </PopupContext.Provider>
   );
 }
@@ -44,7 +52,7 @@ export function CTAButton({ className = "", children }: { className?: string; ch
 const BUG_OPTIONS = ["Gián", "Chuột", "Mối", "Muỗi", "Kiến", "Ruồi", "Khác"];
 
 /* ── Multi-step popup ── */
-function SmartFormPopup({ onClose }: { onClose: () => void }) {
+function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void; initialLoaiHinh?: string }) {
   const [step, setStep] = useState(1);
   const [customerType, setCustomerType] = useState<"personal" | "org" | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +73,7 @@ function SmartFormPopup({ onClose }: { onClose: () => void }) {
   const [nguoiLienHe, setNguoiLienHe] = useState("");
   const [emailCty, setEmailCty] = useState("");
   const [diaChiCty, setDiaChiCty] = useState("");
-  const [loaiHinh, setLoaiHinh] = useState("");
+  const [loaiHinh, setLoaiHinh] = useState(initialLoaiHinh);
   const [bugsOrg, setBugsOrg] = useState<string[]>([]);
   const [dienTichOrg, setDienTichOrg] = useState("");
   const [soChiNhanh, setSoChiNhanh] = useState("");
