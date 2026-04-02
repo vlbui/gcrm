@@ -107,6 +107,8 @@ function SmartFormPopup({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     try {
       const supabase = createClient();
+      const now = new Date();
+      const ma_yc = `GS-YC${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
 
       const isPersonal = customerType === "personal";
       const orgParts = [
@@ -117,6 +119,7 @@ function SmartFormPopup({ onClose }: { onClose: () => void }) {
       ].filter(Boolean).join(". ");
 
       const payload = {
+        ma_yc,
         ten_kh: isPersonal ? tenKh : nguoiLienHe,
         sdt: isPersonal ? sdt : sdtOrg,
         loai_hinh: isPersonal ? null : (loaiHinh || null),
