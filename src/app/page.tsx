@@ -10,7 +10,7 @@ import {
   CertificatesSection,
   FAQSection,
   ContactSection,
-  // MapSection,
+  MapSection,
   Footer,
   FloatingWidgets,
   ContactPopupProvider,
@@ -102,7 +102,7 @@ export default async function Home() {
         }))}
       />
 
-      {/* <MapSection /> */}
+      <MapSection />
 
       <Footer />
 
