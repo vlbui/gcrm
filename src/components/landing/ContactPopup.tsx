@@ -107,9 +107,6 @@ function SmartFormPopup({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     try {
       const supabase = createClient();
-      const now = new Date();
-      const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
-      const ma_yc = `GS-YC${ts}`;
 
       const isPersonal = customerType === "personal";
       const orgParts = [
@@ -120,16 +117,12 @@ function SmartFormPopup({ onClose }: { onClose: () => void }) {
       ].filter(Boolean).join(". ");
 
       const payload = {
-        ma_yc,
         ten_kh: isPersonal ? tenKh : nguoiLienHe,
         sdt: isPersonal ? sdt : sdtOrg,
-        email: (isPersonal ? email : emailCty) || null,
-        dia_chi: (isPersonal ? diaChi : diaChiCty) || null,
         loai_hinh: isPersonal ? null : (loaiHinh || null),
         loai_con_trung: (isPersonal ? bugs : bugsOrg).join(", ") || null,
         dien_tich: (isPersonal ? dienTich : dienTichOrg) || null,
         mo_ta: isPersonal ? (moTa || null) : (orgParts || null),
-        trang_thai: "Mới",
       };
 
       const { error } = await supabase.from("service_requests").insert(payload);
