@@ -591,11 +591,7 @@ export default function YeuCauPage() {
                 </div>
                 <div className="form-field">
                   <Label>Loại hình</Label>
-                  <Input
-                    value={convertLoaiHinh}
-                    onChange={(e) => setConvertLoaiHinh(e.target.value)}
-                    placeholder="Hộ gia đình, Nhà hàng..."
-                  />
+                  <p>{convertLoaiHinh || "—"}</p>
                 </div>
                 <div className="form-field">
                   <Label>Diện tích (m²)</Label>
