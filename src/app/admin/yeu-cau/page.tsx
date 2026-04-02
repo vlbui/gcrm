@@ -229,7 +229,7 @@ export default function YeuCauPage() {
           sdt: phone,
           email: emailVal || null,
           dia_chi: convertDiaChi.trim() || null,
-          loai_kh: "Hộ gia đình",
+          loai_kh: convertLoaiHinh || "Cá nhân",
           trang_thai: "Mới",
           ghi_chu: convertGhiChu || null,
         });
@@ -691,8 +691,8 @@ export default function YeuCauPage() {
                   />
                 </div>
                 <div className="form-field">
-                  <Label>Loại hình</Label>
-                  <p>{convertLoaiHinh || "—"}</p>
+                  <Label>Loại hình khách hàng</Label>
+                  <p>{convertLoaiHinh || "Cá nhân"}</p>
                 </div>
                 <div className="form-field">
                   <Label>Diện tích (m²)</Label>

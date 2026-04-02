@@ -319,8 +319,15 @@ export default function KhachHangPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="Cá nhân">Cá nhân</SelectItem>
                     <SelectItem value="Hộ gia đình">Hộ gia đình</SelectItem>
+                    <SelectItem value="Nhà hàng / Khách sạn">Nhà hàng / Khách sạn</SelectItem>
+                    <SelectItem value="Văn phòng / Tòa nhà">Văn phòng / Tòa nhà</SelectItem>
+                    <SelectItem value="Nhà máy / Kho bãi">Nhà máy / Kho bãi</SelectItem>
+                    <SelectItem value="Trường học / Bệnh viện">Trường học / Bệnh viện</SelectItem>
+                    <SelectItem value="Trang trại / Nông nghiệp">Trang trại / Nông nghiệp</SelectItem>
                     <SelectItem value="Doanh nghiệp">Doanh nghiệp</SelectItem>
+                    <SelectItem value="Khác">Khác</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
