@@ -167,6 +167,7 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
       setSuccess(true);
       setDuplicateWarning("");
       toast.success("Gửi yêu cầu thành công!");
+      setTimeout(() => onClose(), 3000);
     } catch (err) {
       console.error("Submit error:", err);
       toast.error("Có lỗi xảy ra. Vui lòng gọi trực tiếp 085 9955 969.");
