@@ -72,6 +72,8 @@ export default function YeuCauPage() {
   const [convertDiaChi, setConvertDiaChi] = useState("");
   const [convertLoaiKH, setConvertLoaiKH] = useState("Hộ gia đình");
   const [convertDichVu, setConvertDichVu] = useState("");
+  const [convertDienTich, setConvertDienTich] = useState("");
+  const [convertLoaiHinh, setConvertLoaiHinh] = useState("");
   const [convertGhiChu, setConvertGhiChu] = useState("");
 
   // Duplicate customer check
@@ -108,6 +110,8 @@ export default function YeuCauPage() {
     setConvertDiaChi(item.dia_chi ?? "");
     setConvertLoaiKH(isOrg ? "Doanh nghiệp" : "Hộ gia đình");
     setConvertDichVu(item.loai_con_trung ?? "");
+    setConvertDienTich(item.dien_tich ?? "");
+    setConvertLoaiHinh(item.loai_hinh ?? "");
 
     // Build ghi_chu from all request details
     const notes: string[] = [];
@@ -197,7 +201,7 @@ export default function YeuCauPage() {
       await createContract({
         customer_id: customerId,
         dich_vu: convertDichVu || "Kiểm soát côn trùng",
-        dien_tich: selectedItem.dien_tich ?? null,
+        dien_tich: convertDienTich || null,
         gia_tri: null,
         trang_thai: "Mới",
         ngay_bat_dau: new Date().toISOString().split("T")[0],
@@ -591,6 +595,22 @@ export default function YeuCauPage() {
                     value={convertDichVu}
                     onChange={(e) => setConvertDichVu(e.target.value)}
                     placeholder="Kiểm soát côn trùng"
+                  />
+                </div>
+                <div className="form-field">
+                  <Label>Loại hình</Label>
+                  <Input
+                    value={convertLoaiHinh}
+                    onChange={(e) => setConvertLoaiHinh(e.target.value)}
+                    placeholder="Hộ gia đình, Nhà hàng..."
+                  />
+                </div>
+                <div className="form-field">
+                  <Label>Diện tích (m²)</Label>
+                  <Input
+                    value={convertDienTich}
+                    onChange={(e) => setConvertDienTich(e.target.value)}
+                    placeholder="VD: 80"
                   />
                 </div>
                 <div className="form-field full-width">
