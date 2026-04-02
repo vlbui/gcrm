@@ -69,6 +69,7 @@ export default function KhachHangPage() {
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
@@ -312,7 +313,7 @@ export default function KhachHangPage() {
               <div className="form-field">
                 <Label>Loại khách hàng</Label>
                 <Select
-                  defaultValue={editing?.loai_kh ?? "Hộ gia đình"}
+                  value={watch("loai_kh")}
                   onValueChange={(val) => setValue("loai_kh", val)}
                 >
                   <SelectTrigger>
@@ -334,7 +335,7 @@ export default function KhachHangPage() {
               <div className="form-field">
                 <Label>Trạng thái</Label>
                 <Select
-                  defaultValue={editing?.trang_thai ?? "Mới"}
+                  value={watch("trang_thai")}
                   onValueChange={(val) => setValue("trang_thai", val)}
                 >
                   <SelectTrigger>
