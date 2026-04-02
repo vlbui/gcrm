@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
+import { sanitizePhone, sanitizeEmail } from "@/lib/utils/sanitize";
 
 const contactSchema = z.object({
   ten_kh: z.string().min(1, "Vui lòng nhập họ tên"),
@@ -22,6 +23,7 @@ type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactForm() {
   const [submitting, setSubmitting] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState("");
 
   const {
     register,
@@ -34,23 +36,45 @@ export default function ContactForm() {
 
   const onSubmit = async (data: ContactFormData) => {
     setSubmitting(true);
+    setDuplicateWarning("");
     try {
       const supabase = createClient();
+      const phone = sanitizePhone(data.sdt);
+      const emailVal = data.email ? sanitizeEmail(data.email) : null;
+
+      // Check duplicate by phone
+      const { data: existing } = await supabase
+        .from("service_requests")
+        .select("ma_yc, ten_kh, created_at")
+        .eq("sdt", phone)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (existing && existing.length > 0 && !duplicateWarning) {
+        const date = new Date(existing[0].created_at).toLocaleDateString("vi-VN");
+        setDuplicateWarning(
+          `SĐT này đã gửi yêu cầu ${existing[0].ma_yc} (${existing[0].ten_kh}) ngày ${date}. Nhấn "Gửi" lần nữa nếu vẫn muốn tạo yêu cầu mới.`
+        );
+        setSubmitting(false);
+        return;
+      }
+
       const { error } = await supabase.from("service_requests").insert({
-        ten_kh: data.ten_kh,
-        sdt: data.sdt,
-        email: data.email || null,
-        dia_chi: data.dia_chi || null,
+        ten_kh: data.ten_kh.trim(),
+        sdt: phone,
+        email: emailVal || null,
+        dia_chi: data.dia_chi?.trim() || null,
         loai_kh: "Cá nhân",
         loai_hinh: data.loai_hinh || null,
         loai_con_trung: data.loai_con_trung || null,
         dien_tich: data.dien_tich ? Number(data.dien_tich) : null,
-        mo_ta: data.mo_ta || null,
+        mo_ta: data.mo_ta?.trim() || null,
       });
 
       if (error) throw error;
 
       toast.success("Gửi yêu cầu thành công! Chúng tôi sẽ liên hệ bạn trong 30 phút.");
+      setDuplicateWarning("");
       reset();
     } catch {
       toast.error("Có lỗi xảy ra. Vui lòng thử lại hoặc gọi trực tiếp 085 9955 969.");
@@ -157,6 +181,12 @@ export default function ContactForm() {
           {...register("mo_ta")}
         />
       </div>
+
+      {duplicateWarning && (
+        <div className="form-warning" style={{ background: "#FFF8E1", border: "1px solid #FFE082", borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 14, color: "#E65100" }}>
+          ⚠️ {duplicateWarning}
+        </div>
+      )}
 
       <button type="submit" className="form-submit" disabled={submitting}>
         {submitting ? "ĐANG GỬI..." : "GỬI YÊU CẦU & NHẬN TƯ VẤN NGAY"}

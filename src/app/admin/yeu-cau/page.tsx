@@ -34,9 +34,10 @@ import {
   updateServiceRequest,
   type ServiceRequest,
 } from "@/lib/api/serviceRequests.api";
-import { createCustomer, fetchCustomers, type Customer } from "@/lib/api/customers.api";
+import { createCustomer, fetchCustomers, deleteCustomer, type Customer } from "@/lib/api/customers.api";
 import { createContract } from "@/lib/api/contracts.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { sanitizePhone, sanitizeEmail } from "@/lib/utils/sanitize";
 import Pagination from "@/components/admin/Pagination";
 
 const statusLabels: Record<string, string> = {
@@ -179,8 +180,9 @@ export default function YeuCauPage() {
     if (!selectedItem) return;
 
     try {
+      const phone = sanitizePhone(convertSDT);
       const customers = await fetchCustomers();
-      const existing = customers.find((c) => c.sdt === convertSDT.trim());
+      const existing = customers.find((c) => sanitizePhone(c.sdt) === phone);
 
       if (existing) {
         setDuplicateCustomer(existing);
@@ -188,29 +190,46 @@ export default function YeuCauPage() {
         return;
       }
 
-      await doConvert(null);
+      await doConvert(null, false);
     } catch {
       toast.error("Có lỗi xảy ra khi kiểm tra");
     }
   };
 
-  const doConvert = async (existingCustomer: Customer | null) => {
+  const hasInfoChanged = (existing: Customer): boolean => {
+    return (
+      existing.ten_kh !== convertTenKH.trim() ||
+      (existing.email ?? "") !== (convertEmail ? sanitizeEmail(convertEmail) : "") ||
+      (existing.dia_chi ?? "") !== convertDiaChi.trim()
+    );
+  };
+
+  const doConvert = async (existingCustomer: Customer | null, replaceExisting: boolean) => {
     if (!selectedItem) return;
     setConverting(true);
     setShowDuplicateConfirm(false);
 
     try {
       let customerId: string;
+      const phone = sanitizePhone(convertSDT);
+      const emailVal = convertEmail ? sanitizeEmail(convertEmail) : null;
 
-      if (existingCustomer) {
+      if (existingCustomer && !replaceExisting) {
         customerId = existingCustomer.id;
       } else {
+        if (existingCustomer && replaceExisting) {
+          try {
+            await deleteCustomer(existingCustomer.id);
+          } catch {
+            // Old customer may have contracts, just create new one
+          }
+        }
         const customer = await createCustomer({
-          ten_kh: convertTenKH,
-          sdt: convertSDT,
-          email: convertEmail || null,
-          dia_chi: convertDiaChi || null,
-          loai_kh: convertLoaiKH === "Cá nhân" ? "Hộ gia đình" : "Doanh nghiệp",
+          ten_kh: convertTenKH.trim(),
+          sdt: phone,
+          email: emailVal || null,
+          dia_chi: convertDiaChi.trim() || null,
+          loai_kh: "Hộ gia đình",
           trang_thai: "Mới",
           ghi_chu: convertGhiChu || null,
         });
@@ -271,6 +290,13 @@ export default function YeuCauPage() {
   });
 
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  // Detect duplicate phones in all data
+  const phoneCounts = data.reduce<Record<string, number>>((acc, item) => {
+    const p = sanitizePhone(item.sdt);
+    acc[p] = (acc[p] || 0) + 1;
+    return acc;
+  }, {});
 
   const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Nhân viên";
 
@@ -355,7 +381,12 @@ export default function YeuCauPage() {
                 <TableRow key={item.id}>
                   <TableCell>{item.ma_yc}</TableCell>
                   <TableCell>{item.loai_kh === "Tổ chức" ? (item.ten_cong_ty ?? item.ten_kh) : item.ten_kh}</TableCell>
-                  <TableCell>{item.sdt}</TableCell>
+                  <TableCell>
+                    {item.sdt}
+                    {phoneCounts[sanitizePhone(item.sdt)] > 1 && (
+                      <span title="SĐT trùng lặp" style={{ marginLeft: 4, color: "#E65100", fontSize: 12 }}>⚠️</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <span className={getLoaiHinhBadgeClass(item.loai_hinh, item.loai_kh)}>
                       {getLoaiHinhLabel(item.loai_hinh, item.loai_kh)}
@@ -581,20 +612,42 @@ export default function YeuCauPage() {
                   <AlertTriangle size={20} color="#F57C00" />
                   <strong style={{ color: "#E65100" }}>Khách hàng đã tồn tại</strong>
                 </div>
-                <p style={{ fontSize: 14, color: "#424242", margin: 0 }}>
-                  SĐT <strong>{convertSDT}</strong> đã thuộc về khách hàng{" "}
+                <p style={{ fontSize: 14, color: "#424242", margin: "0 0 8px" }}>
+                  SĐT <strong>{sanitizePhone(convertSDT)}</strong> đã thuộc về khách hàng{" "}
                   <strong>{duplicateCustomer.ma_kh} - {duplicateCustomer.ten_kh}</strong>.
-                  <br />
-                  Bạn có muốn tạo hợp đồng mới cho khách hàng này?
                 </p>
+                {hasInfoChanged(duplicateCustomer) && (
+                  <div style={{ fontSize: 13, color: "#424242", background: "#fff", borderRadius: 6, padding: 10, marginTop: 8 }}>
+                    <strong>Thông tin thay đổi:</strong>
+                    <table style={{ width: "100%", marginTop: 6, fontSize: 13 }}>
+                      <thead><tr><th style={{ textAlign: "left", padding: "2px 8px" }}></th><th style={{ textAlign: "left", padding: "2px 8px" }}>KH cũ</th><th style={{ textAlign: "left", padding: "2px 8px" }}>Yêu cầu mới</th></tr></thead>
+                      <tbody>
+                        {duplicateCustomer.ten_kh !== convertTenKH.trim() && (
+                          <tr><td style={{ padding: "2px 8px" }}>Tên</td><td style={{ padding: "2px 8px" }}>{duplicateCustomer.ten_kh}</td><td style={{ padding: "2px 8px", fontWeight: 600 }}>{convertTenKH.trim()}</td></tr>
+                        )}
+                        {(duplicateCustomer.email ?? "") !== (convertEmail ? sanitizeEmail(convertEmail) : "") && (
+                          <tr><td style={{ padding: "2px 8px" }}>Email</td><td style={{ padding: "2px 8px" }}>{duplicateCustomer.email ?? "—"}</td><td style={{ padding: "2px 8px", fontWeight: 600 }}>{convertEmail || "—"}</td></tr>
+                        )}
+                        {(duplicateCustomer.dia_chi ?? "") !== convertDiaChi.trim() && (
+                          <tr><td style={{ padding: "2px 8px" }}>Địa chỉ</td><td style={{ padding: "2px 8px" }}>{duplicateCustomer.dia_chi ?? "—"}</td><td style={{ padding: "2px 8px", fontWeight: 600 }}>{convertDiaChi.trim() || "—"}</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-              <div className="form-actions" style={{ width: "100%" }}>
+              <div className="form-actions" style={{ width: "100%", flexWrap: "wrap", gap: 8 }}>
                 <Button variant="outline" onClick={() => setShowDuplicateConfirm(false)}>
                   Quay lại
                 </Button>
-                <Button onClick={() => doConvert(duplicateCustomer)} disabled={converting}>
+                <Button onClick={() => doConvert(duplicateCustomer, false)} disabled={converting}>
                   {converting ? "Đang xử lý..." : "Tạo HĐ cho KH cũ"}
                 </Button>
+                {hasInfoChanged(duplicateCustomer) && (
+                  <Button variant="destructive" onClick={() => doConvert(duplicateCustomer, true)} disabled={converting}>
+                    {converting ? "Đang xử lý..." : "Tạo KH mới (thay thế cũ)"}
+                  </Button>
+                )}
               </div>
             </div>
           ) : (

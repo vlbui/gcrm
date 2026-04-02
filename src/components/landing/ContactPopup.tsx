@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { X, Shield, ArrowLeft, Building2, Home, Check } from "lucide-react";
+import { sanitizePhone, sanitizeEmail } from "@/lib/utils/sanitize";
 
 /* ── Context ── */
 const PopupContext = createContext<{ open: (loaiHinh?: string) => void }>({ open: () => {} });
@@ -58,6 +59,7 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [duplicateWarning, setDuplicateWarning] = useState("");
 
   // Personal fields
   const [tenKh, setTenKh] = useState("");
@@ -119,6 +121,28 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
       const ma_yc = `GS-YC${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
 
       const isPersonal = customerType === "personal";
+      const rawPhone = isPersonal ? sdt : sdtOrg;
+      const phone = sanitizePhone(rawPhone);
+      const rawEmail = isPersonal ? email : emailCty;
+      const emailVal = rawEmail ? sanitizeEmail(rawEmail) : null;
+
+      // Check duplicate by phone
+      const { data: existing } = await supabase
+        .from("service_requests")
+        .select("ma_yc, ten_kh, created_at")
+        .eq("sdt", phone)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (existing && existing.length > 0 && !duplicateWarning) {
+        const date = new Date(existing[0].created_at).toLocaleDateString("vi-VN");
+        setDuplicateWarning(
+          `SĐT này đã gửi yêu cầu ${existing[0].ma_yc} (${existing[0].ten_kh}) ngày ${date}. Nhấn "Gửi" lần nữa nếu vẫn muốn tạo yêu cầu mới.`
+        );
+        setSubmitting(false);
+        return;
+      }
+
       const orgParts = [
         tenCty && `Công ty: ${tenCty}`,
         soChiNhanh && `Chi nhánh: ${soChiNhanh}`,
@@ -128,20 +152,21 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
 
       const payload = {
         ma_yc,
-        ten_kh: isPersonal ? tenKh : nguoiLienHe,
-        sdt: isPersonal ? sdt : sdtOrg,
-        email: (isPersonal ? email : emailCty) || null,
-        dia_chi: (isPersonal ? diaChi : diaChiCty) || null,
+        ten_kh: (isPersonal ? tenKh : nguoiLienHe).trim(),
+        sdt: phone,
+        email: emailVal || null,
+        dia_chi: (isPersonal ? diaChi : diaChiCty)?.trim() || null,
         loai_kh: isPersonal ? "Cá nhân" : "Tổ chức",
         loai_hinh: loaiHinh || null,
         loai_con_trung: (isPersonal ? bugs : bugsOrg).join(", ") || null,
         dien_tich: (isPersonal ? dienTich : dienTichOrg) || null,
-        mo_ta: isPersonal ? (moTa || null) : (orgParts || null),
+        mo_ta: isPersonal ? (moTa?.trim() || null) : (orgParts || null),
       };
 
       const { error } = await supabase.from("service_requests").insert(payload);
       if (error) throw error;
       setSuccess(true);
+      setDuplicateWarning("");
       toast.success("Gửi yêu cầu thành công!");
     } catch (err) {
       console.error("Submit error:", err);
@@ -323,8 +348,13 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
                   </div>
                 )}
               </div>
+              {duplicateWarning && (
+                <div style={{ background: "#FFF8E1", border: "1px solid #FFE082", borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 14, color: "#E65100" }}>
+                  ⚠️ {duplicateWarning}
+                </div>
+              )}
               <button className="popup-submit" onClick={handleSubmit} disabled={submitting}>
-                {submitting ? "ĐANG GỬI..." : "GỬI YÊU CẦU BÁO GIÁ"}
+                {submitting ? "ĐANG GỬI..." : duplicateWarning ? "VẪN GỬI YÊU CẦU MỚI" : "GỬI YÊU CẦU BÁO GIÁ"}
               </button>
               <p className="popup-note">Chuyên gia sẽ liên hệ bạn trong 30 phút</p>
             </div>
