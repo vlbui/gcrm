@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Home, Building2, UtensilsCrossed, Landmark, Factory, GraduationCap, Tractor, HelpCircle, User } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,30 @@ const customerSchema = z.object({
 
 type CustomerFormData = z.infer<typeof customerSchema>;
 
+function getLoaiKHIcon(loaiKh: string) {
+  if (loaiKh.includes("Cá nhân")) return <User size={13} />;
+  if (loaiKh.includes("Hộ gia đình")) return <Home size={13} />;
+  if (loaiKh.includes("Nhà hàng") || loaiKh.includes("Khách sạn")) return <UtensilsCrossed size={13} />;
+  if (loaiKh.includes("Văn phòng") || loaiKh.includes("Tòa nhà")) return <Landmark size={13} />;
+  if (loaiKh.includes("Nhà máy") || loaiKh.includes("Kho bãi")) return <Factory size={13} />;
+  if (loaiKh.includes("Trường học") || loaiKh.includes("Bệnh viện")) return <GraduationCap size={13} />;
+  if (loaiKh.includes("Trang trại") || loaiKh.includes("Nông nghiệp")) return <Tractor size={13} />;
+  if (loaiKh.includes("Doanh nghiệp")) return <Building2 size={13} />;
+  return <HelpCircle size={13} />;
+}
+
+function getLoaiKHBadgeClass(loaiKh: string): string {
+  if (loaiKh.includes("Cá nhân")) return "loai-hinh-badge ca-nhan";
+  if (loaiKh.includes("Hộ gia đình")) return "loai-hinh-badge ho-gia-dinh";
+  if (loaiKh.includes("Nhà hàng") || loaiKh.includes("Khách sạn")) return "loai-hinh-badge nha-hang";
+  if (loaiKh.includes("Văn phòng") || loaiKh.includes("Tòa nhà")) return "loai-hinh-badge van-phong";
+  if (loaiKh.includes("Nhà máy") || loaiKh.includes("Kho bãi")) return "loai-hinh-badge nha-may";
+  if (loaiKh.includes("Trường học") || loaiKh.includes("Bệnh viện")) return "loai-hinh-badge truong-hoc";
+  if (loaiKh.includes("Trang trại") || loaiKh.includes("Nông nghiệp")) return "loai-hinh-badge trang-trai";
+  if (loaiKh.includes("Doanh nghiệp")) return "loai-hinh-badge nha-hang";
+  return "loai-hinh-badge khac";
+}
+
 export default function KhachHangPage() {
   const { user } = useCurrentUser();
   const [data, setData] = useState<Customer[]>([]);
@@ -61,6 +85,8 @@ export default function KhachHangPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
   const [search, setSearch] = useState("");
+  const [filterLoaiKH, setFilterLoaiKH] = useState("all");
+  const [filterTrangThai, setFilterTrangThai] = useState("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
@@ -100,7 +126,11 @@ export default function KhachHangPage() {
   }, []);
 
   const filtered = data.filter((item) => {
+    if (filterLoaiKH !== "all" && item.loai_kh !== filterLoaiKH) return false;
+    if (filterTrangThai !== "all" && item.trang_thai !== filterTrangThai) return false;
+
     const q = search.toLowerCase();
+    if (!q) return true;
     return (
       item.ten_kh.toLowerCase().includes(q) ||
       item.sdt.toLowerCase().includes(q) ||
@@ -201,7 +231,34 @@ export default function KhachHangPage() {
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
-          <div className="data-table-actions">
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <Select value={filterLoaiKH} onValueChange={(v) => { setFilterLoaiKH(v); setPage(1); }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Loại KH" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả loại KH</SelectItem>
+                <SelectItem value="Cá nhân">Cá nhân</SelectItem>
+                <SelectItem value="Hộ gia đình">Hộ gia đình</SelectItem>
+                <SelectItem value="Nhà hàng / Khách sạn">Nhà hàng / Khách sạn</SelectItem>
+                <SelectItem value="Văn phòng / Tòa nhà">Văn phòng / Tòa nhà</SelectItem>
+                <SelectItem value="Nhà máy / Kho bãi">Nhà máy / Kho bãi</SelectItem>
+                <SelectItem value="Trường học / Bệnh viện">Trường học / Bệnh viện</SelectItem>
+                <SelectItem value="Trang trại / Nông nghiệp">Trang trại / Nông nghiệp</SelectItem>
+                <SelectItem value="Doanh nghiệp">Doanh nghiệp</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterTrangThai} onValueChange={(v) => { setFilterTrangThai(v); setPage(1); }}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả TT</SelectItem>
+                <SelectItem value="Mới">Mới</SelectItem>
+                <SelectItem value="Đang phục vụ">Đang phục vụ</SelectItem>
+                <SelectItem value="Ngưng">Ngưng</SelectItem>
+              </SelectContent>
+            </Select>
             {user?.vai_tro !== "Xem" && (
               <Button className="btn-add" onClick={openAdd}>
                 <Plus size={16} /> Thêm khách hàng
@@ -239,7 +296,12 @@ export default function KhachHangPage() {
                   <TableCell>{item.ten_kh}</TableCell>
                   <TableCell>{item.sdt}</TableCell>
                   <TableCell>{item.email ?? "—"}</TableCell>
-                  <TableCell>{item.loai_kh}</TableCell>
+                  <TableCell>
+                    <span className={getLoaiKHBadgeClass(item.loai_kh)} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      {getLoaiKHIcon(item.loai_kh)}
+                      {item.loai_kh}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <span
                       className={`status-badge ${
