@@ -349,7 +349,7 @@ ul { list-style: none; }
    ============================================ */
 .hero {
   position: relative;
-  min-height: 100vh;
+  min-height: auto;
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -381,8 +381,8 @@ ul { list-style: none; }
 .hero-content {
   position: relative;
   z-index: 2;
-  padding-top: 80px;
-  padding-bottom: 40px;
+  padding-top: 60px;
+  padding-bottom: 24px;
 }
 
 .hero-grid {
@@ -589,7 +589,7 @@ ul { list-style: none; }
    SECTIONS GENERAL
    ============================================ */
 .section {
-  padding: 36px 0;
+  padding: 28px 0;
 }
 
 .section-alt {
@@ -2076,9 +2076,9 @@ ul { list-style: none; }
   .nav-links, .nav-cta-group { display: none; }
   .hamburger { display: flex; }
 
-  .section { padding: 24px 0; }
+  .section { padding: 20px 0; }
 
-  .hero { min-height: auto; padding: 110px 0 70px; }
+  .hero { min-height: auto; padding: 80px 0 40px; }
   .hero h1 { font-size: 2rem; }
   .hero-stats { gap: 24px; flex-wrap: wrap; }
 
