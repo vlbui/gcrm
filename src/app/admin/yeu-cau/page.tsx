@@ -395,14 +395,6 @@ export default function YeuCauPage() {
                 </p>
               </div>
               <div className="form-field">
-                <Label>Loại khách</Label>
-                <p>
-                  <span className={`status-badge ${selectedItem.loai_kh === "Tổ chức" ? "active" : "moi"}`}>
-                    {selectedItem.loai_kh ?? "Cá nhân"}
-                  </span>
-                </p>
-              </div>
-              <div className="form-field">
                 <Label>Tên khách hàng</Label>
                 <p>{selectedItem.ten_kh}</p>
               </div>
