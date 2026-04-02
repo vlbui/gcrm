@@ -25,6 +25,13 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   fetchChemicals,
   createChemical,
   updateChemical,
@@ -32,6 +39,7 @@ import {
   type Chemical,
   type CreateChemicalInput,
 } from "@/lib/api/chemicals.api";
+import { fetchSuppliers, type Supplier } from "@/lib/api/suppliers.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import Pagination from "@/components/admin/Pagination";
 
@@ -50,6 +58,7 @@ type ChemicalFormData = z.infer<typeof chemicalSchema>;
 export default function HoaChatPage() {
   const { user } = useCurrentUser();
   const [data, setData] = useState<Chemical[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Chemical | null>(null);
@@ -61,6 +70,8 @@ export default function HoaChatPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ChemicalFormData>({
     resolver: zodResolver(chemicalSchema),
@@ -77,8 +88,12 @@ export default function HoaChatPage() {
 
   const loadData = async () => {
     try {
-      const result = await fetchChemicals();
+      const [result, supplierList] = await Promise.all([
+        fetchChemicals(),
+        fetchSuppliers(),
+      ]);
       setData(result);
+      setSuppliers(supplierList);
     } catch {
       toast.error("Không thể tải danh sách hóa chất");
     } finally {
@@ -300,7 +315,21 @@ export default function HoaChatPage() {
               </div>
               <div className="form-field">
                 <Label>Nhà cung cấp</Label>
-                <Input placeholder="Tên nhà cung cấp" {...register("nha_cung_cap")} />
+                <Select
+                  value={watch("nha_cung_cap") ?? ""}
+                  onValueChange={(val) => setValue("nha_cung_cap", val || null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn nhà cung cấp" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((s) => (
+                      <SelectItem key={s.id} value={s.ten_ncc}>
+                        {s.ten_ncc}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>

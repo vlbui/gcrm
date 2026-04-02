@@ -32,6 +32,7 @@ const crmLinks = [
   { href: "/admin/lich-su-dich-vu", icon: History, label: "Lịch sử dịch vụ" },
   { href: "/admin/hoa-chat", icon: FlaskConical, label: "Hóa chất" },
   { href: "/admin/vat-tu", icon: Package, label: "Vật tư" },
+  { href: "/admin/nha-cung-cap", icon: Users, label: "Nhà cung cấp" },
 ];
 
 const cmsLinks = [

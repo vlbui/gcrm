@@ -25,41 +25,32 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  fetchSupplies,
-  createSupply,
-  updateSupply,
-  deleteSupply,
-  type Supply,
-  type CreateSupplyInput,
-} from "@/lib/api/supplies.api";
-import { fetchSuppliers, type Supplier } from "@/lib/api/suppliers.api";
+  fetchSuppliers,
+  createSupplier,
+  updateSupplier,
+  deleteSupplier,
+  type Supplier,
+  type CreateSupplierInput,
+} from "@/lib/api/suppliers.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import Pagination from "@/components/admin/Pagination";
 
-const supplySchema = z.object({
-  ten_vat_tu: z.string().min(2, "Tên vật tư tối thiểu 2 ký tự"),
-  loai_vt: z.string().min(1, "Loại vật tư là bắt buộc"),
-  don_vi_tinh: z.string().min(1, "Đơn vị tính là bắt buộc"),
-  nha_cung_cap: z.string().nullable(),
+const supplierSchema = z.object({
+  ten_ncc: z.string().min(2, "Tên nhà cung cấp tối thiểu 2 ký tự"),
+  sdt: z.string().nullable(),
+  email: z.string().nullable(),
+  dia_chi: z.string().nullable(),
   ghi_chu: z.string().nullable(),
 });
 
-type SupplyFormData = z.infer<typeof supplySchema>;
+type SupplierFormData = z.infer<typeof supplierSchema>;
 
-export default function VatTuPage() {
+export default function NhaCungCapPage() {
   const { user } = useCurrentUser();
-  const [data, setData] = useState<Supply[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [data, setData] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Supply | null>(null);
+  const [editing, setEditing] = useState<Supplier | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -68,30 +59,24 @@ export default function VatTuPage() {
     register,
     handleSubmit,
     reset,
-    setValue,
-    watch,
     formState: { errors, isSubmitting },
-  } = useForm<SupplyFormData>({
-    resolver: zodResolver(supplySchema),
+  } = useForm<SupplierFormData>({
+    resolver: zodResolver(supplierSchema),
     defaultValues: {
-      ten_vat_tu: "",
-      loai_vt: "",
-      don_vi_tinh: "",
-      nha_cung_cap: "",
+      ten_ncc: "",
+      sdt: "",
+      email: "",
+      dia_chi: "",
       ghi_chu: "",
     },
   });
 
   const loadData = async () => {
     try {
-      const [result, supplierList] = await Promise.all([
-        fetchSupplies(),
-        fetchSuppliers(),
-      ]);
+      const result = await fetchSuppliers();
       setData(result);
-      setSuppliers(supplierList);
     } catch {
-      toast.error("Không thể tải danh sách vật tư");
+      toast.error("Không thể tải danh sách nhà cung cấp");
     } finally {
       setLoading(false);
     }
@@ -104,10 +89,10 @@ export default function VatTuPage() {
   const filtered = data.filter((item) => {
     const q = search.toLowerCase();
     return (
-      item.ten_vat_tu.toLowerCase().includes(q) ||
-      item.ma_vt.toLowerCase().includes(q) ||
-      (item.loai_vt?.toLowerCase().includes(q) ?? false) ||
-      (item.nha_cung_cap?.toLowerCase().includes(q) ?? false)
+      item.ten_ncc.toLowerCase().includes(q) ||
+      item.ma_ncc.toLowerCase().includes(q) ||
+      (item.sdt?.toLowerCase().includes(q) ?? false) ||
+      (item.email?.toLowerCase().includes(q) ?? false)
     );
   });
 
@@ -116,42 +101,42 @@ export default function VatTuPage() {
   const openAdd = () => {
     setEditing(null);
     reset({
-      ten_vat_tu: "",
-      loai_vt: "",
-      don_vi_tinh: "",
-      nha_cung_cap: "",
+      ten_ncc: "",
+      sdt: "",
+      email: "",
+      dia_chi: "",
       ghi_chu: "",
     });
     setDialogOpen(true);
   };
 
-  const openEdit = (item: Supply) => {
+  const openEdit = (item: Supplier) => {
     setEditing(item);
     reset({
-      ten_vat_tu: item.ten_vat_tu,
-      loai_vt: item.loai_vt ?? "",
-      don_vi_tinh: item.don_vi_tinh ?? "",
-      nha_cung_cap: item.nha_cung_cap ?? "",
+      ten_ncc: item.ten_ncc,
+      sdt: item.sdt ?? "",
+      email: item.email ?? "",
+      dia_chi: item.dia_chi ?? "",
       ghi_chu: item.ghi_chu ?? "",
     });
     setDialogOpen(true);
   };
 
-  const onSubmit = async (formData: SupplyFormData) => {
+  const onSubmit = async (formData: SupplierFormData) => {
     try {
-      const input: CreateSupplyInput = {
-        ten_vat_tu: formData.ten_vat_tu,
-        loai_vt: formData.loai_vt || null,
-        don_vi_tinh: formData.don_vi_tinh || null,
-        nha_cung_cap: formData.nha_cung_cap || null,
+      const input: CreateSupplierInput = {
+        ten_ncc: formData.ten_ncc,
+        sdt: formData.sdt || null,
+        email: formData.email || null,
+        dia_chi: formData.dia_chi || null,
         ghi_chu: formData.ghi_chu || null,
       };
       if (editing) {
-        await updateSupply(editing.id, input);
-        toast.success("Cập nhật vật tư thành công");
+        await updateSupplier(editing.id, input);
+        toast.success("Cập nhật nhà cung cấp thành công");
       } else {
-        await createSupply(input);
-        toast.success("Thêm vật tư thành công");
+        await createSupplier(input);
+        toast.success("Thêm nhà cung cấp thành công");
       }
       setDialogOpen(false);
       loadData();
@@ -160,18 +145,18 @@ export default function VatTuPage() {
     }
   };
 
-  const handleDelete = async (item: Supply) => {
-    if (!window.confirm(`Xác nhận xóa vật tư "${item.ten_vat_tu}"?`)) return;
+  const handleDelete = async (item: Supplier) => {
+    if (!window.confirm(`Xác nhận xóa nhà cung cấp "${item.ten_ncc}"?`)) return;
     try {
-      await deleteSupply(item.id);
-      toast.success("Xóa vật tư thành công");
+      await deleteSupplier(item.id);
+      toast.success("Xóa nhà cung cấp thành công");
       loadData();
     } catch {
-      toast.error("Không thể xóa vật tư");
+      toast.error("Không thể xóa nhà cung cấp");
     }
   };
 
-  const canEdit = (item: Supply) => {
+  const canEdit = (item: Supplier) => {
     if (!user) return false;
     if (user.vai_tro === "Xem") return false;
     if (user.vai_tro === "Admin") return true;
@@ -182,8 +167,8 @@ export default function VatTuPage() {
     <div>
       <div className="admin-page-header">
         <div>
-          <h1 className="admin-page-title">Vật tư</h1>
-          <p className="admin-page-subtitle">Quản lý danh sách vật tư</p>
+          <h1 className="admin-page-title">Nhà cung cấp</h1>
+          <p className="admin-page-subtitle">Quản lý danh sách nhà cung cấp vật tư, hóa chất</p>
         </div>
       </div>
 
@@ -192,7 +177,7 @@ export default function VatTuPage() {
           <div className="data-table-search">
             <Search size={16} />
             <Input
-              placeholder="Tìm kiếm theo tên, mã VT, loại, nhà cung cấp..."
+              placeholder="Tìm kiếm theo tên, mã NCC, SĐT, email..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
@@ -200,7 +185,7 @@ export default function VatTuPage() {
           <div className="data-table-actions">
             {user?.vai_tro !== "Xem" && (
               <Button className="btn-add" onClick={openAdd}>
-                <Plus size={16} /> Thêm vật tư
+                <Plus size={16} /> Thêm NCC
               </Button>
             )}
           </div>
@@ -219,22 +204,22 @@ export default function VatTuPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Mã VT</TableHead>
-                <TableHead>Tên vật tư</TableHead>
-                <TableHead>Loại VT</TableHead>
-                <TableHead>Đơn vị tính</TableHead>
-                <TableHead>Nhà cung cấp</TableHead>
+                <TableHead>Mã NCC</TableHead>
+                <TableHead>Tên nhà cung cấp</TableHead>
+                <TableHead>SĐT</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Địa chỉ</TableHead>
                 <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paged.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>{item.ma_vt}</TableCell>
-                  <TableCell>{item.ten_vat_tu}</TableCell>
-                  <TableCell>{item.loai_vt ?? "—"}</TableCell>
-                  <TableCell>{item.don_vi_tinh ?? "—"}</TableCell>
-                  <TableCell>{item.nha_cung_cap ?? "—"}</TableCell>
+                  <TableCell>{item.ma_ncc}</TableCell>
+                  <TableCell>{item.ten_ncc}</TableCell>
+                  <TableCell>{item.sdt ?? "—"}</TableCell>
+                  <TableCell>{item.email ?? "—"}</TableCell>
+                  <TableCell>{item.dia_chi ?? "—"}</TableCell>
                   <TableCell>
                     {canEdit(item) && (
                       <>
@@ -266,49 +251,29 @@ export default function VatTuPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editing ? "Cập nhật vật tư" : "Thêm vật tư"}
+              {editing ? "Cập nhật nhà cung cấp" : "Thêm nhà cung cấp"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="form-grid">
               <div className="form-field">
-                <Label>Tên vật tư *</Label>
-                <Input placeholder="VD: Bẫy dính chuột" {...register("ten_vat_tu")} />
-                {errors.ten_vat_tu && (
-                  <span className="error">{errors.ten_vat_tu.message}</span>
+                <Label>Tên nhà cung cấp *</Label>
+                <Input placeholder="VD: Công ty ABC" {...register("ten_ncc")} />
+                {errors.ten_ncc && (
+                  <span className="error">{errors.ten_ncc.message}</span>
                 )}
               </div>
               <div className="form-field">
-                <Label>Loại vật tư *</Label>
-                <Input placeholder="VD: Bẫy, Thuốc, Dụng cụ" {...register("loai_vt")} />
-                {errors.loai_vt && (
-                  <span className="error">{errors.loai_vt.message}</span>
-                )}
+                <Label>Số điện thoại</Label>
+                <Input placeholder="VD: 0901234567" {...register("sdt")} />
               </div>
               <div className="form-field">
-                <Label>Đơn vị tính *</Label>
-                <Input placeholder="VD: Cái, Hộp, Kg" {...register("don_vi_tinh")} />
-                {errors.don_vi_tinh && (
-                  <span className="error">{errors.don_vi_tinh.message}</span>
-                )}
+                <Label>Email</Label>
+                <Input placeholder="VD: info@abc.com" {...register("email")} />
               </div>
               <div className="form-field">
-                <Label>Nhà cung cấp</Label>
-                <Select
-                  value={watch("nha_cung_cap") ?? ""}
-                  onValueChange={(val) => setValue("nha_cung_cap", val || null)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn nhà cung cấp" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((s) => (
-                      <SelectItem key={s.id} value={s.ten_ncc}>
-                        {s.ten_ncc}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Địa chỉ</Label>
+                <Input placeholder="Địa chỉ nhà cung cấp" {...register("dia_chi")} />
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>
