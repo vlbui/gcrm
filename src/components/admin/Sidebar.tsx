@@ -26,12 +26,12 @@ interface SidebarProps {
 
 const crmLinks = [
   { href: "/admin", icon: LayoutDashboard, label: "Tổng quan" },
+  { href: "/admin/yeu-cau", icon: MessageSquare, label: "Yêu cầu" },
   { href: "/admin/khach-hang", icon: Users, label: "Khách hàng" },
   { href: "/admin/hop-dong", icon: FileText, label: "Hợp đồng" },
   { href: "/admin/lich-su-dich-vu", icon: History, label: "Lịch sử dịch vụ" },
   { href: "/admin/hoa-chat", icon: FlaskConical, label: "Hóa chất" },
   { href: "/admin/vat-tu", icon: Package, label: "Vật tư" },
-  { href: "/admin/yeu-cau", icon: MessageSquare, label: "Yêu cầu" },
 ];
 
 const cmsLinks = [
