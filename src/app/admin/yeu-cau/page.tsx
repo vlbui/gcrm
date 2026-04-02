@@ -515,7 +515,7 @@ export default function YeuCauPage() {
               </div>
               <div className="form-field">
                 <Label>Loại hình</Label>
-                <p>{selectedItem.loai_hinh ?? "—"}</p>
+                <p>{selectedItem.loai_hinh ?? selectedItem.loai_kh ?? "Cá nhân"}</p>
               </div>
               {selectedItem.nhu_cau && (
                 <div className="form-field">
