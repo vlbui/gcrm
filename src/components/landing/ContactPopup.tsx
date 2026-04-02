@@ -112,9 +112,15 @@ function SmartFormPopup({ onClose }: { onClose: () => void }) {
       const ma_yc = `GS-YC${ts}`;
 
       const isPersonal = customerType === "personal";
+      const orgParts = [
+        tenCty && `Công ty: ${tenCty}`,
+        soChiNhanh && `Chi nhánh: ${soChiNhanh}`,
+        nhuCau && `Nhu cầu: ${nhuCau}`,
+        moTaOrg && moTaOrg,
+      ].filter(Boolean).join(". ");
+
       const payload = {
         ma_yc,
-        loai_kh: isPersonal ? "Cá nhân" : "Tổ chức",
         ten_kh: isPersonal ? tenKh : nguoiLienHe,
         sdt: isPersonal ? sdt : sdtOrg,
         email: (isPersonal ? email : emailCty) || null,
@@ -122,11 +128,7 @@ function SmartFormPopup({ onClose }: { onClose: () => void }) {
         loai_hinh: isPersonal ? null : (loaiHinh || null),
         loai_con_trung: (isPersonal ? bugs : bugsOrg).join(", ") || null,
         dien_tich: (isPersonal ? dienTich : dienTichOrg) || null,
-        mo_ta: (isPersonal ? moTa : moTaOrg) || null,
-        ten_cong_ty: isPersonal ? null : (tenCty || null),
-        nguoi_lien_he: isPersonal ? null : (nguoiLienHe || null),
-        so_chi_nhanh: !isPersonal && soChiNhanh ? Number(soChiNhanh) : null,
-        nhu_cau: isPersonal ? null : (nhuCau || null),
+        mo_ta: isPersonal ? (moTa || null) : (orgParts || null),
         trang_thai: "Mới",
       };
 
@@ -134,7 +136,8 @@ function SmartFormPopup({ onClose }: { onClose: () => void }) {
       if (error) throw error;
       setSuccess(true);
       toast.success("Gửi yêu cầu thành công!");
-    } catch {
+    } catch (err) {
+      console.error("Submit error:", err);
       toast.error("Có lỗi xảy ra. Vui lòng gọi trực tiếp 085 9955 969.");
     } finally {
       setSubmitting(false);
