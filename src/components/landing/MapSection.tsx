@@ -20,11 +20,11 @@ export default function MapSection() {
                 Văn Phòng Lá Chắn Xanh
               </h3>
               <p style={{ fontSize: 14, color: "var(--neutral-600)" }}>
-                Số 7, ngõ 125 Trung Kính, Yên Hòa, Cầu Giấy, Hà Nội
+                Số 7, ngõ 125 Trung Kính, Yên Hòa, Hà Nội
               </p>
             </div>
             <a
-              href="https://maps.google.com/?q=Số+7+ngõ+125+Trung+Kính+Yên+Hòa+Cầu+Giấy+Hà+Nội"
+              href="https://maps.google.com/?q=Công+ty+cổ+phần+lá+chắn+xanh+số+7+ngõ+125+Trung+Kính+phường+Yên+Hòa+Hà+Nội"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-cta btn-outline"
