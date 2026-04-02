@@ -570,18 +570,6 @@ export default function YeuCauPage() {
                   />
                 </div>
                 <div className="form-field">
-                  <Label>Loại khách hàng</Label>
-                  <Select value={convertLoaiKH} onValueChange={setConvertLoaiKH}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Cá nhân">Cá nhân</SelectItem>
-                      <SelectItem value="Doanh nghiệp">Doanh nghiệp</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="form-field">
                   <Label>Dịch vụ (hợp đồng)</Label>
                   <Input
                     value={convertDichVu}
