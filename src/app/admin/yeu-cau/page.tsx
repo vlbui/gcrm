@@ -279,7 +279,6 @@ export default function YeuCauPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Mã YC</TableHead>
-                <TableHead>Loại KH</TableHead>
                 <TableHead>Tên KH</TableHead>
                 <TableHead>SĐT</TableHead>
                 <TableHead>Loại hình</TableHead>
@@ -293,14 +292,9 @@ export default function YeuCauPage() {
               {paged.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.ma_yc}</TableCell>
-                  <TableCell>
-                    <span className={`status-badge ${item.loai_kh === "Tổ chức" ? "active" : "moi"}`}>
-                      {item.loai_kh ?? "Cá nhân"}
-                    </span>
-                  </TableCell>
                   <TableCell>{item.loai_kh === "Tổ chức" ? (item.ten_cong_ty ?? item.ten_kh) : item.ten_kh}</TableCell>
                   <TableCell>{item.sdt}</TableCell>
-                  <TableCell>{item.loai_hinh ?? "—"}</TableCell>
+                  <TableCell>{item.loai_hinh ?? (item.loai_kh === "Cá nhân" ? "Cá nhân" : "—")}</TableCell>
                   <TableCell>{item.loai_con_trung ?? "—"}</TableCell>
                   <TableCell>
                     {canEdit ? (
