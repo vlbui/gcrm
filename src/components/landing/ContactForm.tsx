@@ -64,7 +64,7 @@ export default function ContactForm() {
         sdt: phone,
         email: emailVal || null,
         dia_chi: data.dia_chi?.trim() || null,
-        loai_hinh: data.loai_hinh || "Cá nhân",
+        loai_hinh: data.loai_hinh || "Cá nhân / Hộ gia đình",
         loai_con_trung: data.loai_con_trung || null,
         dien_tich: data.dien_tich ? Number(data.dien_tich) : null,
         mo_ta: data.mo_ta?.trim() || null,
@@ -137,9 +137,9 @@ export default function ContactForm() {
         <label className="form-label">Loại hình cần bảo vệ</label>
         <select className="form-select" {...register("loai_hinh")}>
           <option value="">— Chọn loại hình —</option>
-          <option>Cá nhân</option>
-          <option>Doanh nghiệp</option>
-          <option>Văn phòng / Trường học</option>
+          <option>Cá nhân / Hộ gia đình</option>
+          <option>Doanh nghiệp / Khu công nghiệp</option>
+          <option>Khu chung cư / Văn phòng / Trường học</option>
           <option>Trang trại</option>
         </select>
       </div>

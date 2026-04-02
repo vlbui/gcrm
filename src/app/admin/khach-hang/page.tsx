@@ -55,15 +55,15 @@ const customerSchema = z.object({
 type CustomerFormData = z.infer<typeof customerSchema>;
 
 function getLoaiKHIcon(loaiKh: string) {
-  if (loaiKh.includes("Doanh nghiệp")) return <Building2 size={13} />;
-  if (loaiKh.includes("Văn phòng") || loaiKh.includes("Trường học")) return <Landmark size={13} />;
+  if (loaiKh.includes("Doanh nghiệp") || loaiKh.includes("Khu công nghiệp")) return <Building2 size={13} />;
+  if (loaiKh.includes("Khu chung cư") || loaiKh.includes("Văn phòng") || loaiKh.includes("Trường học")) return <Landmark size={13} />;
   if (loaiKh.includes("Trang trại")) return <Tractor size={13} />;
   return <User size={13} />;
 }
 
 function getLoaiKHBadgeClass(loaiKh: string): string {
-  if (loaiKh.includes("Doanh nghiệp")) return "loai-hinh-badge nha-hang";
-  if (loaiKh.includes("Văn phòng") || loaiKh.includes("Trường học")) return "loai-hinh-badge van-phong";
+  if (loaiKh.includes("Doanh nghiệp") || loaiKh.includes("Khu công nghiệp")) return "loai-hinh-badge nha-hang";
+  if (loaiKh.includes("Khu chung cư") || loaiKh.includes("Văn phòng") || loaiKh.includes("Trường học")) return "loai-hinh-badge van-phong";
   if (loaiKh.includes("Trang trại")) return "loai-hinh-badge trang-trai";
   return "loai-hinh-badge ca-nhan";
 }
@@ -94,7 +94,7 @@ export default function KhachHangPage() {
       sdt: "",
       email: "",
       dia_chi: "",
-      loai_kh: "Cá nhân",
+      loai_kh: "Cá nhân / Hộ gia đình",
       trang_thai: "Mới",
       ghi_chu: "",
     },
@@ -138,7 +138,7 @@ export default function KhachHangPage() {
       sdt: "",
       email: "",
       dia_chi: "",
-      loai_kh: "Cá nhân",
+      loai_kh: "Cá nhân / Hộ gia đình",
       trang_thai: "Mới",
       ghi_chu: "",
     });
@@ -228,9 +228,9 @@ export default function KhachHangPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả loại hình</SelectItem>
-                <SelectItem value="Cá nhân">Cá nhân</SelectItem>
-                <SelectItem value="Doanh nghiệp">Doanh nghiệp</SelectItem>
-                <SelectItem value="Văn phòng / Trường học">Văn phòng / Trường học</SelectItem>
+                <SelectItem value="Cá nhân">Cá nhân / Hộ gia đình</SelectItem>
+                <SelectItem value="Doanh nghiệp">Doanh nghiệp / Khu CN</SelectItem>
+                <SelectItem value="chung cư">Chung cư / VP / Trường học</SelectItem>
                 <SelectItem value="Trang trại">Trang trại</SelectItem>
               </SelectContent>
             </Select>
@@ -368,9 +368,9 @@ export default function KhachHangPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Cá nhân">Cá nhân</SelectItem>
-                    <SelectItem value="Doanh nghiệp">Doanh nghiệp</SelectItem>
-                    <SelectItem value="Văn phòng / Trường học">Văn phòng / Trường học</SelectItem>
+                    <SelectItem value="Cá nhân / Hộ gia đình">Cá nhân / Hộ gia đình</SelectItem>
+                    <SelectItem value="Doanh nghiệp / Khu công nghiệp">Doanh nghiệp / Khu CN</SelectItem>
+                    <SelectItem value="Khu chung cư / Văn phòng / Trường học">Chung cư / VP / Trường học</SelectItem>
                     <SelectItem value="Trang trại">Trang trại</SelectItem>
                   </SelectContent>
                 </Select>

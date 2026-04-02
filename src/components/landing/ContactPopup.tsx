@@ -156,7 +156,7 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
         sdt: phone,
         email: emailVal || null,
         dia_chi: (isPersonal ? diaChi : diaChiCty)?.trim() || null,
-        loai_hinh: loaiHinh || (isPersonal ? "Cá nhân" : "Doanh nghiệp"),
+        loai_hinh: loaiHinh || (isPersonal ? "Cá nhân / Hộ gia đình" : "Doanh nghiệp / Khu công nghiệp"),
         loai_con_trung: (isPersonal ? bugs : bugsOrg).join(", ") || null,
         dien_tich: (isPersonal ? dienTich : dienTichOrg) || null,
         mo_ta: isPersonal ? (moTa?.trim() || null) : (orgParts || null),
@@ -218,7 +218,7 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
                 <button className="popup-type-card" onClick={() => selectType("org")}>
                   <Building2 size={32} />
                   <span className="popup-type-title">Doanh nghiệp / Tổ chức</span>
-                  <span className="popup-type-desc">Doanh nghiệp, văn phòng, trường học, trang trại</span>
+                  <span className="popup-type-desc">Doanh nghiệp, chung cư, văn phòng, trang trại</span>
                 </button>
               </div>
             </div>
@@ -280,8 +280,8 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
                 <Field label="Loại hình">
                   <select value={loaiHinh} onChange={(e) => setLoaiHinh(e.target.value)}>
                     <option value="">— Chọn —</option>
-                    <option>Doanh nghiệp</option>
-                    <option>Văn phòng / Trường học</option>
+                    <option>Doanh nghiệp / Khu công nghiệp</option>
+                    <option>Khu chung cư / Văn phòng / Trường học</option>
                     <option>Trang trại</option>
                   </select>
                 </Field>
