@@ -9,8 +9,6 @@ import {
   PricingSection,
   CertificatesSection,
   FAQSection,
-  ContactSection,
-  MapSection,
   Footer,
   FloatingWidgets,
   ContactPopupProvider,
@@ -101,8 +99,6 @@ export default async function Home() {
           answer: f.answer,
         }))}
       />
-
-      <MapSection />
 
       <Footer />
 
