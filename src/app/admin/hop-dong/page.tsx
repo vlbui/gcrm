@@ -80,6 +80,7 @@ export default function HopDongPage() {
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ContractFormData>({
     resolver: zodResolver(contractSchema),
@@ -324,7 +325,7 @@ export default function HopDongPage() {
               <div className="form-field">
                 <Label>Khách hàng *</Label>
                 <Select
-                  defaultValue={editing?.customer_id ?? ""}
+                  value={watch("customer_id")}
                   onValueChange={(val) => setValue("customer_id", val)}
                 >
                   <SelectTrigger>
