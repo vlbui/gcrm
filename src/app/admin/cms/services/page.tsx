@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -53,6 +54,8 @@ export default function ServicesCmsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<CmsService | null>(null);
 
   const {
     register,
@@ -162,11 +165,13 @@ export default function ServicesCmsPage() {
     }
   };
 
-  const handleDelete = async (item: CmsService) => {
-    if (!window.confirm(`Xác nhận xóa dịch vụ "${item.title}"?`)) return;
+  const handleDelete = async () => {
+    if (!deletingItem) return;
     try {
-      await deleteCmsRecord("cms_services", item.id);
+      await deleteCmsRecord("cms_services", deletingItem.id);
       toast.success("Xóa dịch vụ thành công");
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
       loadData();
     } catch {
       toast.error("Không thể xóa dịch vụ");
@@ -247,7 +252,7 @@ export default function ServicesCmsPage() {
                     </button>
                     <button
                       className="btn-action danger"
-                      onClick={() => handleDelete(item)}
+                      onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -324,6 +329,26 @@ export default function ServicesCmsPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              <span dangerouslySetInnerHTML={{ __html: `Bạn có chắc chắn muốn xóa dịch vụ <strong>${deletingItem?.title}</strong>? Hành động này không thể hoàn tác.` }} />
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Xóa
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

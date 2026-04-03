@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -79,6 +80,8 @@ export default function KhachHangPage() {
   const [filterTrangThai, setFilterTrangThai] = useState("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<Customer | null>(null);
 
   const {
     register,
@@ -184,11 +187,13 @@ export default function KhachHangPage() {
     }
   };
 
-  const handleDelete = async (item: Customer) => {
-    if (!window.confirm(`Xác nhận xóa khách hàng "${item.ten_kh}"?`)) return;
+  const handleDelete = async () => {
+    if (!deletingItem) return;
     try {
-      await deleteCustomer(item.id);
+      await deleteCustomer(deletingItem.id);
       toast.success("Xóa khách hàng thành công");
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
       loadData();
     } catch {
       toast.error("Không thể xóa khách hàng");
@@ -312,7 +317,7 @@ export default function KhachHangPage() {
                         </button>
                         <button
                           className="btn-action danger"
-                          onClick={() => handleDelete(item)}
+                          onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -420,6 +425,28 @@ export default function KhachHangPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa khách hàng{" "}
+              <strong>{deletingItem?.ten_kh}</strong>?
+              Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Xóa
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

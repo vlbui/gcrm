@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -63,6 +64,8 @@ export default function HoaChatPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Chemical | null>(null);
   const [search, setSearch] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<Chemical | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
@@ -170,12 +173,13 @@ export default function HoaChatPage() {
     }
   };
 
-  const handleDelete = async (item: Chemical) => {
-    if (!window.confirm(`Xác nhận xóa hóa chất "${item.ten_thuong_mai}"?`))
-      return;
+  const handleDelete = async () => {
+    if (!deletingItem) return;
     try {
-      await deleteChemical(item.id);
+      await deleteChemical(deletingItem.id);
       toast.success("Xóa hóa chất thành công");
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
       loadData();
     } catch {
       toast.error("Không thể xóa hóa chất");
@@ -257,7 +261,7 @@ export default function HoaChatPage() {
                         </button>
                         <button
                           className="btn-action danger"
-                          onClick={() => handleDelete(item)}
+                          onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -353,6 +357,28 @@ export default function HoaChatPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa hóa chất{" "}
+              <strong>{deletingItem?.ten_thuong_mai}</strong>?
+              Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Xóa
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

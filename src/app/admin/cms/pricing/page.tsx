@@ -23,6 +23,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -70,6 +71,8 @@ export default function PricingCmsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<CmsPricing | null>(null);
 
   const {
     register,
@@ -193,11 +196,13 @@ export default function PricingCmsPage() {
     }
   };
 
-  const handleDelete = async (item: CmsPricing) => {
-    if (!window.confirm(`Xác nhận xóa bảng giá "${item.title}"?`)) return;
+  const handleDelete = async () => {
+    if (!deletingItem) return;
     try {
-      await deleteCmsRecord("cms_pricing", item.id);
+      await deleteCmsRecord("cms_pricing", deletingItem.id);
       toast.success("Xóa bảng giá thành công");
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
       loadData();
     } catch {
       toast.error("Không thể xóa bảng giá");
@@ -285,7 +290,7 @@ export default function PricingCmsPage() {
                     </button>
                     <button
                       className="btn-action danger"
-                      onClick={() => handleDelete(item)}
+                      onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -403,6 +408,26 @@ export default function PricingCmsPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              <span dangerouslySetInnerHTML={{ __html: `Bạn có chắc chắn muốn xóa bảng giá <strong>${deletingItem?.title}</strong>? Hành động này không thể hoàn tác.` }} />
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Xóa
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

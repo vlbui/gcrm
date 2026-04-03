@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -61,6 +62,8 @@ export default function VatTuPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Supply | null>(null);
   const [search, setSearch] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<Supply | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
@@ -160,11 +163,13 @@ export default function VatTuPage() {
     }
   };
 
-  const handleDelete = async (item: Supply) => {
-    if (!window.confirm(`Xác nhận xóa vật tư "${item.ten_vat_tu}"?`)) return;
+  const handleDelete = async () => {
+    if (!deletingItem) return;
     try {
-      await deleteSupply(item.id);
+      await deleteSupply(deletingItem.id);
       toast.success("Xóa vật tư thành công");
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
       loadData();
     } catch {
       toast.error("Không thể xóa vật tư");
@@ -246,7 +251,7 @@ export default function VatTuPage() {
                         </button>
                         <button
                           className="btn-action danger"
-                          onClick={() => handleDelete(item)}
+                          onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -332,6 +337,28 @@ export default function VatTuPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa vật tư{" "}
+              <strong>{deletingItem?.ten_vat_tu}</strong>?
+              Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Xóa
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

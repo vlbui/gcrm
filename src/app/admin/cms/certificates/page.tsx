@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -52,6 +53,8 @@ export default function CertificatesPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<CmsCertificate | null>(null);
 
   const {
     register,
@@ -161,11 +164,13 @@ export default function CertificatesPage() {
     }
   };
 
-  const handleDelete = async (item: CmsCertificate) => {
-    if (!window.confirm(`Xác nhận xóa chứng nhận "${item.title}"?`)) return;
+  const handleDelete = async () => {
+    if (!deletingItem) return;
     try {
-      await deleteCmsRecord("cms_certificates", item.id);
+      await deleteCmsRecord("cms_certificates", deletingItem.id);
       toast.success("Xóa chứng nhận thành công");
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
       loadData();
     } catch {
       toast.error("Không thể xóa chứng nhận");
@@ -246,7 +251,7 @@ export default function CertificatesPage() {
                     </button>
                     <button
                       className="btn-action danger"
-                      onClick={() => handleDelete(item)}
+                      onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -327,6 +332,26 @@ export default function CertificatesPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa chứng nhận <strong>{deletingItem?.title}</strong>? Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Xóa
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -74,6 +75,8 @@ export default function HopDongPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<Contract | null>(null);
 
   const {
     register,
@@ -182,11 +185,13 @@ export default function HopDongPage() {
     }
   };
 
-  const handleDelete = async (item: Contract) => {
-    if (!window.confirm(`Xác nhận xóa hợp đồng "${item.ma_hd}"?`)) return;
+  const handleDelete = async () => {
+    if (!deletingItem) return;
     try {
-      await deleteContract(item.id);
+      await deleteContract(deletingItem.id);
       toast.success("Xóa hợp đồng thành công");
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
       loadData();
     } catch {
       toast.error("Không thể xóa hợp đồng");
@@ -297,7 +302,7 @@ export default function HopDongPage() {
                         </button>
                         <button
                           className="btn-action danger"
-                          onClick={() => handleDelete(item)}
+                          onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -413,6 +418,28 @@ export default function HopDongPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa hợp đồng{" "}
+              <strong>{deletingItem?.ma_hd}</strong>?
+              Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Xóa
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

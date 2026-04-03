@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -54,6 +55,8 @@ export default function NhaCungCapPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<Supplier | null>(null);
 
   const {
     register,
@@ -145,11 +148,13 @@ export default function NhaCungCapPage() {
     }
   };
 
-  const handleDelete = async (item: Supplier) => {
-    if (!window.confirm(`Xác nhận xóa nhà cung cấp "${item.ten_ncc}"?`)) return;
+  const handleDelete = async () => {
+    if (!deletingItem) return;
     try {
-      await deleteSupplier(item.id);
+      await deleteSupplier(deletingItem.id);
       toast.success("Xóa nhà cung cấp thành công");
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
       loadData();
     } catch {
       toast.error("Không thể xóa nhà cung cấp");
@@ -231,7 +236,7 @@ export default function NhaCungCapPage() {
                         </button>
                         <button
                           className="btn-action danger"
-                          onClick={() => handleDelete(item)}
+                          onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -297,6 +302,28 @@ export default function NhaCungCapPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa nhà cung cấp{" "}
+              <strong>{deletingItem?.ten_ncc}</strong>?
+              Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Xóa
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
