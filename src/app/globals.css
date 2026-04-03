@@ -2,6 +2,7 @@
 
 @theme {
   --color-primary: #2E7D32;
+  --color-primary-foreground: #FFFFFF;
   --color-primary-light: #4CAF50;
   --color-primary-dark: #1B5E20;
   --color-primary-50: #E8F5E9;
@@ -14,6 +15,20 @@
   --color-primary-700: #388E3C;
   --color-primary-800: #2E7D32;
   --color-primary-900: #1B5E20;
+
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FFFFFF;
+
+  --color-background: #FFFFFF;
+  --color-foreground: #1A1A2E;
+
+  --color-accent: #F5F7FA;
+  --color-accent-foreground: #1A1A2E;
+
+  --color-secondary: #F1F5F9;
+  --color-secondary-foreground: #1A1A2E;
+
+  --color-ring: #2E7D32;
 
   --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
   --font-heading: "Montserrat", ui-sans-serif, system-ui, sans-serif;
