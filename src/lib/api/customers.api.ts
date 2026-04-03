@@ -17,18 +17,27 @@ export interface Customer {
 
 export type CreateCustomerInput = Omit<Customer, "id" | "ma_kh" | "created_at" | "created_by">;
 
-async function generateMaKH(): Promise<string> {
+function getLoaiPrefix(loaiKh: string): string {
+  if (loaiKh.includes("Doanh nghiệp") || loaiKh.includes("Khu công nghiệp")) return "DN";
+  if (loaiKh.includes("chung cư") || loaiKh.includes("Văn phòng") || loaiKh.includes("Trường học")) return "VP";
+  if (loaiKh.includes("Trang trại")) return "TT";
+  return "CN";
+}
+
+async function generateMaKH(loaiKh: string): Promise<string> {
+  const prefix = `GS-${getLoaiPrefix(loaiKh)}`;
   const supabase = createClient();
   const { data } = await supabase
     .from("customers")
     .select("ma_kh")
+    .like("ma_kh", `${prefix}%`)
     .order("ma_kh", { ascending: false })
     .limit(1);
 
-  if (!data || data.length === 0) return "GS-KH001";
+  if (!data || data.length === 0) return `${prefix}001`;
 
-  const lastNum = parseInt(data[0].ma_kh.replace("GS-KH", "")) || 0;
-  return `GS-KH${String(lastNum + 1).padStart(3, "0")}`;
+  const lastNum = parseInt(data[0].ma_kh.replace(prefix, "")) || 0;
+  return `${prefix}${String(lastNum + 1).padStart(3, "0")}`;
 }
 
 export async function fetchCustomers(): Promise<Customer[]> {
@@ -60,7 +69,7 @@ export async function createCustomer(input: CreateCustomerInput): Promise<Custom
   console.log("Auth session:", session ? "YES" : "NO");
   console.log("Token:", session?.access_token?.substring(0, 20));
 
-  const ma_kh = await generateMaKH();
+  const ma_kh = await generateMaKH(input.loai_kh);
   const { data, error } = await supabase
     .from("customers")
     .insert({
