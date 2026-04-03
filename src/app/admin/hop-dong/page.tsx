@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -66,6 +67,8 @@ function formatCurrency(value: number | null): string {
 }
 
 export default function HopDongPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { user } = useCurrentUser();
   const [data, setData] = useState<Contract[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -117,6 +120,30 @@ export default function HopDongPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Auto-open create dialog when navigated from khach-hang with customer_id
+  useEffect(() => {
+    const customerId = searchParams.get("customer_id");
+    if (customerId && customers.length > 0) {
+      const customer = customers.find((c) => c.id === customerId);
+      if (customer) {
+        setEditing(null);
+        reset({
+          customer_id: customerId,
+          dich_vu: "",
+          dien_tich: "",
+          gia_tri: null,
+          trang_thai: "Mới",
+          ngay_bat_dau: "",
+          ngay_ket_thuc: "",
+          ghi_chu: "",
+        });
+        setDialogOpen(true);
+        // Clean up URL
+        router.replace("/admin/hop-dong");
+      }
+    }
+  }, [customers, searchParams]);
 
   const filtered = data.filter((item) => {
     const q = search.toLowerCase();

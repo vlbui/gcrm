@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Search, Plus, Pencil, Trash2, Building2, Landmark, Tractor, User } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Building2, Landmark, Tractor, User, FilePlus2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +71,7 @@ function getLoaiKHBadgeClass(loaiKh: string): string {
 }
 
 export default function KhachHangPage() {
+  const router = useRouter();
   const { user } = useCurrentUser();
   const [data, setData] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -312,12 +314,21 @@ export default function KhachHangPage() {
                         <button
                           className="btn-action"
                           onClick={() => openEdit(item)}
+                          title="Chỉnh sửa"
                         >
                           <Pencil size={14} />
                         </button>
                         <button
+                          className="btn-action"
+                          onClick={() => router.push(`/admin/hop-dong?customer_id=${item.id}`)}
+                          title="Tạo hợp đồng"
+                        >
+                          <FilePlus2 size={14} />
+                        </button>
+                        <button
                           className="btn-action danger"
                           onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
+                          title="Xóa"
                         >
                           <Trash2 size={14} />
                         </button>
