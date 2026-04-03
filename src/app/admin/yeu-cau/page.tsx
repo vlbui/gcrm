@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Search, Eye, ArrowRightLeft, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ function getLoaiHinhBadgeClass(loaiHinh: string | null): string {
 }
 
 export default function YeuCauPage() {
+  const router = useRouter();
   const { user } = useCurrentUser();
   const [data, setData] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,17 +74,16 @@ export default function YeuCauPage() {
   const [filterLoaiHinh, setFilterLoaiHinh] = useState("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ServiceRequest | null>(null);
   const [converting, setConverting] = useState(false);
+  const [isConvertMode, setIsConvertMode] = useState(false);
 
   // Convert form fields
   const [convertTenKH, setConvertTenKH] = useState("");
   const [convertSDT, setConvertSDT] = useState("");
   const [convertEmail, setConvertEmail] = useState("");
   const [convertDiaChi, setConvertDiaChi] = useState("");
-  const [convertLoaiKH, setConvertLoaiKH] = useState("Hộ gia đình");
   const [convertDichVu, setConvertDichVu] = useState("");
   const [convertDienTich, setConvertDienTich] = useState("");
   const [convertLoaiHinh, setConvertLoaiHinh] = useState("");
@@ -91,6 +92,7 @@ export default function YeuCauPage() {
   // Duplicate customer check
   const [duplicateCustomer, setDuplicateCustomer] = useState<Customer | null>(null);
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
+  const [duplicateMatchType, setDuplicateMatchType] = useState<"phone" | "email" | "both">("phone");
 
   const loadData = async () => {
     try {
@@ -107,15 +109,14 @@ export default function YeuCauPage() {
     loadData();
   }, []);
 
-  const openDetailDialog = (item: ServiceRequest) => {
+  const openDialog = (item: ServiceRequest, convertMode = false) => {
     setSelectedItem(item);
-    setDetailDialogOpen(true);
-  };
+    setIsConvertMode(convertMode);
+    setDuplicateCustomer(null);
+    setShowDuplicateConfirm(false);
 
-  const openConvertDialog = (item: ServiceRequest) => {
-    setSelectedItem(item);
+    // Always populate convert form fields so switching to convert mode is instant
     const isOrg = item.loai_kh === "Tổ chức";
-
     setConvertTenKH(isOrg ? (item.ten_cong_ty ?? item.ten_kh) : item.ten_kh);
     setConvertSDT(item.sdt);
     setConvertEmail(item.email ?? "");
@@ -124,7 +125,6 @@ export default function YeuCauPage() {
     setConvertDienTich(item.dien_tich ?? "");
     setConvertLoaiHinh(item.loai_hinh ?? (isOrg ? "Doanh nghiệp / Khu công nghiệp" : "Cá nhân / Hộ gia đình"));
 
-    // Build ghi_chu from all request details
     const notes: string[] = [];
     if (isOrg && item.nguoi_lien_he) notes.push(`Người liên hệ: ${item.nguoi_lien_he}`);
     if (item.loai_con_trung) notes.push(`Côn trùng: ${item.loai_con_trung}`);
@@ -136,9 +136,7 @@ export default function YeuCauPage() {
     notes.push(`Từ yêu cầu ${item.ma_yc}`);
     setConvertGhiChu(notes.join("\n"));
 
-    setDuplicateCustomer(null);
-    setShowDuplicateConfirm(false);
-    setConvertDialogOpen(true);
+    setDialogOpen(true);
   };
 
   const handleStatusChange = async (
@@ -168,22 +166,34 @@ export default function YeuCauPage() {
   };
 
   const checkDuplicateAndConvert = async () => {
-    if (!selectedItem) return;
+    if (!selectedItem || converting) return;
+    setConverting(true);
 
     try {
       const phone = sanitizePhone(convertSDT);
+      const emailVal = convertEmail ? sanitizeEmail(convertEmail) : null;
       const customers = await fetchCustomers();
-      const existing = customers.find((c) => sanitizePhone(c.sdt) === phone);
+
+      // Check both phone and email
+      const phoneMatch = customers.find((c) => sanitizePhone(c.sdt) === phone);
+      const emailMatch = emailVal ? customers.find((c) => c.email && sanitizeEmail(c.email) === emailVal) : null;
+      const existing = phoneMatch || emailMatch;
 
       if (existing) {
+        const matchType = phoneMatch && emailMatch && phoneMatch.id === emailMatch.id
+          ? "both"
+          : phoneMatch ? "phone" : "email";
+        setDuplicateMatchType(matchType);
         setDuplicateCustomer(existing);
         setShowDuplicateConfirm(true);
+        setConverting(false);
         return;
       }
 
       await doConvert(null, false);
     } catch {
       toast.error("Có lỗi xảy ra khi kiểm tra");
+      setConverting(false);
     }
   };
 
@@ -247,8 +257,9 @@ export default function YeuCauPage() {
         ? `Đã tạo hợp đồng mới cho khách hàng ${existingCustomer.ma_kh} - ${existingCustomer.ten_kh}`
         : "Chuyển đổi thành công! Đã tạo khách hàng và hợp đồng mới.";
       toast.success(msg);
-      setConvertDialogOpen(false);
+      setDialogOpen(false);
       loadData();
+      router.push("/admin/hop-dong");
     } catch {
       toast.error("Có lỗi xảy ra khi chuyển đổi");
     } finally {
@@ -417,14 +428,14 @@ export default function YeuCauPage() {
                     <div className="data-table-actions">
                       <button
                         className="btn-action"
-                        onClick={() => openDetailDialog(item)}
+                        onClick={() => openDialog(item)}
                       >
                         <Eye size={14} />
                       </button>
                       {canEdit && item.trang_thai !== "Đã tạo HĐ" && (
                         <button
                           className="btn-action"
-                          onClick={() => openConvertDialog(item)}
+                          onClick={() => openDialog(item, true)}
                           title="Chuyển đổi thành khách hàng"
                         >
                           <ArrowRightLeft size={14} />
@@ -441,154 +452,17 @@ export default function YeuCauPage() {
         )}
       </div>
 
-      {/* Detail Dialog */}
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+      {/* Unified Detail + Convert Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setIsConvertMode(false); setShowDuplicateConfirm(false); setConverting(false); } }}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              Chi tiết yêu cầu {selectedItem?.ma_yc}
+              {isConvertMode ? `Chuyển đổi yêu cầu ${selectedItem?.ma_yc}` : `Chi tiết yêu cầu ${selectedItem?.ma_yc}`}
             </DialogTitle>
             <DialogDescription>
-              Thông tin chi tiết yêu cầu dịch vụ
-            </DialogDescription>
-          </DialogHeader>
-          {selectedItem && (
-            <div className="form-grid">
-              <div className="form-field">
-                <Label>Mã yêu cầu</Label>
-                <p>{selectedItem.ma_yc}</p>
-              </div>
-              <div className="form-field">
-                <Label>Trạng thái</Label>
-                <p>
-                  <span
-                    className={
-                      statusBadgeClass[selectedItem.trang_thai] ??
-                      "status-badge"
-                    }
-                  >
-                    {statusLabels[selectedItem.trang_thai] ??
-                      selectedItem.trang_thai}
-                  </span>
-                </p>
-              </div>
-              <div className="form-field">
-                <Label>Tên khách hàng</Label>
-                <p>{selectedItem.ten_kh}</p>
-              </div>
-              {selectedItem.ten_cong_ty && (
-                <div className="form-field">
-                  <Label>Tên công ty</Label>
-                  <p>{selectedItem.ten_cong_ty}</p>
-                </div>
-              )}
-              {selectedItem.nguoi_lien_he && (
-                <div className="form-field">
-                  <Label>Người liên hệ</Label>
-                  <p>{selectedItem.nguoi_lien_he}</p>
-                </div>
-              )}
-              <div className="form-field">
-                <Label>Số điện thoại</Label>
-                <p>{selectedItem.sdt}</p>
-              </div>
-              <div className="form-field">
-                <Label>Email</Label>
-                <p>{selectedItem.email ?? "—"}</p>
-              </div>
-              <div className="form-field">
-                <Label>Địa chỉ</Label>
-                <p>{selectedItem.dia_chi ?? "—"}</p>
-              </div>
-              <div className="form-field">
-                <Label>Loại hình</Label>
-                <p>{selectedItem.loai_hinh ?? "Cá nhân / Hộ gia đình"}</p>
-              </div>
-              {selectedItem.nhu_cau && (
-                <div className="form-field">
-                  <Label>Nhu cầu</Label>
-                  <p>{selectedItem.nhu_cau}</p>
-                </div>
-              )}
-              {selectedItem.so_chi_nhanh && (
-                <div className="form-field">
-                  <Label>Số chi nhánh</Label>
-                  <p>{selectedItem.so_chi_nhanh}</p>
-                </div>
-              )}
-              <div className="form-field">
-                <Label>Loại côn trùng</Label>
-                <p>{selectedItem.loai_con_trung ?? "—"}</p>
-              </div>
-              <div className="form-field">
-                <Label>Diện tích</Label>
-                <p>{selectedItem.dien_tich ?? "—"}</p>
-              </div>
-              <div className="form-field">
-                <Label>Ngày gửi</Label>
-                <p>
-                  {new Date(selectedItem.created_at).toLocaleDateString(
-                    "vi-VN"
-                  )}
-                </p>
-              </div>
-              <div className="form-field full-width">
-                <Label>Mô tả</Label>
-                <p>{selectedItem.mo_ta ?? "—"}</p>
-              </div>
-              <div className="form-field full-width">
-                <Label>Ghi chú nhân viên</Label>
-                {canEdit ? (
-                  <Textarea
-                    rows={3}
-                    defaultValue={selectedItem.ghi_chu_nv ?? ""}
-                    onBlur={(e) => {
-                      if (e.target.value !== (selectedItem.ghi_chu_nv ?? "")) {
-                        handleNotesUpdate(selectedItem, e.target.value);
-                      }
-                    }}
-                    placeholder="Nhập ghi chú..."
-                  />
-                ) : (
-                  <p>{selectedItem.ghi_chu_nv ?? "—"}</p>
-                )}
-              </div>
-            </div>
-          )}
-          <div className="form-actions">
-            <Button
-              variant="outline"
-              onClick={() => setDetailDialogOpen(false)}
-            >
-              Đóng
-            </Button>
-            {canEdit &&
-              selectedItem &&
-              selectedItem.trang_thai !== "Đã tạo HĐ" && (
-                <Button
-                  onClick={() => {
-                    setDetailDialogOpen(false);
-                    openConvertDialog(selectedItem);
-                  }}
-                >
-                  <ArrowRightLeft size={16} />
-                  Chuyển đổi
-                </Button>
-              )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Convert Dialog */}
-      <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              Chuyển đổi yêu cầu {selectedItem?.ma_yc}
-            </DialogTitle>
-            <DialogDescription>
-              Tạo khách hàng và hợp đồng mới từ yêu cầu này. Kiểm tra và chỉnh
-              sửa thông tin trước khi chuyển đổi.
+              {isConvertMode
+                ? "Tạo khách hàng và hợp đồng mới từ yêu cầu này. Kiểm tra và chỉnh sửa thông tin trước khi chuyển đổi."
+                : "Thông tin chi tiết yêu cầu dịch vụ"}
             </DialogDescription>
           </DialogHeader>
 
@@ -600,7 +474,12 @@ export default function YeuCauPage() {
                   <strong style={{ color: "#E65100" }}>Khách hàng đã tồn tại</strong>
                 </div>
                 <p style={{ fontSize: 14, color: "#424242", margin: "0 0 8px" }}>
-                  SĐT <strong>{sanitizePhone(convertSDT)}</strong> đã thuộc về khách hàng{" "}
+                  {duplicateMatchType === "email"
+                    ? <>Email <strong>{sanitizeEmail(convertEmail)}</strong></>
+                    : duplicateMatchType === "both"
+                    ? <>SĐT <strong>{sanitizePhone(convertSDT)}</strong> và Email <strong>{sanitizeEmail(convertEmail)}</strong></>
+                    : <>SĐT <strong>{sanitizePhone(convertSDT)}</strong></>
+                  }{" "}đã thuộc về khách hàng{" "}
                   <strong>{duplicateCustomer.ma_kh} - {duplicateCustomer.ten_kh}</strong>.
                 </p>
                 {hasInfoChanged(duplicateCustomer) && (
@@ -628,7 +507,7 @@ export default function YeuCauPage() {
                   Quay lại
                 </Button>
                 <Button onClick={() => doConvert(duplicateCustomer, false)} disabled={converting}>
-                  {converting ? "Đang xử lý..." : "Tạo HĐ cho KH cũ"}
+                  {converting ? "Đang xử lý..." : "Tạo hợp đồng mới"}
                 </Button>
                 {hasInfoChanged(duplicateCustomer) && (
                   <Button variant="destructive" onClick={() => doConvert(duplicateCustomer, true)} disabled={converting}>
@@ -637,7 +516,7 @@ export default function YeuCauPage() {
                 )}
               </div>
             </div>
-          ) : (
+          ) : isConvertMode ? (
             <>
               <div className="form-grid">
                 <div className="form-field">
@@ -702,13 +581,118 @@ export default function YeuCauPage() {
               <div className="form-actions">
                 <Button
                   variant="outline"
-                  onClick={() => setConvertDialogOpen(false)}
+                  onClick={() => setDialogOpen(false)}
                 >
                   Hủy
                 </Button>
                 <Button onClick={checkDuplicateAndConvert} disabled={converting}>
                   {converting ? "Đang xử lý..." : "Chuyển đổi"}
                 </Button>
+              </div>
+            </>
+          ) : selectedItem && (
+            <>
+              <div className="form-grid">
+                <div className="form-field">
+                  <Label>Mã yêu cầu</Label>
+                  <p>{selectedItem.ma_yc}</p>
+                </div>
+                <div className="form-field">
+                  <Label>Trạng thái</Label>
+                  <p>
+                    <span className={statusBadgeClass[selectedItem.trang_thai] ?? "status-badge"}>
+                      {statusLabels[selectedItem.trang_thai] ?? selectedItem.trang_thai}
+                    </span>
+                  </p>
+                </div>
+                <div className="form-field">
+                  <Label>Tên khách hàng</Label>
+                  <p>{selectedItem.ten_kh}</p>
+                </div>
+                {selectedItem.ten_cong_ty && (
+                  <div className="form-field">
+                    <Label>Tên công ty</Label>
+                    <p>{selectedItem.ten_cong_ty}</p>
+                  </div>
+                )}
+                {selectedItem.nguoi_lien_he && (
+                  <div className="form-field">
+                    <Label>Người liên hệ</Label>
+                    <p>{selectedItem.nguoi_lien_he}</p>
+                  </div>
+                )}
+                <div className="form-field">
+                  <Label>Số điện thoại</Label>
+                  <p>{selectedItem.sdt}</p>
+                </div>
+                <div className="form-field">
+                  <Label>Email</Label>
+                  <p>{selectedItem.email ?? "—"}</p>
+                </div>
+                <div className="form-field">
+                  <Label>Địa chỉ</Label>
+                  <p>{selectedItem.dia_chi ?? "—"}</p>
+                </div>
+                <div className="form-field">
+                  <Label>Loại hình</Label>
+                  <p>{selectedItem.loai_hinh ?? "Cá nhân / Hộ gia đình"}</p>
+                </div>
+                {selectedItem.nhu_cau && (
+                  <div className="form-field">
+                    <Label>Nhu cầu</Label>
+                    <p>{selectedItem.nhu_cau}</p>
+                  </div>
+                )}
+                {selectedItem.so_chi_nhanh && (
+                  <div className="form-field">
+                    <Label>Số chi nhánh</Label>
+                    <p>{selectedItem.so_chi_nhanh}</p>
+                  </div>
+                )}
+                <div className="form-field">
+                  <Label>Loại côn trùng</Label>
+                  <p>{selectedItem.loai_con_trung ?? "—"}</p>
+                </div>
+                <div className="form-field">
+                  <Label>Diện tích</Label>
+                  <p>{selectedItem.dien_tich ?? "—"}</p>
+                </div>
+                <div className="form-field">
+                  <Label>Ngày gửi</Label>
+                  <p>{new Date(selectedItem.created_at).toLocaleDateString("vi-VN")}</p>
+                </div>
+                <div className="form-field full-width">
+                  <Label>Mô tả</Label>
+                  <p>{selectedItem.mo_ta ?? "—"}</p>
+                </div>
+                <div className="form-field full-width">
+                  <Label>Ghi chú nhân viên</Label>
+                  {canEdit ? (
+                    <Textarea
+                      rows={3}
+                      defaultValue={selectedItem.ghi_chu_nv ?? ""}
+                      onBlur={(e) => {
+                        if (e.target.value !== (selectedItem.ghi_chu_nv ?? "")) {
+                          handleNotesUpdate(selectedItem, e.target.value);
+                        }
+                      }}
+                      placeholder="Nhập ghi chú..."
+                    />
+                  ) : (
+                    <p>{selectedItem.ghi_chu_nv ?? "—"}</p>
+                  )}
+                </div>
+              </div>
+              <div className="form-actions">
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                  Đóng
+                </Button>
+                {canEdit && selectedItem.trang_thai !== "Đã tạo HĐ" && (
+                  <Button onClick={() => setIsConvertMode(true)}>
+                    <ArrowRightLeft size={16} />
+                    Chuyển đổi
+                  </Button>
+                )}
               </div>
             </>
           )}
