@@ -1,4 +1,4 @@
-import { MapPin, Phone, Mail, ExternalLink } from "lucide-react";
+import { MapPin, Phone, Mail } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -6,36 +6,25 @@ export default function Footer() {
       <div className="container">
         <div className="footer-grid">
           <div>
-            <div className="footer-brand-name">
-              <img
-                src="/logo.png"
-                alt="Lá Chắn Xanh"
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: "50%",
-                  display: "inline-block",
-                  verticalAlign: "middle",
-                  marginRight: 10,
-                }}
-              />
-              LÁ CHẮN XANH
+            <div className="footer-brand">
+              <img src="/logo.png" alt="Lá Chắn Xanh" className="footer-logo" />
+              <span className="footer-brand-name">LÁ CHẮN XANH</span>
             </div>
-            <p className="footer-brand-desc">
-              Công ty dịch vụ diệt côn trùng chuyên nghiệp tại Hà Nội. Diệt mối, gián, chuột, muỗi, kiến, ruồi bằng phương pháp IPM an toàn.
+            <p className="footer-desc">
+              Công ty dịch vụ diệt côn trùng chuyên nghiệp tại Hà Nội. Phương pháp IPM an toàn.
             </p>
             <p className="footer-mst">MST: 0110328932</p>
           </div>
 
           <div>
-            <h4>Dịch vụ diệt côn trùng</h4>
+            <h4>Dịch vụ</h4>
             <div className="footer-links">
-              <a href="#services">Dịch vụ diệt muỗi</a>
-              <a href="#services">Dịch vụ diệt gián</a>
-              <a href="#services">Dịch vụ diệt chuột</a>
-              <a href="#services">Dịch vụ diệt mối</a>
-              <a href="#services">Dịch vụ diệt ruồi</a>
-              <a href="#services">Phun khử trùng, khử khuẩn</a>
+              <a href="#services">Diệt muỗi</a>
+              <a href="#services">Diệt gián</a>
+              <a href="#services">Diệt chuột</a>
+              <a href="#services">Diệt mối</a>
+              <a href="#services">Diệt ruồi</a>
+              <a href="#services">Phun khử trùng</a>
             </div>
           </div>
 
@@ -46,42 +35,30 @@ export default function Footer() {
               <a href="#ipm">Phương pháp IPM</a>
               <a href="#pricing">Bảng giá</a>
               <a href="#faq">FAQ</a>
-              <a href="#contact">Liên hệ</a>
             </div>
           </div>
 
           <div>
             <h4>Liên hệ</h4>
-            <div className="footer-contact-item">
-              <MapPin size={16} />
-              Số 7, ngõ 125 Trung Kính, Yên Hòa, Cầu Giấy, Hà Nội
+            <div className="footer-contact">
+              <div className="footer-contact-item">
+                <MapPin size={15} />
+                <span>Số 7, ngõ 125 Trung Kính, Yên Hòa, Cầu Giấy, Hà Nội</span>
+              </div>
+              <div className="footer-contact-item">
+                <Phone size={15} />
+                <a href="tel:0859955969">085 9955 969</a>
+              </div>
+              <div className="footer-contact-item">
+                <Mail size={15} />
+                <span>greenshield.jsc@gmail.com</span>
+              </div>
             </div>
-            <div className="footer-contact-item">
-              <Phone size={16} />
-              <a href="tel:0859955969" style={{ color: "var(--primary-400)" }}>
-                085 9955 969
-              </a>
-            </div>
-            <div className="footer-contact-item">
-              <Mail size={16} />
-              greenshield.jsc@gmail.com
-            </div>
-            <a
-              href="https://maps.google.com/?q=Công+ty+cổ+phần+lá+chắn+xanh+số+7+ngõ+125+Trung+Kính+phường+Yên+Hòa+Hà+Nội"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-cta btn-outline"
-              style={{ marginTop: 8, fontSize: 13, padding: "8px 14px", color: "var(--primary-300)", borderColor: "var(--primary-700)" }}
-            >
-              <ExternalLink size={14} />
-              Mở Google Maps
-            </a>
           </div>
         </div>
 
         <div className="footer-bottom">
-          <span>© 2026 GreenShield JSC — Công ty Cổ phần Lá Chắn Xanh. All rights reserved.</span>
-          <span>Thiết kế bởi GreenShield Team</span>
+          <span>&copy; 2026 GreenShield JSC &mdash; Công ty Cổ phần Lá Chắn Xanh</span>
         </div>
       </div>
     </footer>

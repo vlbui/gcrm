@@ -12,41 +12,22 @@ interface CertificatesSectionProps {
 }
 
 const defaultCerts: CertificateItem[] = [
-  {
-    icon: "📋",
-    title: "Giấy phép kinh doanh hợp lệ",
-    description: "MST: 0110328932 — Sở KH&ĐT Hà Nội cấp. Đăng ký ngành nghề diệt côn trùng, khử trùng",
-  },
-  {
-    icon: "🧪",
-    title: "Chứng nhận hóa chất an toàn",
-    description: "Thuốc diệt côn trùng nhập ngoại chính hãng, có phiếu kiểm nghiệm và chứng nhận Bộ Y tế",
-  },
-  {
-    icon: "🏥",
-    title: "Năng lực y tế dự phòng",
-    description: "Kỹ thuật viên được đào tạo bài bản về dịch tễ học, kiểm soát sinh vật gây hại",
-  },
-  {
-    icon: "🌍",
-    title: "Quy trình chuẩn quốc tế",
-    description: "Áp dụng phương pháp IPM theo tiêu chuẩn NPMA (Mỹ) trong mọi dự án diệt côn trùng",
-  },
+  { icon: "📋", title: "Giấy phép kinh doanh", description: "MST: 0110328932 — Sở KH&ĐT Hà Nội cấp" },
+  { icon: "🧪", title: "Chứng nhận hóa chất", description: "Thuốc nhập ngoại chính hãng, Bộ Y tế cấp phép" },
+  { icon: "🏥", title: "Năng lực y tế dự phòng", description: "Kỹ thuật viên đào tạo bài bản về dịch tễ học" },
+  { icon: "🌍", title: "Chuẩn quốc tế", description: "Phương pháp IPM theo tiêu chuẩn NPMA (Mỹ)" },
 ];
 
 export default function CertificatesSection({ certificates }: CertificatesSectionProps) {
   const data = certificates && certificates.length > 0 ? certificates : defaultCerts;
 
   return (
-    <section className="section section-green" id="certificates">
+    <section className="section section-alt" id="certificates">
       <div className="container">
         <FadeUp>
           <div className="section-header">
-            <span className="section-label">📜 Chứng chỉ &amp; Pháp lý</span>
-            <h2 className="section-title">Công Ty Diệt Côn Trùng Có Đầy Đủ Giấy Phép</h2>
-            <p className="section-desc">
-              Lá Chắn Xanh hoạt động minh bạch, tuân thủ mọi quy định pháp luật về y tế dự phòng và an toàn hóa chất. Đây là cơ sở để bạn yên tâm lựa chọn dịch vụ diệt côn trùng uy tín.
-            </p>
+            <p className="section-label">Chứng chỉ & Pháp lý</p>
+            <h2 className="section-title">Đầy Đủ Giấy Phép Hành Nghề</h2>
           </div>
         </FadeUp>
 

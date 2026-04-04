@@ -21,26 +21,10 @@ const defaultInfo: CompanyInfo = {
 };
 
 const highlights = [
-  {
-    icon: "🎓",
-    title: "10+ năm kinh nghiệm",
-    desc: "Đội ngũ chuyên gia diệt côn trùng được đào tạo bài bản về dịch tễ học",
-  },
-  {
-    icon: "🔬",
-    title: "Phương pháp IPM",
-    desc: "Kiểm soát côn trùng khoa học, không phun hóa chất tràn lan",
-  },
-  {
-    icon: "📑",
-    title: "Đầy đủ giấy phép",
-    desc: "Hồ sơ năng lực, giấy phép hành nghề, chứng nhận hóa chất",
-  },
-  {
-    icon: "🤝",
-    title: "Bảo hành cam kết",
-    desc: "Bảo hành 30 ngày — 5 năm, xử lý lại miễn phí nếu tái phát",
-  },
+  { title: "10+ năm kinh nghiệm", desc: "Đội ngũ chuyên gia được đào tạo bài bản về dịch tễ học" },
+  { title: "Phương pháp IPM", desc: "Kiểm soát côn trùng khoa học, không phun hóa chất tràn lan" },
+  { title: "Đầy đủ giấy phép", desc: "Giấy phép hành nghề, chứng nhận hóa chất hợp lệ" },
+  { title: "Bảo hành cam kết", desc: "Bảo hành 30 ngày — 5 năm, xử lý lại miễn phí" },
 ];
 
 export default function AboutSection({ companyInfo }: AboutSectionProps) {
@@ -49,25 +33,29 @@ export default function AboutSection({ companyInfo }: AboutSectionProps) {
   return (
     <section className="section" id="about">
       <div className="container">
-        <div className="about-grid" style={{ gridTemplateColumns: "1fr" }}>
-          <FadeUp>
-            <div className="about-content" style={{ maxWidth: 900, margin: "0 auto" }}>
-              <span className="section-label">🏢 Về chúng tôi</span>
-              <h2>{data.about_title}</h2>
-              <p dangerouslySetInnerHTML={{ __html: data.about_description! }} />
-              <p>{data.about_description2}</p>
+        <FadeUp>
+          <div className="section-header">
+            <p className="section-label">Về chúng tôi</p>
+            <h2 className="section-title">{data.about_title}</h2>
+          </div>
+        </FadeUp>
 
-              <div className="about-highlights" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-                {highlights.map((h, i) => (
-                  <div className="about-highlight" key={i}>
-                    <div className="about-highlight-icon">{h.icon}</div>
-                    <h4>{h.title}</h4>
-                    <p>{h.desc}</p>
-                  </div>
-                ))}
+        <FadeUp>
+          <div className="about-text">
+            <p dangerouslySetInnerHTML={{ __html: data.about_description! }} />
+            <p>{data.about_description2}</p>
+          </div>
+        </FadeUp>
+
+        <div className="about-highlights">
+          {highlights.map((h, i) => (
+            <FadeUp key={i}>
+              <div className="about-highlight">
+                <h4>{h.title}</h4>
+                <p>{h.desc}</p>
               </div>
-            </div>
-          </FadeUp>
+            </FadeUp>
+          ))}
         </div>
       </div>
     </section>

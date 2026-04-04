@@ -12,6 +12,7 @@ export interface PricingItem {
   is_popular?: boolean;
   icon?: string;
   cta_text?: string;
+  ghi_chu?: string | null;
 }
 
 interface PricingSectionProps {
@@ -20,43 +21,24 @@ interface PricingSectionProps {
 
 const defaultPricing: PricingItem[] = [
   {
-    icon: "🏠",
     title: "Xử Lý Đơn Lẻ",
     subtitle: "Cho hộ gia đình, xử lý 1 lần",
     is_popular: false,
-    features: [
-      "Khảo sát hiện trạng miễn phí",
-      "Xử lý 1 loại dịch hại",
-      "Bảo hành 30 ngày",
-      "Báo cáo sau xử lý",
-    ],
+    features: ["Khảo sát hiện trạng miễn phí", "Xử lý 1 loại dịch hại", "Bảo hành 30 ngày", "Báo cáo sau xử lý"],
     cta_text: "Nhận báo giá",
   },
   {
-    icon: "🔄",
     title: "Định Kỳ Hàng Tháng",
     subtitle: "Gói bảo vệ liên tục, hiệu quả cao",
     is_popular: true,
-    features: [
-      "Xử lý định kỳ 1 lần/tháng",
-      "Bao gồm tất cả loại dịch hại",
-      "Xử lý khẩn cấp miễn phí",
-      "Báo cáo hàng tháng chi tiết",
-      "Giảm 15% so với đơn lẻ",
-    ],
+    features: ["Xử lý định kỳ 1 lần/tháng", "Bao gồm tất cả loại dịch hại", "Xử lý khẩn cấp miễn phí", "Báo cáo hàng tháng", "Giảm 15% so với đơn lẻ"],
     cta_text: "Nhận báo giá",
   },
   {
-    icon: "🏢",
     title: "Hợp Đồng Năm",
     subtitle: "Cho doanh nghiệp, bao trọn gói",
     is_popular: false,
-    features: [
-      "Quản lý tài khoản chuyên biệt",
-      "Báo cáo chuyên nghiệp, chi tiết",
-      "Hỗ trợ kiểm toán doanh nghiệp",
-      "Giảm 25% so với đơn lẻ",
-    ],
+    features: ["Quản lý tài khoản chuyên biệt", "Báo cáo chuyên nghiệp, chi tiết", "Hỗ trợ kiểm toán doanh nghiệp", "Giảm 25% so với đơn lẻ"],
     cta_text: "Liên hệ tư vấn",
   },
 ];
@@ -69,10 +51,10 @@ export default function PricingSection({ pricing }: PricingSectionProps) {
       <div className="container">
         <FadeUp>
           <div className="section-header">
-            <span className="section-label">💰 Bảng giá diệt côn trùng</span>
-            <h2 className="section-title">Bảng Giá Dịch Vụ Diệt Côn Trùng Tại Hà Nội</h2>
+            <p className="section-label">Bảng giá</p>
+            <h2 className="section-title">Bảng Giá Dịch Vụ</h2>
             <p className="section-desc">
-              Giá dịch vụ diệt côn trùng minh bạch, không phát sinh. Chi phí cuối cùng tùy thuộc vào diện tích và mức độ côn trùng sau khảo sát thực tế miễn phí.
+              Giá dịch vụ minh bạch, không phát sinh. Chi phí cuối cùng tùy thuộc diện tích và mức độ côn trùng sau khảo sát thực tế miễn phí.
             </p>
           </div>
         </FadeUp>
@@ -81,15 +63,14 @@ export default function PricingSection({ pricing }: PricingSectionProps) {
           {data.map((plan, i) => (
             <FadeUp key={plan.id ?? i}>
               <div className={`pricing-card${plan.is_popular ? " featured" : ""}`}>
-                {plan.is_popular && <div className="pricing-badge">⭐ Phổ biến nhất</div>}
-                <div className="pricing-icon">{plan.icon}</div>
+                {plan.is_popular && <div className="pricing-badge">Phổ biến nhất</div>}
                 <h3>{plan.title}</h3>
                 <p className="pricing-subtitle">{plan.subtitle}</p>
-                <div className="pricing-divider"></div>
+                <div className="pricing-divider" />
                 <div className="pricing-features">
                   {(plan.features ?? []).map((feature, j) => (
                     <div className="pricing-feature" key={j}>
-                      <Check size={16} strokeWidth={2.5} />
+                      <Check size={16} />
                       {feature}
                     </div>
                   ))}
@@ -104,15 +85,6 @@ export default function PricingSection({ pricing }: PricingSectionProps) {
               </div>
             </FadeUp>
           ))}
-        </div>
-
-        <div style={{ textAlign: "center", marginTop: "40px" }}>
-          <button
-            className="btn-cta btn-accent btn-lg"
-            onClick={() => window.dispatchEvent(new Event("open-contact-popup"))}
-          >
-            Nhận tư vấn & báo giá miễn phí
-          </button>
         </div>
       </div>
     </section>

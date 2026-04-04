@@ -1,20 +1,20 @@
 export default function TrustBar() {
   const items = [
-    { icon: "🏥", text: "Chuyên gia diệt côn trùng" },
-    { icon: "🌍", text: "Hóa chất nhập ngoại không mùi" },
-    { icon: "📊", text: "Báo cáo & giám sát định kỳ" },
-    { icon: "⏰", text: "Hỗ trợ khẩn cấp 24/7" },
-    { icon: "✅", text: "Bảo hành lên đến 5 năm" },
+    "Chuyên gia diệt côn trùng",
+    "Hóa chất nhập ngoại không mùi",
+    "Báo cáo & giám sát định kỳ",
+    "Hỗ trợ khẩn cấp 24/7",
+    "Bảo hành lên đến 5 năm",
   ];
 
   return (
     <div className="trust-bar">
       <div className="container">
         <div className="trust-inner">
-          {items.map((item, i) => (
+          {items.map((text, i) => (
             <div className="trust-item" key={i}>
-              <div className="trust-icon">{item.icon}</div>
-              <span>{item.text}</span>
+              <span className="trust-dot" />
+              <span>{text}</span>
             </div>
           ))}
         </div>
