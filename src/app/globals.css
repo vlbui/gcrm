@@ -103,7 +103,7 @@ html {
 body {
   font-family: 'Be Vietnam Pro', sans-serif;
   color: var(--neutral-800);
-  background: var(--white);
+  background: #F7F8FA;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -342,6 +342,7 @@ ul { list-style: none; }
   padding: 120px 0 60px;
   background: var(--white);
   text-align: center;
+  box-shadow: 0 1px 0 var(--neutral-100);
 }
 
 .hero-inner {
@@ -464,7 +465,7 @@ ul { list-style: none; }
 }
 
 .section-alt {
-  background: var(--neutral-50);
+  background: var(--white);
 }
 
 .section-header {
@@ -526,14 +527,16 @@ ul { list-style: none; }
 .about-highlight {
   padding: 24px 20px;
   background: var(--white);
-  border: 1px solid var(--neutral-200);
+  border: 1px solid var(--neutral-100);
   border-radius: var(--radius-md);
   text-align: center;
-  transition: border-color 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .about-highlight:hover {
-  border-color: var(--primary-300);
+  border-color: var(--primary-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 
 .about-highlight h4 {
@@ -563,14 +566,16 @@ ul { list-style: none; }
   position: relative;
   padding: 32px 20px 24px;
   background: var(--white);
-  border: 1px solid var(--neutral-200);
+  border: 1px solid var(--neutral-100);
   border-radius: var(--radius-md);
   text-align: center;
-  transition: border-color 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .ipm-step:hover {
-  border-color: var(--primary-300);
+  border-color: var(--primary-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 
 .ipm-step-num {
@@ -615,14 +620,16 @@ ul { list-style: none; }
 
 .service-card {
   background: var(--white);
-  border: 1px solid var(--neutral-200);
+  border: 1px solid var(--neutral-100);
   border-radius: var(--radius-md);
   padding: 24px 20px;
-  transition: border-color 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .service-card:hover {
-  border-color: var(--primary-300);
+  border-color: var(--primary-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 
 .service-icon {
@@ -685,12 +692,14 @@ ul { list-style: none; }
   background: var(--white);
   border-radius: var(--radius-md);
   overflow: hidden;
-  border: 1px solid var(--neutral-200);
-  transition: border-color 0.2s;
+  border: 1px solid var(--neutral-100);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .solution-card:hover {
-  border-color: var(--primary-300);
+  border-color: var(--primary-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 
 .solution-card-header {
@@ -750,20 +759,23 @@ ul { list-style: none; }
 
 .pricing-card {
   background: var(--white);
-  border: 1.5px solid var(--neutral-200);
+  border: 1.5px solid var(--neutral-100);
   border-radius: var(--radius-md);
   padding: 28px 24px;
   text-align: center;
   position: relative;
-  transition: border-color 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .pricing-card.featured {
-  border-color: var(--primary-600);
+  border-color: var(--primary-500);
+  box-shadow: 0 2px 12px rgba(22,163,74,0.1);
 }
 
 .pricing-card:hover {
-  border-color: var(--primary-400);
+  border-color: var(--primary-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 
 .pricing-badge {
@@ -835,15 +847,17 @@ ul { list-style: none; }
 
 .cert-card {
   background: var(--white);
-  border: 1px solid var(--neutral-200);
+  border: 1px solid var(--neutral-100);
   border-radius: var(--radius-md);
   padding: 20px 16px;
   text-align: center;
-  transition: border-color 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .cert-card:hover {
-  border-color: var(--primary-300);
+  border-color: var(--primary-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 
 .cert-icon {
@@ -877,15 +891,17 @@ ul { list-style: none; }
 
 .faq-item {
   background: var(--white);
-  border: 1px solid var(--neutral-200);
+  border: 1px solid var(--neutral-100);
   border-radius: var(--radius-md);
   overflow: hidden;
-  transition: border-color 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .faq-item:hover,
 .faq-item.active {
-  border-color: var(--primary-300);
+  border-color: var(--primary-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 
 .faq-question {
