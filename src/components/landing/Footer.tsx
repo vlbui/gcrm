@@ -1,4 +1,4 @@
-import { MapPin, Phone, Mail } from "lucide-react";
+import { MapPin, Phone, Mail, ExternalLink } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -53,6 +53,15 @@ export default function Footer() {
                 <Mail size={15} />
                 <span>greenshield.jsc@gmail.com</span>
               </div>
+              <a
+                href="https://maps.google.com/?q=Công+ty+cổ+phần+lá+chắn+xanh+số+7+ngõ+125+Trung+Kính+phường+Yên+Hòa+Hà+Nội"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer-map-btn"
+              >
+                <ExternalLink size={14} />
+                Mở trên Google Maps
+              </a>
             </div>
           </div>
         </div>

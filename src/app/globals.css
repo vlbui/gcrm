@@ -1205,6 +1205,25 @@ ul { list-style: none; }
   color: var(--primary-300);
 }
 
+.footer-map-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-400);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.footer-map-btn:hover {
+  border-color: var(--primary-500);
+  color: var(--primary-300);
+}
+
 .footer-bottom {
   border-top: 1px solid rgba(255,255,255,0.08);
   padding: 16px 0;
