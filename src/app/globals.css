@@ -137,12 +137,13 @@ ul { list-style: none; }
   background: rgba(255,255,255,0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--neutral-200);
+  border-bottom: 2px solid var(--green-600);
   transition: all 0.3s ease;
 }
 
 .navbar.scrolled {
   box-shadow: var(--shadow-sm);
+  border-bottom: 2px solid var(--green-600);
 }
 
 .nav-inner {
