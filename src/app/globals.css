@@ -1817,9 +1817,9 @@ ul { list-style: none; }
 .topbar-user-role { font-size: 11.5px; color: #2E7D32; font-weight: 600; }
 
 /* ---- Main content ---- */
-.admin-main { flex: 1; margin-left: 270px; transition: margin-left 0.3s var(--ease-out); }
+.admin-main { flex: 1; margin-left: 270px; max-width: calc(100vw - 270px); overflow-x: auto; transition: margin-left 0.3s var(--ease-out); }
 .admin-sidebar.collapsed ~ .admin-main,
-.admin-layout:has(.admin-sidebar.collapsed) .admin-main { margin-left: 72px; }
+.admin-layout:has(.admin-sidebar.collapsed) .admin-main { margin-left: 72px; max-width: calc(100vw - 72px); }
 .admin-content { padding: 32px; min-height: calc(100vh - 68px); }
 
 /* ---- Page header ---- */
