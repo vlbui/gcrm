@@ -43,6 +43,7 @@ import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
 import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import Pagination from "@/components/admin/Pagination";
+import DateInput from "@/components/admin/DateInput";
 import { formatDate } from "@/lib/utils/date";
 
 const formSchema = z.object({
@@ -397,9 +398,9 @@ export default function LichSuDichVuPage() {
 
               <div className="form-field">
                 <Label>Ngày thực hiện *</Label>
-                <Input
-                  type="date"
-                  {...form.register("ngay_thuc_hien")}
+                <DateInput
+                  value={form.watch("ngay_thuc_hien")}
+                  onChange={(v) => form.setValue("ngay_thuc_hien", v)}
                 />
                 {form.formState.errors.ngay_thuc_hien && (
                   <p className="error">

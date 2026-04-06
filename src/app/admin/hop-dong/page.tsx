@@ -48,6 +48,7 @@ import {
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatDate } from "@/lib/utils/date";
 import Pagination from "@/components/admin/Pagination";
+import DateInput from "@/components/admin/DateInput";
 
 const contractSchema = z.object({
   customer_id: z.string().min(1, "Vui lòng chọn khách hàng"),
@@ -396,14 +397,14 @@ export default function HopDongPage() {
               </div>
               <div className="form-field">
                 <Label>Ngày bắt đầu *</Label>
-                <Input type="date" {...register("ngay_bat_dau")} />
+                <DateInput value={watch("ngay_bat_dau")} onChange={(v) => setValue("ngay_bat_dau", v)} />
                 {errors.ngay_bat_dau && (
                   <span className="error">{errors.ngay_bat_dau.message}</span>
                 )}
               </div>
               <div className="form-field">
                 <Label>Ngày kết thúc</Label>
-                <Input type="date" {...register("ngay_ket_thuc")} />
+                <DateInput value={watch("ngay_ket_thuc") ?? ""} onChange={(v) => setValue("ngay_ket_thuc", v || null)} />
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>
