@@ -527,16 +527,14 @@ export default function YeuCauPage() {
               <Label>Địa chỉ</Label>
               <Input value={newDiaChi} onChange={(e) => setNewDiaChi(e.target.value)} />
             </div>
-            <div className="form-field full-width">
+            <div className="form-field">
               <Label>Loại hình</Label>
-              <div className="popup-bug-chips">
+              <select className="native-select" value={newLoaiHinh} onChange={(e) => setNewLoaiHinh(e.target.value)}>
+                <option value="">Chọn loại hình</option>
                 {LOAI_HINH_OPTIONS.map((opt) => (
-                  <button key={opt} type="button" className={`popup-chip${newLoaiHinh === opt ? " active" : ""}`} onClick={() => setNewLoaiHinh(newLoaiHinh === opt ? "" : opt)}>
-                    {newLoaiHinh === opt && <Check size={14} />}
-                    {opt}
-                  </button>
+                  <option key={opt} value={opt}>{opt}</option>
                 ))}
-              </div>
+              </select>
             </div>
             <div className="form-field full-width">
               <Label>Loại côn trùng</Label>
