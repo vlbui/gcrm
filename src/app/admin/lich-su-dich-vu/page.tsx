@@ -284,12 +284,11 @@ export default function LichSuDichVuPage() {
                 <TableHead>Ngày thực hiện</TableHead>
                 <TableHead>KTV thực hiện</TableHead>
                 <TableHead>Kết quả</TableHead>
-                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paged.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} onClick={() => openEditDialog(item)}>
                   <TableCell>{item.ma_lsdv}</TableCell>
                   <TableCell>{item.customers?.ten_kh ?? "—"}</TableCell>
                   <TableCell>{item.contracts?.ma_hd ?? "—"}</TableCell>
@@ -303,27 +302,6 @@ export default function LichSuDichVuPage() {
                         ? item.ket_qua.slice(0, 50) + "..."
                         : item.ket_qua
                       : "—"}
-                  </TableCell>
-                  <TableCell>
-                    {canEdit && (
-                      <div className="data-table-actions">
-                        <button
-                          className="btn-action"
-                          onClick={() => openEditDialog(item)}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          className="btn-action danger"
-                          onClick={() => {
-                            setDeletingItem(item);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    )}
                   </TableCell>
                 </TableRow>
               ))}

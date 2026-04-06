@@ -279,12 +279,11 @@ export default function KhachHangPage() {
                 <TableHead>Email</TableHead>
                 <TableHead>Loại hình</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paged.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} onClick={() => openEdit(item)}>
                   <TableCell>{item.ma_kh}</TableCell>
                   <TableCell>{item.ten_kh}</TableCell>
                   <TableCell>{item.sdt}</TableCell>
@@ -307,33 +306,6 @@ export default function KhachHangPage() {
                     >
                       {item.trang_thai}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    {canEdit(item) && (
-                      <>
-                        <button
-                          className="btn-action"
-                          onClick={() => openEdit(item)}
-                          title="Chỉnh sửa"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          className="btn-action"
-                          onClick={() => router.push(`/admin/hop-dong?customer_id=${item.id}`)}
-                          title="Tạo hợp đồng"
-                        >
-                          <FilePlus2 size={14} />
-                        </button>
-                        <button
-                          className="btn-action danger"
-                          onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
-                          title="Xóa"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </>
-                    )}
                   </TableCell>
                 </TableRow>
               ))}

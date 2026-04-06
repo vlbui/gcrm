@@ -223,12 +223,11 @@ export default function NguoiDungPage() {
                 <TableHead>Vai trò</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Ngày tạo</TableHead>
-                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paged.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} onClick={() => openEditDialog(item)}>
                   <TableCell>{item.email}</TableCell>
                   <TableCell>{item.ho_ten}</TableCell>
                   <TableCell>
@@ -245,25 +244,6 @@ export default function NguoiDungPage() {
                   </TableCell>
                   <TableCell>
                     {formatDate(item.created_at)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="data-table-actions">
-                      <button
-                        className="btn-action"
-                        onClick={() => openEditDialog(item)}
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        className="btn-action danger"
-                        onClick={() => {
-                          setDeletingItem(item);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
                   </TableCell>
                 </TableRow>
               ))}

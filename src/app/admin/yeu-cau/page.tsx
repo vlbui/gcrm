@@ -431,12 +431,11 @@ export default function YeuCauPage() {
                 <TableHead>Loại côn trùng</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Ngày gửi</TableHead>
-                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paged.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} onClick={() => openDialog(item)}>
                   <TableCell>{item.ma_yc}</TableCell>
                   <TableCell>{item.loai_kh === "Tổ chức" ? (item.ten_cong_ty ?? item.ten_kh) : item.ten_kh}</TableCell>
                   <TableCell>
@@ -483,17 +482,6 @@ export default function YeuCauPage() {
                   </TableCell>
                   <TableCell>
                     {formatDate(item.created_at)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="data-table-actions">
-                      <button
-                        className="btn-action"
-                        onClick={() => openDialog(item)}
-                        title="Xem chi tiết"
-                      >
-                        <Eye size={14} />
-                      </button>
-                    </div>
                   </TableCell>
                 </TableRow>
               ))}

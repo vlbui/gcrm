@@ -297,12 +297,11 @@ export default function HopDongPage() {
                 <TableHead>Giá trị</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Ngày bắt đầu</TableHead>
-                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paged.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} onClick={() => openEdit(item)}>
                   <TableCell>{item.ma_hd}</TableCell>
                   <TableCell>
                     {item.customers?.ten_kh ?? "—"}
@@ -318,24 +317,6 @@ export default function HopDongPage() {
                   </TableCell>
                   <TableCell>
                     {formatDate(item.ngay_bat_dau)}
-                  </TableCell>
-                  <TableCell>
-                    {canEdit(item) && (
-                      <>
-                        <button
-                          className="btn-action"
-                          onClick={() => openEdit(item)}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          className="btn-action danger"
-                          onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </>
-                    )}
                   </TableCell>
                 </TableRow>
               ))}

@@ -214,35 +214,16 @@ export default function NhaCungCapPage() {
                 <TableHead>SĐT</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Địa chỉ</TableHead>
-                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paged.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} onClick={() => openEdit(item)}>
                   <TableCell>{item.ma_ncc}</TableCell>
                   <TableCell>{item.ten_ncc}</TableCell>
                   <TableCell>{item.sdt ?? "—"}</TableCell>
                   <TableCell>{item.email ?? "—"}</TableCell>
                   <TableCell>{item.dia_chi ?? "—"}</TableCell>
-                  <TableCell>
-                    {canEdit(item) && (
-                      <>
-                        <button
-                          className="btn-action"
-                          onClick={() => openEdit(item)}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          className="btn-action danger"
-                          onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </>
-                    )}
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

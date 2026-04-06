@@ -239,35 +239,16 @@ export default function HoaChatPage() {
                 <TableHead>Hoạt chất</TableHead>
                 <TableHead>Đối tượng</TableHead>
                 <TableHead>Dạng sử dụng</TableHead>
-                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paged.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} onClick={() => openEdit(item)}>
                   <TableCell>{item.ma_hc}</TableCell>
                   <TableCell>{item.ten_thuong_mai}</TableCell>
                   <TableCell>{item.hoat_chat ?? "—"}</TableCell>
                   <TableCell>{item.doi_tuong ?? "—"}</TableCell>
                   <TableCell>{item.dang_su_dung ?? "—"}</TableCell>
-                  <TableCell>
-                    {canEdit(item) && (
-                      <>
-                        <button
-                          className="btn-action"
-                          onClick={() => openEdit(item)}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          className="btn-action danger"
-                          onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </>
-                    )}
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -1918,7 +1918,7 @@ ul { list-style: none; }
 }
 
 .data-table-wrapper tbody tr:nth-child(even) { background: #FAFBFC; }
-.data-table-wrapper tbody tr:hover { background: #E8F5E9; }
+.data-table-wrapper tbody tr:hover { background: #E8F5E9; cursor: pointer; }
 .data-table-wrapper tbody tr:last-child td { border-bottom: none; }
 
 /* ---- Search select ---- */
