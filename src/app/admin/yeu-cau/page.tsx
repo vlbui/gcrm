@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Eye, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { Search, Eye, ArrowRightLeft, AlertTriangle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,7 @@ import {
 import {
   fetchServiceRequests,
   updateServiceRequest,
+  createServiceRequest,
   type ServiceRequest,
 } from "@/lib/api/serviceRequests.api";
 import { createCustomer, fetchCustomers, deleteCustomer, type Customer } from "@/lib/api/customers.api";
@@ -93,6 +94,18 @@ export default function YeuCauPage() {
   const [duplicateCustomer, setDuplicateCustomer] = useState<Customer | null>(null);
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
   const [duplicateMatchType, setDuplicateMatchType] = useState<"phone" | "email" | "both">("phone");
+
+  // Create dialog
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newTenKH, setNewTenKH] = useState("");
+  const [newSDT, setNewSDT] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newDiaChi, setNewDiaChi] = useState("");
+  const [newLoaiHinh, setNewLoaiHinh] = useState("");
+  const [newLoaiConTrung, setNewLoaiConTrung] = useState("");
+  const [newDienTich, setNewDienTich] = useState("");
+  const [newMoTa, setNewMoTa] = useState("");
 
   const loadData = async () => {
     try {
@@ -162,6 +175,39 @@ export default function YeuCauPage() {
       loadData();
     } catch {
       toast.error("Không thể cập nhật ghi chú");
+    }
+  };
+
+  const openCreateDialog = () => {
+    setNewTenKH(""); setNewSDT(""); setNewEmail(""); setNewDiaChi("");
+    setNewLoaiHinh(""); setNewLoaiConTrung(""); setNewDienTich(""); setNewMoTa("");
+    setCreateOpen(true);
+  };
+
+  const handleCreate = async () => {
+    if (!newTenKH.trim() || !newSDT.trim()) {
+      toast.error("Vui lòng nhập tên và số điện thoại");
+      return;
+    }
+    setCreating(true);
+    try {
+      await createServiceRequest({
+        ten_kh: newTenKH.trim(),
+        sdt: sanitizePhone(newSDT),
+        email: newEmail ? sanitizeEmail(newEmail) : undefined,
+        dia_chi: newDiaChi.trim() || undefined,
+        loai_hinh: newLoaiHinh || undefined,
+        loai_con_trung: newLoaiConTrung || undefined,
+        dien_tich: newDienTich || undefined,
+        mo_ta: newMoTa.trim() || undefined,
+      });
+      toast.success("Tạo yêu cầu thành công");
+      setCreateOpen(false);
+      loadData();
+    } catch {
+      toast.error("Không thể tạo yêu cầu");
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -310,6 +356,11 @@ export default function YeuCauPage() {
             Quản lý yêu cầu từ form liên hệ công khai
           </p>
         </div>
+        {canEdit && (
+          <Button className="btn-add" onClick={openCreateDialog}>
+            <Plus size={16} /> Thêm yêu cầu
+          </Button>
+        )}
       </div>
 
       <div className="data-table-wrapper">
@@ -429,18 +480,10 @@ export default function YeuCauPage() {
                       <button
                         className="btn-action"
                         onClick={() => openDialog(item)}
+                        title="Xem chi tiết"
                       >
                         <Eye size={14} />
                       </button>
-                      {canEdit && item.trang_thai !== "Đã tạo HĐ" && (
-                        <button
-                          className="btn-action"
-                          onClick={() => openDialog(item, true)}
-                          title="Chuyển đổi thành khách hàng"
-                        >
-                          <ArrowRightLeft size={14} />
-                        </button>
-                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -451,6 +494,64 @@ export default function YeuCauPage() {
           </>
         )}
       </div>
+
+      {/* Create Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Thêm yêu cầu dịch vụ</DialogTitle>
+            <DialogDescription>Tạo yêu cầu dịch vụ mới từ cuộc gọi, tin nhắn hoặc kênh khác.</DialogDescription>
+          </DialogHeader>
+          <div className="form-grid">
+            <div className="form-field">
+              <Label>Tên khách hàng *</Label>
+              <Input value={newTenKH} onChange={(e) => setNewTenKH(e.target.value)} placeholder="Nguyễn Văn A" />
+            </div>
+            <div className="form-field">
+              <Label>Số điện thoại *</Label>
+              <Input value={newSDT} onChange={(e) => setNewSDT(e.target.value)} placeholder="0912345678" />
+            </div>
+            <div className="form-field">
+              <Label>Email</Label>
+              <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+            </div>
+            <div className="form-field">
+              <Label>Địa chỉ</Label>
+              <Input value={newDiaChi} onChange={(e) => setNewDiaChi(e.target.value)} />
+            </div>
+            <div className="form-field">
+              <Label>Loại hình</Label>
+              <Select value={newLoaiHinh} onValueChange={setNewLoaiHinh}>
+                <SelectTrigger><SelectValue placeholder="Chọn loại hình" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Cá nhân / Hộ gia đình">Cá nhân / Hộ gia đình</SelectItem>
+                  <SelectItem value="Doanh nghiệp / Khu công nghiệp">Doanh nghiệp / Khu CN</SelectItem>
+                  <SelectItem value="Khu chung cư / Văn phòng / Trường học">Chung cư / VP / Trường học</SelectItem>
+                  <SelectItem value="Trang trại">Trang trại</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="form-field">
+              <Label>Loại côn trùng</Label>
+              <Input value={newLoaiConTrung} onChange={(e) => setNewLoaiConTrung(e.target.value)} placeholder="Gián, mối, chuột..." />
+            </div>
+            <div className="form-field">
+              <Label>Diện tích (m²)</Label>
+              <Input value={newDienTich} onChange={(e) => setNewDienTich(e.target.value)} placeholder="VD: 80" />
+            </div>
+            <div className="form-field full-width">
+              <Label>Mô tả</Label>
+              <Textarea rows={3} value={newMoTa} onChange={(e) => setNewMoTa(e.target.value)} placeholder="Tình trạng côn trùng, yêu cầu đặc biệt..." />
+            </div>
+          </div>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Hủy</Button>
+            <Button onClick={handleCreate} disabled={creating}>
+              {creating ? "Đang tạo..." : "Tạo yêu cầu"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Unified Detail + Convert Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setIsConvertMode(false); setShowDuplicateConfirm(false); setConverting(false); } }}>
