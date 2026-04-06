@@ -43,6 +43,7 @@ import {
 import { fetchSuppliers, type Supplier } from "@/lib/api/suppliers.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import Pagination from "@/components/admin/Pagination";
+import SearchSelect from "@/components/admin/SearchSelect";
 
 const chemicalSchema = z.object({
   ten_thuong_mai: z.string().min(2, "Tên thương mại tối thiểu 2 ký tự"),
@@ -300,12 +301,12 @@ export default function HoaChatPage() {
               </div>
               <div className="form-field">
                 <Label>Nhà cung cấp</Label>
-                <select className="native-select" value={watch("nha_cung_cap") ?? ""} onChange={(e) => setValue("nha_cung_cap", e.target.value || null)}>
-                  <option value="">Chọn nhà cung cấp</option>
-                  {suppliers.map((s) => (
-                    <option key={s.id} value={s.ten_ncc}>{s.ten_ncc}</option>
-                  ))}
-                </select>
+                <SearchSelect
+                  placeholder="Tìm nhà cung cấp..."
+                  value={watch("nha_cung_cap") ?? ""}
+                  onChange={(v) => setValue("nha_cung_cap", v || null)}
+                  options={suppliers.map((s) => ({ value: s.ten_ncc, label: s.ten_ncc }))}
+                />
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>
