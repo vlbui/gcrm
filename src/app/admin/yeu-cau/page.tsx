@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Eye, ArrowRightLeft, AlertTriangle, Plus } from "lucide-react";
+import { Search, Eye, ArrowRightLeft, AlertTriangle, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,14 @@ import { createContract } from "@/lib/api/contracts.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { sanitizePhone, sanitizeEmail } from "@/lib/utils/sanitize";
 import Pagination from "@/components/admin/Pagination";
+
+const BUG_OPTIONS = ["Gián", "Chuột", "Mối", "Muỗi", "Kiến", "Ruồi", "Khác"];
+const LOAI_HINH_OPTIONS = [
+  "Cá nhân / Hộ gia đình",
+  "Doanh nghiệp / Khu công nghiệp",
+  "Khu chung cư / Văn phòng / Trường học",
+  "Trang trại",
+];
 
 const statusLabels: Record<string, string> = {
   "Mới": "Mới",
@@ -103,7 +111,7 @@ export default function YeuCauPage() {
   const [newEmail, setNewEmail] = useState("");
   const [newDiaChi, setNewDiaChi] = useState("");
   const [newLoaiHinh, setNewLoaiHinh] = useState("");
-  const [newLoaiConTrung, setNewLoaiConTrung] = useState("");
+  const [newBugs, setNewBugs] = useState<string[]>([]);
   const [newDienTich, setNewDienTich] = useState("");
   const [newMoTa, setNewMoTa] = useState("");
 
@@ -180,7 +188,7 @@ export default function YeuCauPage() {
 
   const openCreateDialog = () => {
     setNewTenKH(""); setNewSDT(""); setNewEmail(""); setNewDiaChi("");
-    setNewLoaiHinh(""); setNewLoaiConTrung(""); setNewDienTich(""); setNewMoTa("");
+    setNewLoaiHinh(""); setNewBugs([]); setNewDienTich(""); setNewMoTa("");
     setCreateOpen(true);
   };
 
@@ -197,7 +205,7 @@ export default function YeuCauPage() {
         email: newEmail ? sanitizeEmail(newEmail) : undefined,
         dia_chi: newDiaChi.trim() || undefined,
         loai_hinh: newLoaiHinh || undefined,
-        loai_con_trung: newLoaiConTrung || undefined,
+        loai_con_trung: newBugs.length ? newBugs.join(", ") : undefined,
         dien_tich: newDienTich || undefined,
         mo_ta: newMoTa.trim() || undefined,
       });
@@ -519,21 +527,27 @@ export default function YeuCauPage() {
               <Label>Địa chỉ</Label>
               <Input value={newDiaChi} onChange={(e) => setNewDiaChi(e.target.value)} />
             </div>
-            <div className="form-field">
+            <div className="form-field full-width">
               <Label>Loại hình</Label>
-              <Select value={newLoaiHinh} onValueChange={setNewLoaiHinh}>
-                <SelectTrigger><SelectValue placeholder="Chọn loại hình" /></SelectTrigger>
-                <SelectContent position="popper" sideOffset={4}>
-                  <SelectItem value="Cá nhân / Hộ gia đình">Cá nhân / Hộ gia đình</SelectItem>
-                  <SelectItem value="Doanh nghiệp / Khu công nghiệp">Doanh nghiệp / Khu CN</SelectItem>
-                  <SelectItem value="Khu chung cư / Văn phòng / Trường học">Chung cư / VP / Trường học</SelectItem>
-                  <SelectItem value="Trang trại">Trang trại</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="popup-bug-chips">
+                {LOAI_HINH_OPTIONS.map((opt) => (
+                  <button key={opt} type="button" className={`popup-chip${newLoaiHinh === opt ? " active" : ""}`} onClick={() => setNewLoaiHinh(newLoaiHinh === opt ? "" : opt)}>
+                    {newLoaiHinh === opt && <Check size={14} />}
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="form-field">
+            <div className="form-field full-width">
               <Label>Loại côn trùng</Label>
-              <Input value={newLoaiConTrung} onChange={(e) => setNewLoaiConTrung(e.target.value)} placeholder="Gián, mối, chuột..." />
+              <div className="popup-bug-chips">
+                {BUG_OPTIONS.map((bug) => (
+                  <button key={bug} type="button" className={`popup-chip${newBugs.includes(bug) ? " active" : ""}`} onClick={() => setNewBugs((prev) => prev.includes(bug) ? prev.filter((b) => b !== bug) : [...prev, bug])}>
+                    {newBugs.includes(bug) && <Check size={14} />}
+                    {bug}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="form-field">
               <Label>Diện tích (m²)</Label>
