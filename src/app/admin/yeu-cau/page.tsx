@@ -521,9 +521,9 @@ export default function YeuCauPage() {
             </div>
             <div className="form-field">
               <Label>Loại hình</Label>
-              <Select value={newLoaiHinh} onValueChange={setNewLoaiHinh}>
+              <Select value={newLoaiHinh} onValueChange={setNewLoaiHinh} modal={false}>
                 <SelectTrigger><SelectValue placeholder="Chọn loại hình" /></SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" sideOffset={4}>
                   <SelectItem value="Cá nhân / Hộ gia đình">Cá nhân / Hộ gia đình</SelectItem>
                   <SelectItem value="Doanh nghiệp / Khu công nghiệp">Doanh nghiệp / Khu CN</SelectItem>
                   <SelectItem value="Khu chung cư / Văn phòng / Trường học">Chung cư / VP / Trường học</SelectItem>
