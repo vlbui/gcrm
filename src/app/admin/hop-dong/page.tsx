@@ -338,15 +338,21 @@ export default function HopDongPage() {
             <div className="form-grid">
               <div className="form-field full-width">
                 <Label>Khách hàng *</Label>
-                <SearchSelect
-                  placeholder="Tìm theo tên, mã KH, SĐT..."
-                  value={watch("customer_id")}
-                  onChange={(v) => setValue("customer_id", v)}
-                  options={[...customers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((c) => ({
-                    value: c.id,
-                    label: `${c.ma_kh} - ${c.ten_kh} (${c.sdt})`,
-                  }))}
-                />
+                {editing ? (
+                  <p style={{ fontSize: 14, fontWeight: 600, padding: "8px 0" }}>
+                    {editing.customers?.ten_kh ?? "—"}
+                  </p>
+                ) : (
+                  <SearchSelect
+                    placeholder="Tìm theo tên, mã KH, SĐT..."
+                    value={watch("customer_id")}
+                    onChange={(v) => setValue("customer_id", v)}
+                    options={[...customers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((c) => ({
+                      value: c.id,
+                      label: `${c.ma_kh} - ${c.ten_kh} (${c.sdt})`,
+                    }))}
+                  />
+                )}
                 {errors.customer_id && (
                   <span className="error">{errors.customer_id.message}</span>
                 )}
