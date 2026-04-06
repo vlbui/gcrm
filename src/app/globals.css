@@ -1904,7 +1904,7 @@ ul { list-style: none; }
 .data-table-actions { display: flex; align-items: center; gap: 8px; }
 
 /* Table */
-.data-table-wrapper table { width: 100%; }
+.data-table-wrapper table { width: 100%; min-width: 900px; }
 .data-table-wrapper thead tr { background: #2E7D32; }
 
 .data-table-wrapper thead th {
