@@ -49,6 +49,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatDate } from "@/lib/utils/date";
 import Pagination from "@/components/admin/Pagination";
 import DateInput from "@/components/admin/DateInput";
+import SearchSelect from "@/components/admin/SearchSelect";
 
 const contractSchema = z.object({
   customer_id: z.string().min(1, "Vui lòng chọn khách hàng"),
@@ -356,14 +357,15 @@ export default function HopDongPage() {
             <div className="form-grid">
               <div className="form-field full-width">
                 <Label>Khách hàng *</Label>
-                <select className="native-select" value={watch("customer_id")} onChange={(e) => setValue("customer_id", e.target.value)}>
-                  <option value="">Chọn khách hàng</option>
-                  {[...customers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.ma_kh} - {c.ten_kh} ({c.sdt})
-                    </option>
-                  ))}
-                </select>
+                <SearchSelect
+                  placeholder="Tìm theo tên, mã KH, SĐT..."
+                  value={watch("customer_id")}
+                  onChange={(v) => setValue("customer_id", v)}
+                  options={[...customers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((c) => ({
+                    value: c.id,
+                    label: `${c.ma_kh} - ${c.ten_kh} (${c.sdt})`,
+                  }))}
+                />
                 {errors.customer_id && (
                   <span className="error">{errors.customer_id.message}</span>
                 )}

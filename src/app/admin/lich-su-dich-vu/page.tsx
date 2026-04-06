@@ -44,6 +44,7 @@ import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import Pagination from "@/components/admin/Pagination";
 import DateInput from "@/components/admin/DateInput";
+import SearchSelect from "@/components/admin/SearchSelect";
 import { formatDate } from "@/lib/utils/date";
 
 const formSchema = z.object({
@@ -350,21 +351,15 @@ export default function LichSuDichVuPage() {
             <div className="form-grid">
               <div className="form-field">
                 <Label>Hợp đồng *</Label>
-                <Select
+                <SearchSelect
+                  placeholder="Tìm theo mã HĐ, tên KH..."
                   value={form.watch("contract_id")}
-                  onValueChange={handleContractChange}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Chọn hợp đồng" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contracts.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.ma_hd} - {c.customers?.ten_kh ?? ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={handleContractChange}
+                  options={contracts.map((c) => ({
+                    value: c.id,
+                    label: `${c.ma_hd} - ${c.customers?.ten_kh ?? ""}`,
+                  }))}
+                />
                 {form.formState.errors.contract_id && (
                   <p className="error">
                     {form.formState.errors.contract_id.message}
@@ -374,21 +369,15 @@ export default function LichSuDichVuPage() {
 
               <div className="form-field">
                 <Label>Khách hàng *</Label>
-                <Select
+                <SearchSelect
+                  placeholder="Tìm theo tên, mã KH..."
                   value={form.watch("customer_id")}
-                  onValueChange={(v) => form.setValue("customer_id", v)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Chọn khách hàng" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.ma_kh} - {c.ten_kh}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(v) => form.setValue("customer_id", v)}
+                  options={customers.map((c) => ({
+                    value: c.id,
+                    label: `${c.ma_kh} - ${c.ten_kh}`,
+                  }))}
+                />
                 {form.formState.errors.customer_id && (
                   <p className="error">
                     {form.formState.errors.customer_id.message}
