@@ -376,36 +376,20 @@ export default function KhachHangPage() {
               </div>
               <div className="form-field">
                 <Label>Loại hình</Label>
-                <Select
-                  value={watch("loai_kh")}
-                  onValueChange={(val) => setValue("loai_kh", val)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Cá nhân / Hộ gia đình">Cá nhân / Hộ gia đình</SelectItem>
-                    <SelectItem value="Doanh nghiệp / Khu công nghiệp">Doanh nghiệp / Khu CN</SelectItem>
-                    <SelectItem value="Khu chung cư / Văn phòng / Trường học">Chung cư / VP / Trường học</SelectItem>
-                    <SelectItem value="Trang trại">Trang trại</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select className="native-select" value={watch("loai_kh")} onChange={(e) => setValue("loai_kh", e.target.value)}>
+                  <option value="Cá nhân / Hộ gia đình">Cá nhân / Hộ gia đình</option>
+                  <option value="Doanh nghiệp / Khu công nghiệp">Doanh nghiệp / Khu CN</option>
+                  <option value="Khu chung cư / Văn phòng / Trường học">Chung cư / VP / Trường học</option>
+                  <option value="Trang trại">Trang trại</option>
+                </select>
               </div>
               <div className="form-field">
                 <Label>Trạng thái</Label>
-                <Select
-                  value={watch("trang_thai")}
-                  onValueChange={(val) => setValue("trang_thai", val)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Mới">Mới</SelectItem>
-                    <SelectItem value="Đang phục vụ">Đang phục vụ</SelectItem>
-                    <SelectItem value="Ngưng">Ngưng</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select className="native-select" value={watch("trang_thai")} onChange={(e) => setValue("trang_thai", e.target.value)}>
+                  <option value="Mới">Mới</option>
+                  <option value="Đang phục vụ">Đang phục vụ</option>
+                  <option value="Ngưng">Ngưng</option>
+                </select>
               </div>
               <div className="form-field full-width">
                 <Label>Địa chỉ *</Label>
