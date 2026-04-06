@@ -1876,7 +1876,7 @@ ul { list-style: none; }
   border-radius: 16px;
   border: 1px solid var(--neutral-100);
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .data-table-toolbar {
@@ -2234,5 +2234,4 @@ ul { list-style: none; }
   .form-grid { grid-template-columns: 1fr; }
   .data-table-toolbar { flex-direction: column; }
   .data-table-search { min-width: 100%; }
-  .data-table-wrapper { overflow-x: auto; }
 }
