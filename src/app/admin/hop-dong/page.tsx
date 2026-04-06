@@ -408,6 +408,11 @@ export default function HopDongPage() {
               >
                 Hủy
               </Button>
+              {editing && canEdit(editing) && (
+                <Button type="button" variant="destructive" onClick={() => { setDialogOpen(false); setDeletingItem(editing); setDeleteDialogOpen(true); }}>
+                  <Trash2 size={14} /> Xóa
+                </Button>
+              )}
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting
                   ? "Đang lưu..."

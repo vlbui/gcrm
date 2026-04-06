@@ -343,6 +343,11 @@ export default function NguoiDungPage() {
               >
                 Hủy
               </Button>
+              {editingItem && (
+                <Button type="button" variant="destructive" onClick={() => { setDialogOpen(false); setDeletingItem(editingItem); setDeleteDialogOpen(true); }}>
+                  <Trash2 size={14} /> Xóa
+                </Button>
+              )}
               <Button type="submit" disabled={submitting}>
                 {submitting
                   ? "Đang xử lý..."
