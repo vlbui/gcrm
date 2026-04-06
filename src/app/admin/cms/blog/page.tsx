@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Search, Plus, Pencil, Trash2, Eye } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
+import { formatDate } from "@/lib/utils/date";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -297,9 +298,7 @@ export default function BlogPage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    {item.published_at
-                      ? new Date(item.published_at).toLocaleDateString("vi-VN")
-                      : "—"}
+                    {formatDate(item.published_at)}
                   </TableCell>
                   <TableCell>
                     <button

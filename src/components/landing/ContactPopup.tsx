@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDate } from "@/lib/utils/date";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
@@ -135,7 +136,7 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
         .limit(1);
 
       if (existing && existing.length > 0 && !duplicateWarning) {
-        const date = new Date(existing[0].created_at).toLocaleDateString("vi-VN");
+        const date = formatDate(existing[0].created_at);
         setDuplicateWarning(
           `SĐT này đã gửi yêu cầu ${existing[0].ma_yc} (${existing[0].ten_kh}) ngày ${date}. Nhấn "Gửi" lần nữa nếu vẫn muốn tạo yêu cầu mới.`
         );

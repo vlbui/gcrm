@@ -40,6 +40,7 @@ import { createCustomer, fetchCustomers, deleteCustomer, type Customer } from "@
 import { createContract } from "@/lib/api/contracts.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { sanitizePhone, sanitizeEmail } from "@/lib/utils/sanitize";
+import { formatDate } from "@/lib/utils/date";
 import Pagination from "@/components/admin/Pagination";
 
 const BUG_OPTIONS = ["Gián", "Chuột", "Mối", "Muỗi", "Kiến", "Ruồi", "Khác"];
@@ -481,7 +482,7 @@ export default function YeuCauPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {new Date(item.created_at).toLocaleDateString("vi-VN")}
+                    {formatDate(item.created_at)}
                   </TableCell>
                   <TableCell>
                     <div className="data-table-actions">
@@ -772,7 +773,7 @@ export default function YeuCauPage() {
                 </div>
                 <div className="form-field">
                   <Label>Ngày gửi</Label>
-                  <p>{new Date(selectedItem.created_at).toLocaleDateString("vi-VN")}</p>
+                  <p>{formatDate(selectedItem.created_at)}</p>
                 </div>
                 <div className="form-field full-width">
                   <Label>Mô tả</Label>

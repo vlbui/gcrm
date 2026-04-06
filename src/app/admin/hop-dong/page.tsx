@@ -46,6 +46,7 @@ import {
   type Customer,
 } from "@/lib/api/customers.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { formatDate } from "@/lib/utils/date";
 import Pagination from "@/components/admin/Pagination";
 
 const contractSchema = z.object({
@@ -314,9 +315,7 @@ export default function HopDongPage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    {item.ngay_bat_dau
-                      ? new Date(item.ngay_bat_dau).toLocaleDateString("vi-VN")
-                      : "—"}
+                    {formatDate(item.ngay_bat_dau)}
                   </TableCell>
                   <TableCell>
                     {canEdit(item) && (

@@ -40,6 +40,7 @@ import {
 } from "@/lib/api/users.api";
 import type { UserRole } from "@/lib/api/auth.api";
 import Pagination from "@/components/admin/Pagination";
+import { formatDate } from "@/lib/utils/date";
 
 const formSchema = z.object({
   email: z.string().min(1, "Vui lòng nhập email").email("Email không hợp lệ"),
@@ -243,7 +244,7 @@ export default function NguoiDungPage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    {new Date(item.created_at).toLocaleDateString("vi-VN")}
+                    {formatDate(item.created_at)}
                   </TableCell>
                   <TableCell>
                     <div className="data-table-actions">

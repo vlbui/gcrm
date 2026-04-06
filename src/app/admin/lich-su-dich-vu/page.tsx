@@ -43,6 +43,7 @@ import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
 import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import Pagination from "@/components/admin/Pagination";
+import { formatDate } from "@/lib/utils/date";
 
 const formSchema = z.object({
   contract_id: z.string().min(1, "Vui lòng chọn hợp đồng"),
@@ -291,7 +292,7 @@ export default function LichSuDichVuPage() {
                   <TableCell>{item.customers?.ten_kh ?? "—"}</TableCell>
                   <TableCell>{item.contracts?.ma_hd ?? "—"}</TableCell>
                   <TableCell>
-                    {new Date(item.ngay_thuc_hien).toLocaleDateString("vi-VN")}
+                    {formatDate(item.ngay_thuc_hien)}
                   </TableCell>
                   <TableCell>{item.ktv_thuc_hien ?? "—"}</TableCell>
                   <TableCell>
