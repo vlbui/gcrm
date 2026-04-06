@@ -354,23 +354,16 @@ export default function HopDongPage() {
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="form-grid">
-              <div className="form-field">
+              <div className="form-field full-width">
                 <Label>Khách hàng *</Label>
-                <Select
-                  value={watch("customer_id")}
-                  onValueChange={(val) => setValue("customer_id", val)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn khách hàng" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.ma_kh} - {c.ten_kh}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select className="native-select" value={watch("customer_id")} onChange={(e) => setValue("customer_id", e.target.value)}>
+                  <option value="">Chọn khách hàng</option>
+                  {[...customers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.ma_kh} - {c.ten_kh} ({c.sdt})
+                    </option>
+                  ))}
+                </select>
                 {errors.customer_id && (
                   <span className="error">{errors.customer_id.message}</span>
                 )}
@@ -395,22 +388,12 @@ export default function HopDongPage() {
               </div>
               <div className="form-field">
                 <Label>Trạng thái</Label>
-                <Select
-                  defaultValue={editing?.trang_thai ?? "Mới"}
-                  onValueChange={(val) => setValue("trang_thai", val)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Mới">Mới</SelectItem>
-                    <SelectItem value="Đang thực hiện">
-                      Đang thực hiện
-                    </SelectItem>
-                    <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
-                    <SelectItem value="Hủy">Hủy</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select className="native-select" value={watch("trang_thai")} onChange={(e) => setValue("trang_thai", e.target.value)}>
+                  <option value="Mới">Mới</option>
+                  <option value="Đang thực hiện">Đang thực hiện</option>
+                  <option value="Hoàn thành">Hoàn thành</option>
+                  <option value="Hủy">Hủy</option>
+                </select>
               </div>
               <div className="form-field">
                 <Label>Ngày bắt đầu *</Label>
