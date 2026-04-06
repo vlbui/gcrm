@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,8 @@ import {
 } from "@/lib/api/serviceHistory.api";
 import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
 import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
+import { fetchChemicals, type Chemical } from "@/lib/api/chemicals.api";
+import { fetchSupplies, type Supply } from "@/lib/api/supplies.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import Pagination from "@/components/admin/Pagination";
 import DateInput from "@/components/admin/DateInput";
@@ -65,6 +67,8 @@ export default function LichSuDichVuPage() {
   const [data, setData] = useState<ServiceHistory[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [chemicals, setChemicals] = useState<Chemical[]>([]);
+  const [supplies, setSupplies] = useState<Supply[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -74,6 +78,10 @@ export default function LichSuDichVuPage() {
   const [editingItem, setEditingItem] = useState<ServiceHistory | null>(null);
   const [deletingItem, setDeletingItem] = useState<ServiceHistory | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Dynamic rows for chemicals & supplies
+  const [hoaChatRows, setHoaChatRows] = useState<{ id: string; ten: string; lieu_luong: string }[]>([]);
+  const [vatTuRows, setVatTuRows] = useState<{ id: string; ten: string; so_luong: string }[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -91,14 +99,18 @@ export default function LichSuDichVuPage() {
 
   const loadData = async () => {
     try {
-      const [histories, contractList, customerList] = await Promise.all([
+      const [histories, contractList, customerList, chemList, supplyList] = await Promise.all([
         fetchServiceHistories(),
         fetchContracts(),
         fetchCustomers(),
+        fetchChemicals(),
+        fetchSupplies(),
       ]);
       setData(histories);
       setContracts(contractList);
       setCustomers(customerList);
+      setChemicals(chemList);
+      setSupplies(supplyList);
     } catch {
       toast.error("Không thể tải dữ liệu");
     } finally {
@@ -130,6 +142,8 @@ export default function LichSuDichVuPage() {
       ket_qua: "",
       ghi_chu: "",
     });
+    setHoaChatRows([]);
+    setVatTuRows([]);
     setDialogOpen(true);
   };
 
@@ -140,51 +154,41 @@ export default function LichSuDichVuPage() {
       customer_id: item.customer_id,
       ngay_thuc_hien: item.ngay_thuc_hien,
       ktv_thuc_hien: item.ktv_thuc_hien ?? "",
-      hoa_chat_su_dung: item.hoa_chat_su_dung
-        ? JSON.stringify(item.hoa_chat_su_dung, null, 2)
-        : "",
-      vat_tu_su_dung: item.vat_tu_su_dung
-        ? JSON.stringify(item.vat_tu_su_dung, null, 2)
-        : "",
+      hoa_chat_su_dung: "",
+      vat_tu_su_dung: "",
       ket_qua: item.ket_qua ?? "",
       ghi_chu: item.ghi_chu ?? "",
     });
+    setHoaChatRows(
+      item.hoa_chat_su_dung?.map((h) => ({ id: h.id, ten: h.ten, lieu_luong: h.lieu_luong })) ?? []
+    );
+    setVatTuRows(
+      item.vat_tu_su_dung?.map((v) => ({ id: v.id, ten: v.ten, so_luong: String(v.so_luong) })) ?? []
+    );
     setDialogOpen(true);
   };
 
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
     try {
-      let hoaChatParsed = null;
-      let vatTuParsed = null;
-
-      if (values.hoa_chat_su_dung && values.hoa_chat_su_dung.trim()) {
-        try {
-          hoaChatParsed = JSON.parse(values.hoa_chat_su_dung);
-        } catch {
-          toast.error("Hóa chất sử dụng không đúng định dạng JSON");
-          setSubmitting(false);
-          return;
-        }
-      }
-
-      if (values.vat_tu_su_dung && values.vat_tu_su_dung.trim()) {
-        try {
-          vatTuParsed = JSON.parse(values.vat_tu_su_dung);
-        } catch {
-          toast.error("Vật tư sử dụng không đúng định dạng JSON");
-          setSubmitting(false);
-          return;
-        }
-      }
+      const hoaChatParsed = hoaChatRows.filter((r) => r.id).map((r) => ({
+        id: r.id,
+        ten: r.ten,
+        lieu_luong: r.lieu_luong,
+      }));
+      const vatTuParsed = vatTuRows.filter((r) => r.id).map((r) => ({
+        id: r.id,
+        ten: r.ten,
+        so_luong: Number(r.so_luong) || 0,
+      }));
 
       const payload = {
         contract_id: values.contract_id,
         customer_id: values.customer_id,
         ngay_thuc_hien: values.ngay_thuc_hien,
         ktv_thuc_hien: values.ktv_thuc_hien || null,
-        hoa_chat_su_dung: hoaChatParsed,
-        vat_tu_su_dung: vatTuParsed,
+        hoa_chat_su_dung: hoaChatParsed.length ? hoaChatParsed : null,
+        vat_tu_su_dung: vatTuParsed.length ? vatTuParsed : null,
         ket_qua: values.ket_qua || null,
         ghi_chu: values.ghi_chu || null,
         anh_truoc: null,
@@ -384,22 +388,85 @@ export default function LichSuDichVuPage() {
                 )}
               </div>
 
-              <div className="form-field">
-                <Label>Hóa chất sử dụng (JSON)</Label>
-                <Textarea
-                  rows={3}
-                  placeholder='[{"id":"1","ten":"Hóa chất A","lieu_luong":"100ml"}]'
-                  {...form.register("hoa_chat_su_dung")}
-                />
+              <div className="form-field full-width">
+                <Label>Hóa chất sử dụng</Label>
+                {hoaChatRows.map((row, i) => (
+                  <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                    <select
+                      className="native-select"
+                      style={{ flex: 2 }}
+                      value={row.id}
+                      onChange={(e) => {
+                        const chem = chemicals.find((c) => c.id === e.target.value);
+                        const updated = [...hoaChatRows];
+                        updated[i] = { id: e.target.value, ten: chem?.ten_thuong_mai ?? "", lieu_luong: row.lieu_luong };
+                        setHoaChatRows(updated);
+                      }}
+                    >
+                      <option value="">Chọn hóa chất</option>
+                      {chemicals.map((c) => (
+                        <option key={c.id} value={c.id}>{c.ten_thuong_mai}</option>
+                      ))}
+                    </select>
+                    <Input
+                      style={{ flex: 1 }}
+                      placeholder="Liều lượng"
+                      value={row.lieu_luong}
+                      onChange={(e) => {
+                        const updated = [...hoaChatRows];
+                        updated[i] = { ...row, lieu_luong: e.target.value };
+                        setHoaChatRows(updated);
+                      }}
+                    />
+                    <button type="button" className="btn-action danger" onClick={() => setHoaChatRows(hoaChatRows.filter((_, j) => j !== i))}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={() => setHoaChatRows([...hoaChatRows, { id: "", ten: "", lieu_luong: "" }])}>
+                  <Plus size={14} /> Thêm hóa chất
+                </Button>
               </div>
 
-              <div className="form-field">
-                <Label>Vật tư sử dụng (JSON)</Label>
-                <Textarea
-                  rows={3}
-                  placeholder='[{"id":"1","ten":"Bẫy dính","so_luong":5}]'
-                  {...form.register("vat_tu_su_dung")}
-                />
+              <div className="form-field full-width">
+                <Label>Vật tư sử dụng</Label>
+                {vatTuRows.map((row, i) => (
+                  <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                    <select
+                      className="native-select"
+                      style={{ flex: 2 }}
+                      value={row.id}
+                      onChange={(e) => {
+                        const sup = supplies.find((s) => s.id === e.target.value);
+                        const updated = [...vatTuRows];
+                        updated[i] = { id: e.target.value, ten: sup?.ten_vat_tu ?? "", so_luong: row.so_luong };
+                        setVatTuRows(updated);
+                      }}
+                    >
+                      <option value="">Chọn vật tư</option>
+                      {supplies.map((s) => (
+                        <option key={s.id} value={s.id}>{s.ten_vat_tu}</option>
+                      ))}
+                    </select>
+                    <Input
+                      style={{ flex: 1 }}
+                      type="number"
+                      placeholder="Số lượng"
+                      value={row.so_luong}
+                      onChange={(e) => {
+                        const updated = [...vatTuRows];
+                        updated[i] = { ...row, so_luong: e.target.value };
+                        setVatTuRows(updated);
+                      }}
+                    />
+                    <button type="button" className="btn-action danger" onClick={() => setVatTuRows(vatTuRows.filter((_, j) => j !== i))}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={() => setVatTuRows([...vatTuRows, { id: "", ten: "", so_luong: "" }])}>
+                  <Plus size={14} /> Thêm vật tư
+                </Button>
               </div>
 
               <div className="form-field">
