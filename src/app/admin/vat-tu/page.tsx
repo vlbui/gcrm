@@ -280,21 +280,12 @@ export default function VatTuPage() {
               </div>
               <div className="form-field">
                 <Label>Nhà cung cấp</Label>
-                <Select
-                  value={watch("nha_cung_cap") ?? ""}
-                  onValueChange={(val) => setValue("nha_cung_cap", val || null)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn nhà cung cấp" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((s) => (
-                      <SelectItem key={s.id} value={s.ten_ncc}>
-                        {s.ten_ncc}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select className="native-select" value={watch("nha_cung_cap") ?? ""} onChange={(e) => setValue("nha_cung_cap", e.target.value || null)}>
+                  <option value="">Chọn nhà cung cấp</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.ten_ncc}>{s.ten_ncc}</option>
+                  ))}
+                </select>
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>
