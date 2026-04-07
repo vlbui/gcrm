@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { toast } from "sonner";
-import { Search, Plus, Pencil, Trash2, X } from "lucide-react";
+import {
+  Search, Plus, X, Trash2, CheckCircle, Clock, Calendar,
+  Phone, ChevronDown, ChevronRight, Camera, Upload,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,514 +18,495 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  fetchServiceHistories,
-  createServiceHistory,
-  updateServiceHistory,
-  deleteServiceHistory,
-  type ServiceHistory,
-} from "@/lib/api/serviceHistory.api";
+  fetchVisitsByContract,
+  createVisit,
+  updateVisit,
+  completeVisit,
+  deleteVisit,
+  type ServiceVisit,
+} from "@/lib/api/serviceVisits.api";
 import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
-import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
+import { fetchActiveTechnicians, type Technician } from "@/lib/api/technicians.api";
 import { fetchChemicals, type Chemical } from "@/lib/api/chemicals.api";
 import { fetchSupplies, type Supply } from "@/lib/api/supplies.api";
+import { uploadFile, getPublicUrl } from "@/lib/api/storage.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import Pagination from "@/components/admin/Pagination";
-import DateInput from "@/components/admin/DateInput";
-import SearchSelect from "@/components/admin/SearchSelect";
 import { formatDate } from "@/lib/utils/date";
-
-const formSchema = z.object({
-  contract_id: z.string().min(1, "Vui lòng chọn hợp đồng"),
-  customer_id: z.string().min(1, "Vui lòng chọn khách hàng"),
-  ngay_thuc_hien: z.string().min(1, "Vui lòng nhập ngày thực hiện"),
-  ktv_thuc_hien: z.string().min(2, "Tên KTV tối thiểu 2 ký tự"),
-  hoa_chat_su_dung: z.string().nullable(),
-  vat_tu_su_dung: z.string().nullable(),
-  ket_qua: z.string().nullable(),
-  ghi_chu: z.string().nullable(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
 
 export default function LichSuDichVuPage() {
   const { user } = useCurrentUser();
-  const [data, setData] = useState<ServiceHistory[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [chemicals, setChemicals] = useState<Chemical[]>([]);
   const [supplies, setSupplies] = useState<Supply[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+
+  // Selected contract + visits
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [visits, setVisits] = useState<ServiceVisit[]>([]);
+  const [loadingVisits, setLoadingVisits] = useState(false);
+
+  // Form dialog
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<ServiceHistory | null>(null);
-  const [deletingItem, setDeletingItem] = useState<ServiceHistory | null>(null);
+  const [editing, setEditing] = useState<ServiceVisit | null>(null);
+
+  // Form state
+  const [formDate, setFormDate] = useState("");
+  const [formStart, setFormStart] = useState("08:00");
+  const [formEnd, setFormEnd] = useState("11:00");
+  const [formKtv, setFormKtv] = useState<string[]>([]);
+  const [formNoteBefore, setFormNoteBefore] = useState("");
+  const [formNoteAfter, setFormNoteAfter] = useState("");
+  const [formResult, setFormResult] = useState("Đã lên lịch");
+  const [hoaChatRows, setHoaChatRows] = useState<{ id: string; ten: string; so_luong: number; don_vi: string }[]>([]);
+  const [vatTuRows, setVatTuRows] = useState<{ id: string; ten: string; so_luong: number; don_vi: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  // Dynamic rows for chemicals & supplies
-  const [hoaChatRows, setHoaChatRows] = useState<{ id: string; ten: string; lieu_luong: string }[]>([]);
-  const [vatTuRows, setVatTuRows] = useState<{ id: string; ten: string; so_luong: string }[]>([]);
+  // Delete
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingVisit, setDeletingVisit] = useState<ServiceVisit | null>(null);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      contract_id: "",
-      customer_id: "",
-      ngay_thuc_hien: "",
-      ktv_thuc_hien: "",
-      hoa_chat_su_dung: "",
-      vat_tu_su_dung: "",
-      ket_qua: "",
-      ghi_chu: "",
-    },
-  });
+  // Expanded contract rows
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const loadData = async () => {
+  // Contract visits cache
+  const [contractVisits, setContractVisits] = useState<Map<string, ServiceVisit[]>>(new Map());
+
+  useEffect(() => { loadInitial(); }, []);
+
+  async function loadInitial() {
     try {
-      const [histories, contractList, customerList, chemList, supplyList] = await Promise.all([
-        fetchServiceHistories(),
+      const [c, t, ch, su] = await Promise.all([
         fetchContracts(),
-        fetchCustomers(),
+        fetchActiveTechnicians(),
         fetchChemicals(),
         fetchSupplies(),
       ]);
-      setData(histories);
-      setContracts(contractList);
-      setCustomers(customerList);
-      setChemicals(chemList);
-      setSupplies(supplyList);
-    } catch {
-      toast.error("Không thể tải dữ liệu");
-    } finally {
-      setLoading(false);
+      setContracts(c);
+      setTechnicians(t);
+      setChemicals(ch);
+      setSupplies(su);
+    } catch { toast.error("Lỗi tải dữ liệu"); }
+    finally { setLoading(false); }
+  }
+
+  async function loadVisits(contractId: string) {
+    try {
+      const v = await fetchVisitsByContract(contractId);
+      setContractVisits((prev) => new Map(prev).set(contractId, v));
+    } catch { toast.error("Lỗi tải lần DV"); }
+  }
+
+  const toggleExpand = async (contractId: string) => {
+    const next = new Set(expanded);
+    if (next.has(contractId)) {
+      next.delete(contractId);
+    } else {
+      next.add(contractId);
+      if (!contractVisits.has(contractId)) await loadVisits(contractId);
     }
+    setExpanded(next);
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const filteredContracts = contracts.filter((c) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return c.ma_hd.toLowerCase().includes(q)
+      || (c.customers?.ten_kh ?? "").toLowerCase().includes(q)
+      || c.dich_vu.toLowerCase().includes(q);
+  });
 
-  const handleContractChange = (contractId: string) => {
-    form.setValue("contract_id", contractId);
-    const contract = contracts.find((c) => c.id === contractId);
-    if (contract) {
-      form.setValue("customer_id", contract.customer_id);
-    }
-  };
-
-  const openCreateDialog = () => {
-    setEditingItem(null);
-    form.reset({
-      contract_id: "",
-      customer_id: "",
-      ngay_thuc_hien: "",
-      ktv_thuc_hien: "",
-      hoa_chat_su_dung: "",
-      vat_tu_su_dung: "",
-      ket_qua: "",
-      ghi_chu: "",
-    });
+  // Open form
+  const openCreate = (contract: Contract) => {
+    setEditing(null);
+    setSelectedContract(contract);
+    setFormDate(new Date().toISOString().split("T")[0]);
+    setFormStart("08:00");
+    setFormEnd("11:00");
+    setFormKtv([]);
+    setFormNoteBefore("");
+    setFormNoteAfter("");
+    setFormResult("Đã lên lịch");
     setHoaChatRows([]);
     setVatTuRows([]);
     setDialogOpen(true);
   };
 
-  const openEditDialog = (item: ServiceHistory) => {
-    setEditingItem(item);
-    form.reset({
-      contract_id: item.contract_id,
-      customer_id: item.customer_id,
-      ngay_thuc_hien: item.ngay_thuc_hien,
-      ktv_thuc_hien: item.ktv_thuc_hien ?? "",
-      hoa_chat_su_dung: "",
-      vat_tu_su_dung: "",
-      ket_qua: item.ket_qua ?? "",
-      ghi_chu: item.ghi_chu ?? "",
-    });
-    setHoaChatRows(
-      item.hoa_chat_su_dung?.map((h) => ({ id: h.id, ten: h.ten, lieu_luong: h.lieu_luong })) ?? []
-    );
-    setVatTuRows(
-      item.vat_tu_su_dung?.map((v) => ({ id: v.id, ten: v.ten, so_luong: String(v.so_luong) })) ?? []
-    );
+  const openEdit = (visit: ServiceVisit, contract: Contract) => {
+    setEditing(visit);
+    setSelectedContract(contract);
+    setFormDate(visit.ngay_du_kien || visit.ngay_thuc_te || "");
+    setFormStart(visit.gio_bat_dau?.slice(0, 5) || "08:00");
+    setFormEnd(visit.gio_ket_thuc?.slice(0, 5) || "11:00");
+    setFormKtv(visit.ktv_ids || []);
+    setFormNoteBefore(visit.ghi_chu_truoc || "");
+    setFormNoteAfter(visit.ghi_chu_sau || "");
+    setFormResult(visit.trang_thai);
+    setHoaChatRows((visit.hoa_chat || []).map((h) => ({
+      id: h.id, ten: h.ten, so_luong: h.so_luong, don_vi: h.don_vi || "",
+    })));
+    setVatTuRows((visit.vat_tu || []).map((v) => ({
+      id: v.id, ten: v.ten, so_luong: v.so_luong, don_vi: v.don_vi || "",
+    })));
     setDialogOpen(true);
   };
 
-  const onSubmit = async (values: FormValues) => {
+  const handleSubmit = async () => {
+    if (!selectedContract) return;
     setSubmitting(true);
     try {
-      const hoaChatParsed = hoaChatRows.filter((r) => r.id).map((r) => ({
-        id: r.id,
-        ten: r.ten,
-        lieu_luong: r.lieu_luong,
-      }));
-      const vatTuParsed = vatTuRows.filter((r) => r.id).map((r) => ({
-        id: r.id,
-        ten: r.ten,
-        so_luong: Number(r.so_luong) || 0,
-      }));
+      const hcParsed = hoaChatRows.filter((r) => r.id).map((r) => {
+        const chem = chemicals.find((c) => c.id === r.id);
+        return { id: r.id, ten: r.ten, ma: chem?.ma_hc ?? "", so_luong: r.so_luong, don_vi: r.don_vi };
+      });
+      const vtParsed = vatTuRows.filter((r) => r.id).map((r) => {
+        const sup = supplies.find((s) => s.id === r.id);
+        return { id: r.id, ten: r.ten, ma: sup?.ma_vt ?? "", so_luong: r.so_luong, don_vi: r.don_vi };
+      });
 
-      const payload = {
-        contract_id: values.contract_id,
-        customer_id: values.customer_id,
-        ngay_thuc_hien: values.ngay_thuc_hien,
-        ktv_thuc_hien: values.ktv_thuc_hien || null,
-        hoa_chat_su_dung: hoaChatParsed.length ? hoaChatParsed : null,
-        vat_tu_su_dung: vatTuParsed.length ? vatTuParsed : null,
-        ket_qua: values.ket_qua || null,
-        ghi_chu: values.ghi_chu || null,
-        anh_truoc: null,
-        anh_sau: null,
-      };
-
-      if (editingItem) {
-        await updateServiceHistory(editingItem.id, payload);
-        toast.success("Cập nhật lịch sử dịch vụ thành công");
+      if (editing) {
+        await updateVisit(editing.id, {
+          ngay_du_kien: formDate || null,
+          gio_bat_dau: formStart || null,
+          gio_ket_thuc: formEnd || null,
+          ktv_ids: formKtv,
+          hoa_chat: hcParsed,
+          vat_tu: vtParsed,
+          trang_thai: formResult,
+          ghi_chu_truoc: formNoteBefore || null,
+          ghi_chu_sau: formNoteAfter || null,
+        });
+        toast.success("Đã cập nhật");
       } else {
-        await createServiceHistory(payload);
-        toast.success("Thêm lịch sử dịch vụ thành công");
+        await createVisit({
+          contract_id: selectedContract.id,
+          ngay_du_kien: formDate || undefined,
+          gio_bat_dau: formStart || undefined,
+          gio_ket_thuc: formEnd || undefined,
+          ktv_ids: formKtv,
+          ghi_chu_truoc: formNoteBefore || undefined,
+        });
+        toast.success("Đã tạo lần DV mới");
       }
-
       setDialogOpen(false);
-      loadData();
-    } catch {
-      toast.error("Có lỗi xảy ra, vui lòng thử lại");
-    } finally {
-      setSubmitting(false);
-    }
+      await loadVisits(selectedContract.id);
+    } catch { toast.error("Lỗi lưu"); }
+    finally { setSubmitting(false); }
+  };
+
+  const handleComplete = async (visit: ServiceVisit) => {
+    if (!confirm("Hoàn thành lần DV này? Hóa chất/vật tư sẽ được tự động xuất kho.")) return;
+    try {
+      await completeVisit(visit.id);
+      toast.success("Đã hoàn thành + xuất kho tự động");
+      await loadVisits(visit.contract_id);
+    } catch { toast.error("Lỗi"); }
   };
 
   const handleDelete = async () => {
-    if (!deletingItem) return;
+    if (!deletingVisit) return;
     try {
-      await deleteServiceHistory(deletingItem.id);
-      toast.success("Xóa lịch sử dịch vụ thành công");
+      await deleteVisit(deletingVisit.id);
+      toast.success("Đã xóa");
       setDeleteDialogOpen(false);
-      setDeletingItem(null);
-      loadData();
-    } catch {
-      toast.error("Không thể xóa lịch sử dịch vụ");
-    }
+      await loadVisits(deletingVisit.contract_id);
+    } catch { toast.error("Lỗi xóa"); }
   };
 
-  const filtered = data.filter((item) => {
-    const q = search.toLowerCase();
-    return (
-      item.ma_lsdv.toLowerCase().includes(q) ||
-      (item.customers?.ten_kh ?? "").toLowerCase().includes(q) ||
-      (item.contracts?.ma_hd ?? "").toLowerCase().includes(q) ||
-      (item.ktv_thuc_hien ?? "").toLowerCase().includes(q) ||
-      (item.ket_qua ?? "").toLowerCase().includes(q)
-    );
-  });
-
-  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
-
   const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Nhân viên";
+
+  const statusColor = (s: string) => {
+    if (s === "Hoàn thành") return "green";
+    if (s === "Đang làm") return "blue";
+    if (s === "Hủy" || s === "Hoãn") return "gray";
+    return "amber";
+  };
 
   return (
     <div>
       <div className="admin-page-header">
         <div>
           <h1 className="admin-page-title">Lịch sử dịch vụ</h1>
-          <p className="admin-page-subtitle">
-            Quản lý lịch sử thực hiện dịch vụ
-          </p>
+          <p className="admin-page-subtitle">Quản lý các lần thực hiện dịch vụ theo hợp đồng</p>
         </div>
-        {canEdit && (
-          <Button className="btn-add" onClick={openCreateDialog}>
-            <Plus size={16} />
-            Thêm mới
-          </Button>
-        )}
       </div>
 
-      <div className="data-table-wrapper">
-        <div className="data-table-toolbar">
-          <div className="data-table-search">
-            <Search size={16} />
-            <Input
-              placeholder="Tìm kiếm lịch sử dịch vụ..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            />
-          </div>
+      <div className="admin-toolbar">
+        <div className="admin-search">
+          <Search size={16} />
+          <input placeholder="Tìm mã HĐ, tên KH, dịch vụ..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-
-        {loading ? (
-          <div className="empty-state">
-            <p>Đang tải...</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="empty-state">
-            <p>Không có dữ liệu</p>
-          </div>
-        ) : (
-          <>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Mã LSDV</TableHead>
-                <TableHead>Khách hàng</TableHead>
-                <TableHead>Hợp đồng</TableHead>
-                <TableHead>Ngày thực hiện</TableHead>
-                <TableHead>KTV thực hiện</TableHead>
-                <TableHead>Kết quả</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paged.map((item) => (
-                <TableRow key={item.id} onClick={() => openEditDialog(item)}>
-                  <TableCell>{item.ma_lsdv}</TableCell>
-                  <TableCell>{item.customers?.ten_kh ?? "—"}</TableCell>
-                  <TableCell>{item.contracts?.ma_hd ?? "—"}</TableCell>
-                  <TableCell>
-                    {formatDate(item.ngay_thuc_hien)}
-                  </TableCell>
-                  <TableCell>{item.ktv_thuc_hien ?? "—"}</TableCell>
-                  <TableCell>
-                    {item.ket_qua
-                      ? item.ket_qua.length > 50
-                        ? item.ket_qua.slice(0, 50) + "..."
-                        : item.ket_qua
-                      : "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
-          </>
-        )}
       </div>
+
+      {loading ? <div className="empty-state"><p>Đang tải...</p></div> : (
+        <div className="sv-contract-list">
+          {filteredContracts.map((c) => {
+            const isExpanded = expanded.has(c.id);
+            const cvs = contractVisits.get(c.id) || [];
+            const completedCount = cvs.filter((v) => v.trang_thai === "Hoàn thành").length;
+
+            return (
+              <div key={c.id} className="sv-contract-card">
+                <div className="sv-contract-header" onClick={() => toggleExpand(c.id)}>
+                  <div className="sv-contract-chevron">
+                    {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                  </div>
+                  <div className="sv-contract-info">
+                    <div className="sv-contract-title">
+                      <strong>{c.ma_hd}</strong> — {c.customers?.ten_kh}
+                    </div>
+                    <div className="sv-contract-sub">
+                      {c.dich_vu} · {formatDate(c.ngay_bat_dau)} → {c.ngay_ket_thuc ? formatDate(c.ngay_ket_thuc) : "—"}
+                    </div>
+                  </div>
+                  <div className="sv-contract-meta">
+                    {isExpanded && cvs.length > 0 && (
+                      <span style={{ fontSize: 12, color: "var(--primary-700)" }}>
+                        {completedCount}/{cvs.length} lần xong
+                      </span>
+                    )}
+                    <span className={`admin-badge ${c.loai_hd === "Định kỳ" ? "blue" : "gray"}`}>
+                      {c.loai_hd || "Một lần"}
+                    </span>
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="sv-visits-body">
+                    {canEdit && (
+                      <button className="p-btn p-btn-primary" style={{ marginBottom: 10, fontSize: 12 }} onClick={() => openCreate(c)}>
+                        <Plus size={14} /> Thêm lần dịch vụ
+                      </button>
+                    )}
+
+                    {cvs.length === 0 ? (
+                      <p style={{ fontSize: 13, color: "var(--neutral-500)", padding: 12 }}>Chưa có lần dịch vụ nào</p>
+                    ) : (
+                      <div className="sv-visits-list">
+                        {cvs.map((v) => {
+                          const ktvNames = (v.ktv_ids || []).map((id) => technicians.find((t) => t.id === id)?.ho_ten).filter(Boolean);
+                          return (
+                            <div key={v.id} className={`sv-visit-card ${v.trang_thai === "Hoàn thành" ? "done" : v.trang_thai === "Hủy" ? "cancelled" : ""}`}>
+                              <div className="sv-visit-header">
+                                <span className="sv-visit-num">Lần {v.lan_thu}</span>
+                                <span className={`admin-badge ${statusColor(v.trang_thai)}`}>{v.trang_thai}</span>
+                                <div className="sv-visit-date">
+                                  <Calendar size={12} />
+                                  {v.ngay_du_kien ? formatDate(v.ngay_du_kien) : "Chưa xếp"}
+                                  {v.gio_bat_dau && ` ${v.gio_bat_dau.slice(0, 5)}`}
+                                  {v.gio_ket_thuc && `–${v.gio_ket_thuc.slice(0, 5)}`}
+                                </div>
+                              </div>
+
+                              {ktvNames.length > 0 && (
+                                <div className="sv-visit-ktv">KTV: {ktvNames.join(", ")}</div>
+                              )}
+
+                              {(v.hoa_chat || []).length > 0 && (
+                                <div className="sv-visit-materials">
+                                  HC: {(v.hoa_chat || []).map((h) => `${h.ten} (${h.so_luong} ${h.don_vi || ""})`).join(", ")}
+                                </div>
+                              )}
+
+                              {(v.vat_tu || []).length > 0 && (
+                                <div className="sv-visit-materials">
+                                  VT: {(v.vat_tu || []).map((vt) => `${vt.ten} (${vt.so_luong} ${vt.don_vi || ""})`).join(", ")}
+                                </div>
+                              )}
+
+                              {v.ghi_chu_truoc && <div className="sv-visit-note">Trước: {v.ghi_chu_truoc}</div>}
+                              {v.ghi_chu_sau && <div className="sv-visit-note">Sau: {v.ghi_chu_sau}</div>}
+
+                              {canEdit && (
+                                <div className="sv-visit-actions">
+                                  {v.trang_thai === "Đã lên lịch" && (
+                                    <button className="p-btn p-btn-ghost" style={{ fontSize: 11 }} onClick={() => handleComplete(v)}>
+                                      <CheckCircle size={12} /> Hoàn thành
+                                    </button>
+                                  )}
+                                  <button className="p-btn p-btn-ghost" style={{ fontSize: 11 }} onClick={() => openEdit(v, c)}>
+                                    Sửa
+                                  </button>
+                                  <button className="p-btn p-btn-ghost" style={{ fontSize: 11, color: "var(--danger-500)" }}
+                                    onClick={() => { setDeletingVisit(v); setDeleteDialogOpen(true); }}>
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {filteredContracts.length === 0 && <div className="empty-state"><p>Không có hợp đồng nào</p></div>}
+        </div>
+      )}
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Cập nhật lịch sử dịch vụ" : "Thêm lịch sử dịch vụ"}
+              {editing ? `Sửa lần ${editing.lan_thu}` : "Thêm lần dịch vụ mới"}
+              {selectedContract && ` — ${selectedContract.ma_hd}`}
             </DialogTitle>
-            <DialogDescription>
-              {editingItem
-                ? "Chỉnh sửa thông tin lịch sử dịch vụ"
-                : "Nhập thông tin lịch sử dịch vụ mới"}
-            </DialogDescription>
           </DialogHeader>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="form-grid">
-              <div className="form-field">
-                <Label>Hợp đồng *</Label>
-                <SearchSelect
-                  placeholder="Tìm theo mã HĐ, tên KH..."
-                  value={form.watch("contract_id")}
-                  onChange={handleContractChange}
-                  options={contracts.map((c) => ({
-                    value: c.id,
-                    label: `${c.ma_hd} - ${c.customers?.ten_kh ?? ""}`,
-                  }))}
-                />
-                {form.formState.errors.contract_id && (
-                  <p className="error">
-                    {form.formState.errors.contract_id.message}
-                  </p>
-                )}
-              </div>
 
-              <div className="form-field">
-                <Label>Khách hàng *</Label>
-                <SearchSelect
-                  placeholder="Tìm theo tên, mã KH..."
-                  value={form.watch("customer_id")}
-                  onChange={(v) => form.setValue("customer_id", v)}
-                  options={customers.map((c) => ({
-                    value: c.id,
-                    label: `${c.ma_kh} - ${c.ten_kh}`,
-                  }))}
-                />
-                {form.formState.errors.customer_id && (
-                  <p className="error">
-                    {form.formState.errors.customer_id.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="form-field">
-                <Label>Ngày thực hiện *</Label>
-                <DateInput
-                  value={form.watch("ngay_thuc_hien")}
-                  onChange={(v) => form.setValue("ngay_thuc_hien", v)}
-                />
-                {form.formState.errors.ngay_thuc_hien && (
-                  <p className="error">
-                    {form.formState.errors.ngay_thuc_hien.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="form-field">
-                <Label>KTV thực hiện *</Label>
-                <Input {...form.register("ktv_thuc_hien")} />
-                {form.formState.errors.ktv_thuc_hien && (
-                  <span className="error">{form.formState.errors.ktv_thuc_hien.message}</span>
-                )}
-              </div>
-
-              <div className="form-field full-width">
-                <Label>Hóa chất sử dụng</Label>
-                {hoaChatRows.map((row, i) => (
-                  <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
-                    <select
-                      className="native-select"
-                      style={{ flex: 2 }}
-                      value={row.id}
-                      onChange={(e) => {
-                        const chem = chemicals.find((c) => c.id === e.target.value);
-                        const updated = [...hoaChatRows];
-                        updated[i] = { id: e.target.value, ten: chem?.ten_thuong_mai ?? "", lieu_luong: row.lieu_luong };
-                        setHoaChatRows(updated);
-                      }}
-                    >
-                      <option value="">Chọn hóa chất</option>
-                      {chemicals.map((c) => (
-                        <option key={c.id} value={c.id}>{c.ten_thuong_mai}</option>
-                      ))}
-                    </select>
-                    <Input
-                      style={{ flex: 1 }}
-                      placeholder="Liều lượng"
-                      value={row.lieu_luong}
-                      onChange={(e) => {
-                        const updated = [...hoaChatRows];
-                        updated[i] = { ...row, lieu_luong: e.target.value };
-                        setHoaChatRows(updated);
-                      }}
-                    />
-                    <button type="button" className="btn-action danger" onClick={() => setHoaChatRows(hoaChatRows.filter((_, j) => j !== i))}>
-                      <X size={14} />
-                    </button>
-                  </div>
-                ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => setHoaChatRows([...hoaChatRows, { id: "", ten: "", lieu_luong: "" }])}>
-                  <Plus size={14} /> Thêm hóa chất
-                </Button>
-              </div>
-
-              <div className="form-field full-width">
-                <Label>Vật tư sử dụng</Label>
-                {vatTuRows.map((row, i) => (
-                  <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
-                    <select
-                      className="native-select"
-                      style={{ flex: 2 }}
-                      value={row.id}
-                      onChange={(e) => {
-                        const sup = supplies.find((s) => s.id === e.target.value);
-                        const updated = [...vatTuRows];
-                        updated[i] = { id: e.target.value, ten: sup?.ten_vat_tu ?? "", so_luong: row.so_luong };
-                        setVatTuRows(updated);
-                      }}
-                    >
-                      <option value="">Chọn vật tư</option>
-                      {supplies.map((s) => (
-                        <option key={s.id} value={s.id}>{s.ten_vat_tu}</option>
-                      ))}
-                    </select>
-                    <Input
-                      style={{ flex: 1 }}
-                      type="number"
-                      placeholder="Số lượng"
-                      value={row.so_luong}
-                      onChange={(e) => {
-                        const updated = [...vatTuRows];
-                        updated[i] = { ...row, so_luong: e.target.value };
-                        setVatTuRows(updated);
-                      }}
-                    />
-                    <button type="button" className="btn-action danger" onClick={() => setVatTuRows(vatTuRows.filter((_, j) => j !== i))}>
-                      <X size={14} />
-                    </button>
-                  </div>
-                ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => setVatTuRows([...vatTuRows, { id: "", ten: "", so_luong: "" }])}>
-                  <Plus size={14} /> Thêm vật tư
-                </Button>
-              </div>
-
-              <div className="form-field">
-                <Label>Kết quả</Label>
-                <Textarea rows={3} {...form.register("ket_qua")} />
-              </div>
-
-              <div className="form-field full-width">
-                <Label>Ghi chú</Label>
-                <Textarea rows={3} {...form.register("ghi_chu")} />
+          <div className="form-grid">
+            <div className="form-field">
+              <Label>Ngày dự kiến *</Label>
+              <input type="date" className="p-input" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
+            </div>
+            <div className="form-field">
+              <Label>Giờ</Label>
+              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                <input type="time" className="p-input" value={formStart} onChange={(e) => setFormStart(e.target.value)} />
+                <span>—</span>
+                <input type="time" className="p-input" value={formEnd} onChange={(e) => setFormEnd(e.target.value)} />
               </div>
             </div>
 
-            <div className="form-actions">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDialogOpen(false)}
-              >
-                Hủy
-              </Button>
-              {editingItem && canEdit && (
-                <Button type="button" variant="destructive" onClick={() => { setDialogOpen(false); setDeletingItem(editingItem); setDeleteDialogOpen(true); }}>
-                  <Trash2 size={14} /> Xóa
-                </Button>
+            {/* KTV multi-select dropdown */}
+            <div className="form-field full-width">
+              <Label>Kỹ thuật viên</Label>
+              <select className="p-select" value="" onChange={(e) => {
+                if (e.target.value && !formKtv.includes(e.target.value)) setFormKtv((p) => [...p, e.target.value]);
+              }}>
+                <option value="">— Thêm KTV —</option>
+                {technicians.filter((t) => !formKtv.includes(t.id)).map((t) => (
+                  <option key={t.id} value={t.id}>{t.ho_ten} — {t.sdt}</option>
+                ))}
+              </select>
+              {formKtv.length > 0 && (
+                <div className="multi-select-tags" style={{ marginTop: 6 }}>
+                  {formKtv.map((id) => {
+                    const t = technicians.find((x) => x.id === id);
+                    return t ? (
+                      <div key={id} className="multi-select-tag">
+                        <span className="multi-select-tag-avatar">{t.ho_ten.charAt(0)}</span>
+                        <span>{t.ho_ten}</span>
+                        <button type="button" className="multi-select-tag-remove" onClick={() => setFormKtv((p) => p.filter((x) => x !== id))}>
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
               )}
-              <Button type="submit" disabled={submitting}>
-                {submitting
-                  ? "Đang xử lý..."
-                  : editingItem
-                    ? "Cập nhật"
-                    : "Thêm mới"}
-              </Button>
             </div>
-          </form>
+
+            {/* Hóa chất */}
+            <div className="form-field full-width">
+              <Label>Hóa chất sử dụng</Label>
+              {hoaChatRows.map((row, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                  <select className="p-select" style={{ flex: 2 }} value={row.id} onChange={(e) => {
+                    const chem = chemicals.find((c) => c.id === e.target.value);
+                    const updated = [...hoaChatRows];
+                    updated[i] = { id: e.target.value, ten: chem?.ten_thuong_mai ?? "", so_luong: row.so_luong, don_vi: chem?.don_vi_tinh ?? "" };
+                    setHoaChatRows(updated);
+                  }}>
+                    <option value="">Chọn hóa chất</option>
+                    {chemicals.map((c) => <option key={c.id} value={c.id}>{c.ten_thuong_mai} (Tồn: {c.so_luong_ton ?? 0})</option>)}
+                  </select>
+                  <input className="p-input" style={{ width: 80 }} type="number" min={0} placeholder="SL"
+                    value={row.so_luong} onChange={(e) => { const u = [...hoaChatRows]; u[i] = { ...row, so_luong: Number(e.target.value) }; setHoaChatRows(u); }} />
+                  <span style={{ fontSize: 12, color: "var(--neutral-500)", minWidth: 30 }}>{row.don_vi}</span>
+                  <button type="button" className="p-btn p-btn-ghost" style={{ padding: 4 }} onClick={() => setHoaChatRows(hoaChatRows.filter((_, j) => j !== i))}>
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+              <button type="button" className="p-btn p-btn-ghost" style={{ fontSize: 12 }} onClick={() => setHoaChatRows([...hoaChatRows, { id: "", ten: "", so_luong: 0, don_vi: "" }])}>
+                <Plus size={14} /> Thêm hóa chất
+              </button>
+            </div>
+
+            {/* Vật tư */}
+            <div className="form-field full-width">
+              <Label>Vật tư sử dụng</Label>
+              {vatTuRows.map((row, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                  <select className="p-select" style={{ flex: 2 }} value={row.id} onChange={(e) => {
+                    const sup = supplies.find((s) => s.id === e.target.value);
+                    const u = [...vatTuRows];
+                    u[i] = { id: e.target.value, ten: sup?.ten_vat_tu ?? "", so_luong: row.so_luong, don_vi: sup?.don_vi_tinh ?? "" };
+                    setVatTuRows(u);
+                  }}>
+                    <option value="">Chọn vật tư</option>
+                    {supplies.map((s) => <option key={s.id} value={s.id}>{s.ten_vat_tu} (Tồn: {s.so_luong_ton ?? 0})</option>)}
+                  </select>
+                  <input className="p-input" style={{ width: 80 }} type="number" min={0} placeholder="SL"
+                    value={row.so_luong} onChange={(e) => { const u = [...vatTuRows]; u[i] = { ...row, so_luong: Number(e.target.value) }; setVatTuRows(u); }} />
+                  <span style={{ fontSize: 12, color: "var(--neutral-500)", minWidth: 30 }}>{row.don_vi}</span>
+                  <button type="button" className="p-btn p-btn-ghost" style={{ padding: 4 }} onClick={() => setVatTuRows(vatTuRows.filter((_, j) => j !== i))}>
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+              <button type="button" className="p-btn p-btn-ghost" style={{ fontSize: 12 }} onClick={() => setVatTuRows([...vatTuRows, { id: "", ten: "", so_luong: 0, don_vi: "" }])}>
+                <Plus size={14} /> Thêm vật tư
+              </button>
+            </div>
+
+            {editing && (
+              <div className="form-field">
+                <Label>Trạng thái</Label>
+                <select className="p-select" value={formResult} onChange={(e) => setFormResult(e.target.value)}>
+                  <option>Đã lên lịch</option>
+                  <option>Đang làm</option>
+                  <option>Hoàn thành</option>
+                  <option>Hủy</option>
+                  <option>Hoãn</option>
+                </select>
+              </div>
+            )}
+
+            <div className="form-field">
+              <Label>Ghi chú trước DV</Label>
+              <Textarea rows={2} value={formNoteBefore} onChange={(e) => setFormNoteBefore(e.target.value)} placeholder="Tình trạng trước khi thực hiện..." />
+            </div>
+
+            {editing && (
+              <div className="form-field">
+                <Label>Ghi chú sau DV</Label>
+                <Textarea rows={2} value={formNoteAfter} onChange={(e) => setFormNoteAfter(e.target.value)} placeholder="Kết quả sau khi thực hiện..." />
+              </div>
+            )}
+          </div>
+
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Hủy</Button>
+            {editing && (
+              <Button variant="destructive" onClick={() => { setDialogOpen(false); setDeletingVisit(editing); setDeleteDialogOpen(true); }}>
+                <Trash2 size={14} /> Xóa
+              </Button>
+            )}
+            <Button onClick={handleSubmit} disabled={submitting}>
+              {submitting ? "Đang lưu..." : editing ? "Cập nhật" : "Thêm lần DV"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Xác nhận xóa</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xóa lịch sử dịch vụ{" "}
-              <strong>{deletingItem?.ma_lsdv}</strong>? Hành động này không thể
-              hoàn tác.
+              Xóa lần dịch vụ {deletingVisit?.lan_thu}? Không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <div className="form-actions">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              Hủy
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Xóa
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
+            <Button variant="destructive" onClick={handleDelete}>Xóa</Button>
           </div>
         </DialogContent>
       </Dialog>

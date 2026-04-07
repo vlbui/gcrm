@@ -3442,6 +3442,34 @@ ul { list-style: none; }
   display: flex; gap: 6px; margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--neutral-100);
 }
 
+/* Service Visits Page — contract list */
+.sv-contract-list { display: flex; flex-direction: column; gap: 6px; }
+.sv-contract-card { background: white; border: 1px solid var(--neutral-200); border-radius: var(--radius-md); overflow: hidden; }
+.sv-contract-header {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; transition: background 0.1s;
+}
+.sv-contract-header:hover { background: var(--neutral-50); }
+.sv-contract-chevron { color: var(--neutral-400); flex-shrink: 0; }
+.sv-contract-info { flex: 1; min-width: 0; }
+.sv-contract-title { font-size: 14px; color: var(--neutral-800); }
+.sv-contract-sub { font-size: 12px; color: var(--neutral-500); margin-top: 2px; }
+.sv-contract-meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.sv-visits-body { padding: 0 14px 14px; border-top: 1px solid var(--neutral-100); }
+.sv-visits-list { display: flex; flex-direction: column; gap: 6px; }
+.sv-visit-card {
+  border: 1px solid var(--neutral-200); border-radius: var(--radius-sm); padding: 10px 12px; transition: border-color 0.15s;
+}
+.sv-visit-card:hover { border-color: var(--neutral-300); }
+.sv-visit-card.done { border-color: var(--primary-200); background: #F0FDF4; }
+.sv-visit-card.cancelled { opacity: 0.5; }
+.sv-visit-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.sv-visit-num { font-size: 12px; font-weight: 700; color: var(--primary-800); background: var(--primary-50); padding: 1px 8px; border-radius: 8px; }
+.sv-visit-date { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--neutral-500); margin-left: auto; }
+.sv-visit-ktv { font-size: 12px; color: var(--neutral-600); margin-top: 2px; }
+.sv-visit-materials { font-size: 11px; color: var(--neutral-500); margin-top: 2px; }
+.sv-visit-note { font-size: 12px; color: var(--neutral-600); margin-top: 3px; font-style: italic; }
+.sv-visit-actions { display: flex; gap: 6px; margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--neutral-100); }
+
 /* ============================================
    DASHBOARD V2
    ============================================ */
