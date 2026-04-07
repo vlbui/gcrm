@@ -50,6 +50,8 @@ const supplySchema = z.object({
   loai_vt: z.string().min(1, "Loại vật tư là bắt buộc"),
   don_vi_tinh: z.string().min(1, "Đơn vị tính là bắt buộc"),
   nha_cung_cap: z.string().nullable(),
+  so_luong_ton: z.coerce.number().min(0).default(0),
+  nguong_canh_bao: z.coerce.number().min(0).default(5),
   ghi_chu: z.string().nullable(),
 });
 
@@ -124,6 +126,8 @@ export default function VatTuPage() {
       loai_vt: "",
       don_vi_tinh: "",
       nha_cung_cap: "",
+      so_luong_ton: 0,
+      nguong_canh_bao: 5,
       ghi_chu: "",
     });
     setDialogOpen(true);
@@ -136,6 +140,8 @@ export default function VatTuPage() {
       loai_vt: item.loai_vt ?? "",
       don_vi_tinh: item.don_vi_tinh ?? "",
       nha_cung_cap: item.nha_cung_cap ?? "",
+      so_luong_ton: item.so_luong_ton ?? 0,
+      nguong_canh_bao: item.nguong_canh_bao ?? 5,
       ghi_chu: item.ghi_chu ?? "",
     });
     setDialogOpen(true);
@@ -148,6 +154,8 @@ export default function VatTuPage() {
         loai_vt: formData.loai_vt || null,
         don_vi_tinh: formData.don_vi_tinh || null,
         nha_cung_cap: formData.nha_cung_cap || null,
+        so_luong_ton: formData.so_luong_ton ?? 0,
+        nguong_canh_bao: formData.nguong_canh_bao ?? 5,
         ghi_chu: formData.ghi_chu || null,
       };
       if (editing) {
@@ -229,6 +237,7 @@ export default function VatTuPage() {
                 <TableHead>Tên vật tư</TableHead>
                 <TableHead>Loại VT</TableHead>
                 <TableHead>Đơn vị tính</TableHead>
+                <TableHead>Tồn kho</TableHead>
                 <TableHead>Nhà cung cấp</TableHead>
               </TableRow>
             </TableHeader>
@@ -239,6 +248,12 @@ export default function VatTuPage() {
                   <TableCell>{item.ten_vat_tu}</TableCell>
                   <TableCell>{item.loai_vt ?? "—"}</TableCell>
                   <TableCell>{item.don_vi_tinh ?? "—"}</TableCell>
+                  <TableCell>
+                    <span style={{ color: (item.so_luong_ton ?? 0) <= (item.nguong_canh_bao ?? 5) ? "var(--danger-500)" : "var(--primary-700)", fontWeight: 600 }}>
+                      {item.so_luong_ton ?? 0}
+                    </span>
+                    {" "}{item.don_vi_tinh ?? ""}
+                  </TableCell>
                   <TableCell>{item.nha_cung_cap ?? "—"}</TableCell>
                 </TableRow>
               ))}
@@ -287,6 +302,14 @@ export default function VatTuPage() {
                   onChange={(v) => setValue("nha_cung_cap", v || null)}
                   options={suppliers.map((s) => ({ value: s.ten_ncc, label: s.ten_ncc }))}
                 />
+              </div>
+              <div className="form-field">
+                <Label>Số lượng tồn</Label>
+                <Input type="number" min={0} placeholder="0" {...register("so_luong_ton")} />
+              </div>
+              <div className="form-field">
+                <Label>Ngưỡng cảnh báo</Label>
+                <Input type="number" min={0} placeholder="5" {...register("nguong_canh_bao")} />
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>

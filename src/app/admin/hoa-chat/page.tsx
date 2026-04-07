@@ -52,6 +52,8 @@ const chemicalSchema = z.object({
   dang_su_dung: z.string().nullable(),
   don_vi_tinh: z.string().min(1, "Đơn vị tính là bắt buộc"),
   nha_cung_cap: z.string().nullable(),
+  so_luong_ton: z.coerce.number().min(0).default(0),
+  nguong_canh_bao: z.coerce.number().min(0).default(5),
   ghi_chu: z.string().nullable(),
 });
 
@@ -130,6 +132,8 @@ export default function HoaChatPage() {
       dang_su_dung: "",
       don_vi_tinh: "",
       nha_cung_cap: "",
+      so_luong_ton: 0,
+      nguong_canh_bao: 5,
       ghi_chu: "",
     });
     setDialogOpen(true);
@@ -144,6 +148,8 @@ export default function HoaChatPage() {
       dang_su_dung: item.dang_su_dung ?? "",
       don_vi_tinh: item.don_vi_tinh ?? "",
       nha_cung_cap: item.nha_cung_cap ?? "",
+      so_luong_ton: item.so_luong_ton ?? 0,
+      nguong_canh_bao: item.nguong_canh_bao ?? 5,
       ghi_chu: item.ghi_chu ?? "",
     });
     setDialogOpen(true);
@@ -158,6 +164,8 @@ export default function HoaChatPage() {
         dang_su_dung: formData.dang_su_dung || null,
         don_vi_tinh: formData.don_vi_tinh || null,
         nha_cung_cap: formData.nha_cung_cap || null,
+        so_luong_ton: formData.so_luong_ton ?? 0,
+        nguong_canh_bao: formData.nguong_canh_bao ?? 5,
         ghi_chu: formData.ghi_chu || null,
       };
       if (editing) {
@@ -240,6 +248,7 @@ export default function HoaChatPage() {
                 <TableHead>Hoạt chất</TableHead>
                 <TableHead>Đối tượng</TableHead>
                 <TableHead>Dạng sử dụng</TableHead>
+                <TableHead>Tồn kho</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -250,6 +259,12 @@ export default function HoaChatPage() {
                   <TableCell>{item.hoat_chat ?? "—"}</TableCell>
                   <TableCell>{item.doi_tuong ?? "—"}</TableCell>
                   <TableCell>{item.dang_su_dung ?? "—"}</TableCell>
+                  <TableCell>
+                    <span style={{ color: (item.so_luong_ton ?? 0) <= (item.nguong_canh_bao ?? 5) ? "var(--danger-500)" : "var(--primary-700)", fontWeight: 600 }}>
+                      {item.so_luong_ton ?? 0}
+                    </span>
+                    {" "}{item.don_vi_tinh ?? ""}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -307,6 +322,14 @@ export default function HoaChatPage() {
                   onChange={(v) => setValue("nha_cung_cap", v || null)}
                   options={suppliers.map((s) => ({ value: s.ten_ncc, label: s.ten_ncc }))}
                 />
+              </div>
+              <div className="form-field">
+                <Label>Số lượng tồn</Label>
+                <Input type="number" min={0} placeholder="0" {...register("so_luong_ton")} />
+              </div>
+              <div className="form-field">
+                <Label>Ngưỡng cảnh báo</Label>
+                <Input type="number" min={0} placeholder="5" {...register("nguong_canh_bao")} />
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>

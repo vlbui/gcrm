@@ -11,6 +11,8 @@ export interface Chemical {
   don_vi_tinh: string | null;
   nha_cung_cap: string | null;
   ghi_chu: string | null;
+  so_luong_ton: number;
+  nguong_canh_bao: number;
   created_at: string;
   created_by: string | null;
 }

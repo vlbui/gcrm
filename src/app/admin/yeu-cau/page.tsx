@@ -52,16 +52,24 @@ const LOAI_HINH_OPTIONS = [
 ];
 
 const statusLabels: Record<string, string> = {
-  "Mới": "Mới",
+  "Mới": "Khách hỏi",
   "Đã liên hệ": "Đã liên hệ",
-  "Đã tạo HĐ": "Đã chuyển đổi",
+  "Đang tư vấn": "Đang tư vấn",
+  "Đã báo giá": "Đã báo giá",
+  "Chốt đơn": "Chốt đơn",
+  "Đang triển khai": "Đang triển khai",
+  "Hoàn thành": "Hoàn thành",
   "Từ chối": "Từ chối",
 };
 
 const statusBadgeClass: Record<string, string> = {
   "Mới": "status-badge moi",
   "Đã liên hệ": "status-badge dang-xu-ly",
-  "Đã tạo HĐ": "status-badge hoan-thanh",
+  "Đang tư vấn": "status-badge dang-xu-ly",
+  "Đã báo giá": "status-badge dang-xu-ly",
+  "Chốt đơn": "status-badge hoan-thanh",
+  "Đang triển khai": "status-badge hoan-thanh",
+  "Hoàn thành": "status-badge hoan-thanh",
   "Từ chối": "status-badge huy",
 };
 
@@ -304,7 +312,7 @@ export default function YeuCauPage() {
       });
 
       await updateServiceRequest(selectedItem.id, {
-        trang_thai: "Đã tạo HĐ",
+        trang_thai: "Chốt đơn",
         xu_ly_boi: user?.id ?? null,
       });
 
@@ -324,7 +332,7 @@ export default function YeuCauPage() {
 
   const filtered = data.filter((item) => {
     // Status filter: "active" hides converted/rejected
-    if (filterStatus === "active" && (item.trang_thai === "Đã tạo HĐ" || item.trang_thai === "Từ chối")) return false;
+    if (filterStatus === "active" && (item.trang_thai === "Hoàn thành" || item.trang_thai === "Từ chối")) return false;
     if (filterStatus !== "active" && filterStatus !== "all" && item.trang_thai !== filterStatus) return false;
 
     // Loại hình filter
@@ -390,9 +398,13 @@ export default function YeuCauPage() {
               <SelectContent>
                 <SelectItem value="active">Đang xử lý</SelectItem>
                 <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="Mới">Mới</SelectItem>
+                <SelectItem value="Mới">Khách hỏi</SelectItem>
                 <SelectItem value="Đã liên hệ">Đã liên hệ</SelectItem>
-                <SelectItem value="Đã tạo HĐ">Đã chuyển đổi</SelectItem>
+                <SelectItem value="Đang tư vấn">Đang tư vấn</SelectItem>
+                <SelectItem value="Đã báo giá">Đã báo giá</SelectItem>
+                <SelectItem value="Chốt đơn">Chốt đơn</SelectItem>
+                <SelectItem value="Đang triển khai">Đang triển khai</SelectItem>
+                <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
                 <SelectItem value="Từ chối">Từ chối</SelectItem>
               </SelectContent>
             </Select>
@@ -789,7 +801,7 @@ export default function YeuCauPage() {
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
                   Đóng
                 </Button>
-                {canEdit && selectedItem.trang_thai !== "Đã tạo HĐ" && (
+                {canEdit && selectedItem.trang_thai !== "Chốt đơn" && selectedItem.trang_thai !== "Hoàn thành" && (
                   <Button onClick={() => setIsConvertMode(true)}>
                     <ArrowRightLeft size={16} />
                     Chuyển đổi
