@@ -50,7 +50,7 @@ const jsonLdBusiness = {
   alternateName: "GreenShield JSC",
   description:
     "Công ty diệt côn trùng chuyên nghiệp tại Hà Nội. Chuyên diệt gián Đức bằng gel bả nhập ngoại, diệt mối, chuột, muỗi bằng phương pháp IPM an toàn.",
-  url: "https://lachaxanh.vn",
+  url: "https://greenshield.com.vn",
   telephone: "+84859955969",
   email: "greenshield.jsc@gmail.com",
   address: {
