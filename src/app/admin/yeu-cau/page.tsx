@@ -262,6 +262,7 @@ export default function YeuCauPage() {
                   <TableHead>Loại hình</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Ngày tạo</TableHead>
+                  {canEdit && <TableHead style={{ width: 50 }}></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -279,6 +280,17 @@ export default function YeuCauPage() {
                       <span className={statusBadgeClass[item.trang_thai] ?? "status-badge"}>{item.trang_thai}</span>
                     </TableCell>
                     <TableCell>{formatDate(item.created_at)}</TableCell>
+                    {canEdit && (
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <button
+                          className="btn-action danger"
+                          title="Xóa"
+                          onClick={() => { setSelected(item); setDeleteOpen(true); }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
