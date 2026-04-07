@@ -10,11 +10,17 @@ export interface Chemical {
   dang_su_dung: string | null;
   don_vi_tinh: string | null;
   nha_cung_cap: string | null;
+  supplier_id?: string | null;
+  don_gia?: number;
+  so_luong_ton?: number;
+  nguong_canh_bao?: number;
+  han_su_dung?: string | null;
+  xuat_xu?: string | null;
   ghi_chu: string | null;
-  so_luong_ton: number;
-  nguong_canh_bao: number;
   created_at: string;
   created_by: string | null;
+  // Joined
+  suppliers?: { ten_ncc: string } | null;
 }
 
 export type CreateChemicalInput = Omit<Chemical, "id" | "ma_hc" | "created_at" | "created_by">;

@@ -14,6 +14,11 @@ import {
   Warehouse,
   Wrench,
   Settings,
+  FileText,
+  CreditCard,
+  Wallet,
+  Bell,
+  Truck,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -28,9 +33,14 @@ const mainLinks = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admin/pipeline", icon: Kanban, label: "Pipeline" },
   { href: "/admin/khach-hang", icon: Users, label: "Khách hàng" },
-  { href: "/admin/kho", icon: Warehouse, label: "Kho" },
-  { href: "/admin/ky-thuat-vien", icon: Wrench, label: "Kỹ thuật viên" },
+  { href: "/admin/hop-dong", icon: FileText, label: "Hợp đồng" },
   { href: "/admin/lich-cong-viec", icon: CalendarDays, label: "Lịch" },
+  { href: "/admin/thanh-toan", icon: CreditCard, label: "Thanh toán" },
+  { href: "/admin/cong-no", icon: Wallet, label: "Công nợ" },
+  { href: "/admin/lich-nhac", icon: Bell, label: "Lịch nhắc" },
+  { href: "/admin/kho", icon: Warehouse, label: "Kho" },
+  { href: "/admin/nha-cung-cap", icon: Truck, label: "Nhà cung cấp" },
+  { href: "/admin/ky-thuat-vien", icon: Wrench, label: "Kỹ thuật viên" },
   { href: "/admin/bao-gia", icon: Receipt, label: "Báo giá" },
 ];
 
@@ -59,9 +69,7 @@ export default function Sidebar({ user, collapsed }: SidebarProps) {
   return (
     <aside className={cn("admin-sidebar", collapsed && "collapsed")}>
       <div className="sidebar-brand">
-        <div className="sidebar-logo">
-          <Shield size={24} />
-        </div>
+        <div className="sidebar-logo"><Shield size={24} /></div>
         {!collapsed && (
           <div>
             <div className="sidebar-brand-name">Lá Chắn Xanh</div>
@@ -85,10 +93,7 @@ export default function Sidebar({ user, collapsed }: SidebarProps) {
 
         <div className="sidebar-divider" />
 
-        <button
-          className="sidebar-link sidebar-cms-toggle"
-          onClick={() => setCmsOpen(!cmsOpen)}
-        >
+        <button className="sidebar-link sidebar-cms-toggle" onClick={() => setCmsOpen(!cmsOpen)}>
           <Globe size={20} />
           {!collapsed && (
             <>
@@ -101,11 +106,7 @@ export default function Sidebar({ user, collapsed }: SidebarProps) {
         {cmsOpen && !collapsed && (
           <div className="sidebar-cms-links">
             {cmsLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn("sidebar-link sub", isActive(link.href) && "active")}
-              >
+              <Link key={link.href} href={link.href} className={cn("sidebar-link sub", isActive(link.href) && "active")}>
                 <span>{link.label}</span>
               </Link>
             ))}
@@ -123,10 +124,9 @@ export default function Sidebar({ user, collapsed }: SidebarProps) {
         )}
       </nav>
 
-      {/* Keyboard hint */}
       {!collapsed && (
         <div className="sidebar-shortcuts-hint">
-          <kbd>N</kbd> Thêm deal · <kbd>/</kbd> Tìm kiếm
+          <kbd>N</kbd> Thêm · <kbd>/</kbd> Tìm · <kbd>Esc</kbd> Đóng
         </div>
       )}
     </aside>

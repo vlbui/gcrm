@@ -12,12 +12,20 @@ export interface Contract {
   ngay_bat_dau: string | null;
   ngay_ket_thuc: string | null;
   ghi_chu: string | null;
+  // New V3 fields (optional — may not exist on old records)
+  loai_hd?: string;
+  tan_suat?: string | null;
+  so_lan_du_kien?: number;
+  giai_doan?: string;
+  trang_thai_thanh_toan?: string | null;
+  so_tien_da_tra?: number | null;
   created_at: string;
   created_by: string | null;
   // Joined
   customers?: {
     ten_kh: string;
     ma_kh: string;
+    sdt?: string;
   };
 }
 

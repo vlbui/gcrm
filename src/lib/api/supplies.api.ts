@@ -8,11 +8,15 @@ export interface Supply {
   loai_vt: string | null;
   don_vi_tinh: string | null;
   nha_cung_cap: string | null;
+  supplier_id?: string | null;
+  don_gia?: number;
+  so_luong_ton?: number;
+  nguong_canh_bao?: number;
   ghi_chu: string | null;
-  so_luong_ton: number;
-  nguong_canh_bao: number;
   created_at: string;
   created_by: string | null;
+  // Joined
+  suppliers?: { ten_ncc: string } | null;
 }
 
 export type CreateSupplyInput = Omit<Supply, "id" | "ma_vt" | "created_at" | "created_by">;

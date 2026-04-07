@@ -57,6 +57,10 @@ const contractSchema = z.object({
   dien_tich: z.string().nullable(),
   gia_tri: z.coerce.number().min(0, "Giá trị không được âm").nullable(),
   trang_thai: z.string(),
+  loai_hd: z.string().default("Một lần"),
+  tan_suat: z.string().nullable(),
+  so_lan_du_kien: z.coerce.number().min(1).default(1),
+  giai_doan: z.string().default("Mới"),
   ngay_bat_dau: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),
   ngay_ket_thuc: z.string().nullable(),
   ghi_chu: z.string().nullable(),
@@ -99,6 +103,10 @@ export default function HopDongPage() {
       dien_tich: "",
       gia_tri: null,
       trang_thai: "Mới",
+      loai_hd: "Một lần",
+      tan_suat: "",
+      so_lan_du_kien: 1,
+      giai_doan: "Mới",
       ngay_bat_dau: "",
       ngay_ket_thuc: "",
       ghi_chu: "",
@@ -167,6 +175,10 @@ export default function HopDongPage() {
       dien_tich: "",
       gia_tri: null,
       trang_thai: "Mới",
+      loai_hd: "Một lần",
+      tan_suat: "",
+      so_lan_du_kien: 1,
+      giai_doan: "Mới",
       ngay_bat_dau: "",
       ngay_ket_thuc: "",
       ghi_chu: "",
@@ -182,6 +194,10 @@ export default function HopDongPage() {
       dien_tich: item.dien_tich ?? "",
       gia_tri: item.gia_tri,
       trang_thai: item.trang_thai,
+      loai_hd: item.loai_hd || "Một lần",
+      tan_suat: item.tan_suat ?? "",
+      so_lan_du_kien: item.so_lan_du_kien || 1,
+      giai_doan: item.giai_doan || "Mới",
       ngay_bat_dau: item.ngay_bat_dau ?? "",
       ngay_ket_thuc: item.ngay_ket_thuc ?? "",
       ghi_chu: item.ghi_chu ?? "",
@@ -205,7 +221,19 @@ export default function HopDongPage() {
         await updateContract(editing.id, input);
         toast.success("Cập nhật hợp đồng thành công");
       } else {
-        await createContract(input);
+        const contract = await createContract(input);
+        // Auto generate visits for periodic contracts
+        if (formData.loai_hd === "Định kỳ" && formData.so_lan_du_kien > 1 && formData.ngay_bat_dau) {
+          const { generateVisitsAndReminders } = await import("@/lib/utils/autoGenerateVisits");
+          await generateVisitsAndReminders(
+            contract.id,
+            formData.customer_id,
+            formData.so_lan_du_kien,
+            formData.ngay_bat_dau,
+            formData.tan_suat || "1 tháng"
+          );
+          toast.success(`Đã tạo ${formData.so_lan_du_kien} lần dịch vụ tự động`);
+        }
         toast.success("Thêm hợp đồng thành công");
       }
       setDialogOpen(false);
@@ -294,6 +322,7 @@ export default function HopDongPage() {
                 <TableHead>Mã HĐ</TableHead>
                 <TableHead>Khách hàng</TableHead>
                 <TableHead>Dịch vụ</TableHead>
+                <TableHead>Loại</TableHead>
                 <TableHead>Giá trị</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Ngày bắt đầu</TableHead>
@@ -307,6 +336,11 @@ export default function HopDongPage() {
                     {item.customers?.ten_kh ?? "—"}
                   </TableCell>
                   <TableCell>{item.dich_vu}</TableCell>
+                  <TableCell>
+                    <span className={`admin-badge ${item.loai_hd === "Định kỳ" ? "blue" : "gray"}`}>
+                      {item.loai_hd || "Một lần"}
+                    </span>
+                  </TableCell>
                   <TableCell>{formatCurrency(item.gia_tri)}</TableCell>
                   <TableCell>
                     <span
@@ -384,6 +418,31 @@ export default function HopDongPage() {
                   <option value="Hủy">Hủy</option>
                 </select>
               </div>
+              <div className="form-field">
+                <Label>Loại hợp đồng</Label>
+                <select className="native-select" value={watch("loai_hd")} onChange={(e) => setValue("loai_hd", e.target.value)}>
+                  <option value="Một lần">Một lần</option>
+                  <option value="Định kỳ">Định kỳ</option>
+                </select>
+              </div>
+              {watch("loai_hd") === "Định kỳ" && (
+                <>
+                  <div className="form-field">
+                    <Label>Tần suất</Label>
+                    <select className="native-select" value={watch("tan_suat") ?? ""} onChange={(e) => setValue("tan_suat", e.target.value)}>
+                      <option value="1 tháng">Hàng tháng</option>
+                      <option value="2 tháng">2 tháng/lần</option>
+                      <option value="3 tháng">Quý</option>
+                      <option value="6 tháng">6 tháng/lần</option>
+                      <option value="Năm">Hàng năm</option>
+                    </select>
+                  </div>
+                  <div className="form-field">
+                    <Label>Số lần dự kiến</Label>
+                    <Input type="number" min={1} {...register("so_lan_du_kien")} />
+                  </div>
+                </>
+              )}
               <div className="form-field">
                 <Label>Ngày bắt đầu *</Label>
                 <DateInput value={watch("ngay_bat_dau")} onChange={(v) => setValue("ngay_bat_dau", v)} />
