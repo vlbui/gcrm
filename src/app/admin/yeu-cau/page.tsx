@@ -3,37 +3,19 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Plus, Eye, ArrowRightLeft, Phone, Mail, MapPin, Bug, Ruler } from "lucide-react";
+import { Search, Plus, Trash2, ArrowRightLeft, Phone, Mail, MapPin, Bug, Ruler, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
+  Table, TableHeader, TableRow, TableHead, TableBody, TableCell,
 } from "@/components/ui/table";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  fetchServiceRequests,
-  updateServiceRequest,
-  createServiceRequest,
+  fetchServiceRequests, updateServiceRequest, createServiceRequest, deleteServiceRequest,
   type ServiceRequest,
 } from "@/lib/api/serviceRequests.api";
 import { createCustomer, fetchCustomers, type Customer } from "@/lib/api/customers.api";
@@ -72,6 +54,8 @@ const statusBadgeClass: Record<string, string> = {
   "Từ chối": "status-badge huy",
 };
 
+type TabKey = "active" | "converted" | "rejected";
+
 export default function YeuCauPage() {
   const router = useRouter();
   const { user } = useCurrentUser();
@@ -79,7 +63,7 @@ export default function YeuCauPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("active");
+  const [activeTab, setActiveTab] = useState<TabKey>("active");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
@@ -88,6 +72,7 @@ export default function YeuCauPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Create form
   const [newForm, setNewForm] = useState({
@@ -111,19 +96,35 @@ export default function YeuCauPage() {
     finally { setLoading(false); }
   }
 
-  const filtered = data.filter((item) => {
-    if (filterStatus === "active" && ["Hoàn thành", "Từ chối", "Chốt đơn"].includes(item.trang_thai)) return false;
-    if (filterStatus !== "active" && filterStatus !== "all" && item.trang_thai !== filterStatus) return false;
+  // Tab filtering
+  const activeStatuses = ["Mới", "Đã liên hệ", "Đang tư vấn", "Đã báo giá", "Đang triển khai"];
+  const convertedStatuses = ["Chốt đơn", "Hoàn thành"];
+  const rejectedStatuses = ["Từ chối"];
+
+  const getTabData = () => {
+    let list = data;
+    if (activeTab === "active") list = data.filter((r) => activeStatuses.includes(r.trang_thai));
+    else if (activeTab === "converted") list = data.filter((r) => convertedStatuses.includes(r.trang_thai));
+    else if (activeTab === "rejected") list = data.filter((r) => rejectedStatuses.includes(r.trang_thai));
+
     if (search) {
       const q = search.toLowerCase();
-      if (!item.ten_kh.toLowerCase().includes(q) && !item.sdt.includes(q) && !item.ma_yc.toLowerCase().includes(q)) return false;
+      list = list.filter((r) => r.ten_kh.toLowerCase().includes(q) || r.sdt.includes(q) || r.ma_yc.toLowerCase().includes(q));
     }
-    return true;
-  });
+    return list;
+  };
 
+  const filtered = getTabData();
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
   const canEdit = user?.vai_tro !== "Xem";
 
+  const tabCounts = {
+    active: data.filter((r) => activeStatuses.includes(r.trang_thai)).length,
+    converted: data.filter((r) => convertedStatuses.includes(r.trang_thai)).length,
+    rejected: data.filter((r) => rejectedStatuses.includes(r.trang_thai)).length,
+  };
+
+  // Handlers
   const handleStatusChange = async (id: string, trang_thai: string) => {
     try {
       await updateServiceRequest(id, { trang_thai });
@@ -138,6 +139,18 @@ export default function YeuCauPage() {
       await updateServiceRequest(id, { ghi_chu_nv });
       setData((prev) => prev.map((r) => r.id === id ? { ...r, ghi_chu_nv } : r));
     } catch { toast.error("Lỗi lưu ghi chú"); }
+  };
+
+  const handleDelete = async () => {
+    if (!selected) return;
+    try {
+      await deleteServiceRequest(selected.id);
+      setData((prev) => prev.filter((r) => r.id !== selected.id));
+      setDeleteOpen(false);
+      setDetailOpen(false);
+      setSelected(null);
+      toast.success("Đã xóa yêu cầu");
+    } catch { toast.error("Lỗi xóa"); }
   };
 
   const handleCreate = async () => {
@@ -198,17 +211,12 @@ export default function YeuCauPage() {
     finally { setConverting(false); }
   };
 
-  const openDetail = (item: ServiceRequest) => {
-    setSelected(item);
-    setDetailOpen(true);
-  };
-
   return (
     <div>
       <div className="admin-page-header">
         <div>
           <h1 className="admin-page-title">Yêu cầu dịch vụ</h1>
-          <p className="admin-page-subtitle">Quản lý yêu cầu từ khách hàng ({filtered.length})</p>
+          <p className="admin-page-subtitle">Quản lý yêu cầu từ khách hàng</p>
         </div>
         {canEdit && (
           <Button className="btn-add" onClick={() => setCreateOpen(true)}>
@@ -217,25 +225,24 @@ export default function YeuCauPage() {
         )}
       </div>
 
+      {/* Tabs */}
+      <div className="yc-tabs">
+        <button className={`yc-tab ${activeTab === "active" ? "active" : ""}`} onClick={() => { setActiveTab("active"); setPage(1); }}>
+          Đang xử lý <span className="yc-tab-count">{tabCounts.active}</span>
+        </button>
+        <button className={`yc-tab ${activeTab === "converted" ? "active" : ""}`} onClick={() => { setActiveTab("converted"); setPage(1); }}>
+          Đã chuyển đổi <span className="yc-tab-count">{tabCounts.converted}</span>
+        </button>
+        <button className={`yc-tab ${activeTab === "rejected" ? "active" : ""}`} onClick={() => { setActiveTab("rejected"); setPage(1); }}>
+          Từ chối <span className="yc-tab-count">{tabCounts.rejected}</span>
+        </button>
+      </div>
+
       <div className="data-table-wrapper">
         <div className="data-table-toolbar">
           <div className="data-table-search">
             <Search size={16} />
             <Input placeholder="Tìm tên, SĐT, mã YC..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
-          </div>
-          <div className="data-table-actions">
-            <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setPage(1); }}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Đang xử lý</SelectItem>
-                <SelectItem value="all">Tất cả</SelectItem>
-                {STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
@@ -259,7 +266,7 @@ export default function YeuCauPage() {
               </TableHeader>
               <TableBody>
                 {paged.map((item) => (
-                  <TableRow key={item.id} onClick={() => openDetail(item)} style={{ cursor: "pointer" }}>
+                  <TableRow key={item.id} onClick={() => { setSelected(item); setDetailOpen(true); }} style={{ cursor: "pointer" }}>
                     <TableCell className="font-medium">{item.ma_yc}</TableCell>
                     <TableCell>
                       <div style={{ fontWeight: 600 }}>{item.ten_kh}</div>
@@ -269,9 +276,7 @@ export default function YeuCauPage() {
                     <TableCell>{item.loai_con_trung || "—"}</TableCell>
                     <TableCell style={{ fontSize: 12 }}>{item.loai_hinh || "—"}</TableCell>
                     <TableCell>
-                      <span className={statusBadgeClass[item.trang_thai] ?? "status-badge"}>
-                        {item.trang_thai}
-                      </span>
+                      <span className={statusBadgeClass[item.trang_thai] ?? "status-badge"}>{item.trang_thai}</span>
                     </TableCell>
                     <TableCell>{formatDate(item.created_at)}</TableCell>
                   </TableRow>
@@ -283,15 +288,13 @@ export default function YeuCauPage() {
         )}
       </div>
 
-      {/* Detail Dialog */}
+      {/* ===== Detail Dialog ===== */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="dialog-bordered sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{selected?.ma_yc} — {selected?.ten_kh}</DialogTitle>
             <DialogDescription>
-              <span className={statusBadgeClass[selected?.trang_thai ?? ""] ?? "status-badge"}>
-                {selected?.trang_thai}
-              </span>
+              <span className={statusBadgeClass[selected?.trang_thai ?? ""] ?? "status-badge"}>{selected?.trang_thai}</span>
               {" "}· Ngày tạo: {selected ? formatDate(selected.created_at) : ""}
             </DialogDescription>
           </DialogHeader>
@@ -301,36 +304,36 @@ export default function YeuCauPage() {
               <div className="form-grid">
                 <div className="form-field">
                   <Label>SĐT</Label>
-                  <p style={{ display: "flex", alignItems: "center", gap: 4 }}><Phone size={14} /> {selected.sdt}</p>
+                  <p className="form-value"><Phone size={14} /> {selected.sdt}</p>
                 </div>
                 {selected.email && (
                   <div className="form-field">
                     <Label>Email</Label>
-                    <p style={{ display: "flex", alignItems: "center", gap: 4 }}><Mail size={14} /> {selected.email}</p>
+                    <p className="form-value"><Mail size={14} /> {selected.email}</p>
                   </div>
                 )}
                 {selected.dia_chi && (
                   <div className="form-field full-width">
                     <Label>Địa chỉ</Label>
-                    <p style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={14} /> {selected.dia_chi}</p>
+                    <p className="form-value"><MapPin size={14} /> {selected.dia_chi}</p>
                   </div>
                 )}
                 {selected.loai_con_trung && (
                   <div className="form-field">
                     <Label>Côn trùng</Label>
-                    <p style={{ display: "flex", alignItems: "center", gap: 4 }}><Bug size={14} /> {selected.loai_con_trung}</p>
+                    <p className="form-value"><Bug size={14} /> {selected.loai_con_trung}</p>
                   </div>
                 )}
                 {selected.loai_hinh && (
                   <div className="form-field">
                     <Label>Loại hình</Label>
-                    <p>{selected.loai_hinh}</p>
+                    <p className="form-value">{selected.loai_hinh}</p>
                   </div>
                 )}
                 {selected.dien_tich && (
                   <div className="form-field">
                     <Label>Diện tích</Label>
-                    <p style={{ display: "flex", alignItems: "center", gap: 4 }}><Ruler size={14} /> {selected.dien_tich} m²</p>
+                    <p className="form-value"><Ruler size={14} /> {selected.dien_tich} m²</p>
                   </div>
                 )}
                 {selected.mo_ta && (
@@ -339,7 +342,6 @@ export default function YeuCauPage() {
                     <p style={{ fontSize: 13, color: "var(--neutral-600)" }}>{selected.mo_ta}</p>
                   </div>
                 )}
-
                 {canEdit && (
                   <div className="form-field">
                     <Label>Trạng thái</Label>
@@ -349,7 +351,6 @@ export default function YeuCauPage() {
                     </select>
                   </div>
                 )}
-
                 {canEdit && (
                   <div className="form-field full-width">
                     <Label>Ghi chú nhân viên</Label>
@@ -364,14 +365,26 @@ export default function YeuCauPage() {
               </div>
 
               <div className="form-actions">
+                {canEdit && (
+                  <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)} style={{ marginRight: "auto" }}>
+                    <Trash2 size={14} /> Xóa
+                  </Button>
+                )}
                 <Button variant="outline" onClick={() => setDetailOpen(false)}>Đóng</Button>
                 {canEdit && !["Chốt đơn", "Hoàn thành"].includes(selected.trang_thai) && (
-                  <Button onClick={() => {
-                    setConvertDichVu(selected.loai_con_trung ? `Dịch vụ ${selected.loai_con_trung}` : "");
-                    setConvertOpen(true);
-                  }}>
-                    <ArrowRightLeft size={14} /> Chuyển thành KH + HĐ
-                  </Button>
+                  <>
+                    {selected.trang_thai !== "Từ chối" && (
+                      <Button variant="outline" onClick={() => handleStatusChange(selected.id, "Từ chối")}>
+                        <XCircle size={14} /> Từ chối
+                      </Button>
+                    )}
+                    <Button onClick={() => {
+                      setConvertDichVu(selected.loai_con_trung ? `Dịch vụ ${selected.loai_con_trung}` : "");
+                      setConvertOpen(true);
+                    }}>
+                      <ArrowRightLeft size={14} /> Chuyển thành KH + HĐ
+                    </Button>
+                  </>
                 )}
               </div>
             </>
@@ -379,18 +392,16 @@ export default function YeuCauPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Convert Dialog */}
+      {/* ===== Convert Dialog ===== */}
       <Dialog open={convertOpen} onOpenChange={setConvertOpen}>
-        <DialogContent>
+        <DialogContent className="dialog-bordered">
           <DialogHeader>
-            <DialogTitle>Chuyển đổi thành KH + HĐ</DialogTitle>
-            <DialogDescription>
-              {selected?.ten_kh} — {selected?.sdt}
-            </DialogDescription>
+            <DialogTitle>Chuyển đổi thành Khách hàng + Hợp đồng</DialogTitle>
+            <DialogDescription>{selected?.ten_kh} — {selected?.sdt}</DialogDescription>
           </DialogHeader>
           {selected && customers.find((c) => sanitizePhone(c.sdt) === sanitizePhone(selected.sdt)) && (
-            <div style={{ padding: "8px 12px", background: "#F0FDF4", borderRadius: 8, fontSize: 13, color: "var(--primary-800)" }}>
-              KH đã tồn tại — sẽ tạo HĐ mới cho KH này
+            <div className="dialog-info-box green">
+              KH đã tồn tại — sẽ tạo hợp đồng mới cho khách hàng này
             </div>
           )}
           <div className="form-grid">
@@ -408,9 +419,26 @@ export default function YeuCauPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Dialog */}
+      {/* ===== Delete Dialog ===== */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="dialog-bordered">
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa yêu cầu <strong>{selected?.ma_yc}</strong> của <strong>{selected?.ten_kh}</strong>?
+              Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Hủy</Button>
+            <Button variant="destructive" onClick={handleDelete}>Xóa yêu cầu</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== Create Dialog ===== */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="dialog-bordered sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Thêm yêu cầu mới</DialogTitle>
             <DialogDescription>Nhập thông tin yêu cầu dịch vụ từ khách hàng</DialogDescription>

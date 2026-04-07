@@ -3573,6 +3573,47 @@ ul { list-style: none; }
 }
 
 /* ============================================
+   YEU CAU TABS
+   ============================================ */
+.yc-tabs {
+  display: flex; gap: 0; margin-bottom: 16px;
+  border-bottom: 2px solid var(--neutral-200);
+}
+.yc-tab {
+  padding: 10px 20px; border: none; background: transparent;
+  font-size: 13px; font-weight: 600; color: var(--neutral-500);
+  cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -2px; transition: all 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.yc-tab:hover { color: var(--neutral-800); }
+.yc-tab.active { color: var(--primary-800); border-bottom-color: var(--primary-800); }
+.yc-tab-count {
+  font-size: 11px; background: var(--neutral-100); color: var(--neutral-600);
+  padding: 1px 7px; border-radius: 10px; font-weight: 700;
+}
+.yc-tab.active .yc-tab-count { background: var(--primary-100); color: var(--primary-800); }
+
+/* ============================================
+   DIALOG BORDERED + INFO BOX
+   ============================================ */
+.dialog-bordered [data-slot="content"] {
+  border: 2px solid var(--neutral-200) !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12) !important;
+}
+.dialog-info-box {
+  padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 8px;
+}
+.dialog-info-box.green { background: #F0FDF4; border: 1px solid #BBF7D0; color: var(--primary-800); }
+.dialog-info-box.amber { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; }
+.dialog-info-box.red { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+
+/* Form value display */
+.form-value {
+  display: flex; align-items: center; gap: 5px; font-size: 14px; color: var(--neutral-700);
+}
+
+/* ============================================
    PRINT STYLES
    ============================================ */
 @media print {

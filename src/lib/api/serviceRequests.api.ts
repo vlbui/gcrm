@@ -83,3 +83,9 @@ export async function updateServiceRequest(
   if (error) throw error;
   return data;
 }
+
+export async function deleteServiceRequest(id: string) {
+  const supabase = createClient();
+  const { error } = await supabase.from("service_requests").delete().eq("id", id);
+  if (error) throw error;
+}
