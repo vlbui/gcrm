@@ -63,6 +63,9 @@ export type CreateDealInput = {
   loai_kh?: string;
   email?: string;
   dia_chi?: string;
+  ten_cong_ty?: string;
+  nguoi_lien_he?: string;
+  loai_hinh?: string;
   loai_con_trung?: string[];
   dich_vu?: string[];
   dien_tich?: number;

@@ -6,13 +6,13 @@ import {
   createDeal,
   updateDealStage,
   updateDealField,
-  updateDeal,
   deleteDeal,
   addPayment,
   DEAL_STAGES,
   type Deal,
   type DealStage,
   type PaymentRecord,
+  type CreateDealInput,
 } from "@/lib/api/deals.api";
 import { fetchActiveTechnicians, type Technician } from "@/lib/api/technicians.api";
 import { fetchUsers, type User } from "@/lib/api/users.api";
@@ -25,21 +25,23 @@ import {
   GripVertical,
   Plus,
   Trash2,
-  Calendar,
   DollarSign,
   User as UserIcon,
   Bug,
-  MapPin,
-  Mail,
-  Building2,
   FileText,
-  Camera,
   CreditCard,
   MessageSquare,
-  ChevronDown,
   Filter,
-  ExternalLink,
+  ChevronDown,
 } from "lucide-react";
+
+const BUG_OPTIONS = ["Gián", "Chuột", "Mối", "Muỗi", "Kiến", "Ruồi", "Khác"];
+const LOAI_HINH_OPTIONS = [
+  "Cá nhân / Hộ gia đình",
+  "Doanh nghiệp / Khu công nghiệp",
+  "Khu chung cư / Văn phòng / Trường học",
+  "Trang trại",
+];
 
 export default function PipelinePage() {
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -52,11 +54,9 @@ export default function PipelinePage() {
   const [showFilters, setShowFilters] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
 
-  // Quick add
-  const [quickAddCol, setQuickAddCol] = useState<string | null>(null);
-  const [quickName, setQuickName] = useState("");
-  const [quickPhone, setQuickPhone] = useState("");
-  const quickNameRef = useRef<HTMLInputElement>(null);
+  // New deal form
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newFormStage, setNewFormStage] = useState<string>("Khách hỏi");
 
   const loadData = useCallback(async () => {
     try {
@@ -80,20 +80,10 @@ export default function PipelinePage() {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === "n" || e.key === "N") {
-        e.preventDefault();
-        setQuickAddCol("Khách hỏi");
-        setTimeout(() => quickNameRef.current?.focus(), 100);
-      }
-      if (e.key === "/" ) {
-        e.preventDefault();
-        document.querySelector<HTMLInputElement>(".pipeline-search input")?.focus();
-      }
-      if (e.key === "Escape") {
-        setSelectedDeal(null);
-        setQuickAddCol(null);
-      }
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
+      if (e.key === "n" || e.key === "N") { e.preventDefault(); setNewFormStage("Khách hỏi"); setShowNewForm(true); }
+      if (e.key === "/") { e.preventDefault(); document.querySelector<HTMLInputElement>(".pipeline-search input")?.focus(); }
+      if (e.key === "Escape") { setSelectedDeal(null); setShowNewForm(false); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -112,8 +102,6 @@ export default function PipelinePage() {
   const getColTotal = (stage: string) => getColDeals(stage).reduce((s, d) => s + (d.gia_tri || 0), 0);
 
   // Drag & Drop
-  const handleDragStart = (id: string) => setDraggedId(id);
-
   const handleDrop = async (e: React.DragEvent, stage: string) => {
     e.preventDefault();
     e.currentTarget.classList.remove("pipeline-col-drag-over");
@@ -121,10 +109,8 @@ export default function PipelinePage() {
     const deal = deals.find((d) => d.id === draggedId);
     if (!deal || deal.giai_doan === stage) { setDraggedId(null); return; }
 
-    // Optimistic update
     setDeals((prev) => prev.map((d) => d.id === draggedId ? { ...d, giai_doan: stage as DealStage } : d));
     setDraggedId(null);
-
     try {
       await updateDealStage(deal.id, stage as DealStage);
       toast.success(`→ ${stage}`);
@@ -134,38 +120,25 @@ export default function PipelinePage() {
     }
   };
 
-  // Quick Add
-  const handleQuickAdd = async (stage: string) => {
-    if (!quickName.trim() || !quickPhone.trim()) {
-      toast.error("Nhập tên và SĐT");
-      return;
-    }
-    try {
-      const deal = await createDeal({
-        ten_kh: quickName.trim(),
-        sdt: quickPhone.trim(),
-        giai_doan: stage as DealStage,
-      });
-      setDeals((prev) => [deal, ...prev]);
-      setQuickAddCol(null);
-      setQuickName("");
-      setQuickPhone("");
-      toast.success("Đã thêm");
-    } catch {
-      toast.error("Lỗi thêm deal");
-    }
-  };
-
   // Auto-save field
   const handleFieldSave = async (dealId: string, field: string, value: unknown) => {
     try {
       await updateDealField(dealId, field, value);
       setDeals((prev) => prev.map((d) => d.id === dealId ? { ...d, [field]: value } : d));
-      if (selectedDeal?.id === dealId) {
-        setSelectedDeal((prev) => prev ? { ...prev, [field]: value } : null);
-      }
+      if (selectedDeal?.id === dealId) setSelectedDeal((prev) => prev ? { ...prev, [field]: value } : null);
     } catch {
       toast.error("Lỗi lưu");
+    }
+  };
+
+  const handleNewDeal = async (input: CreateDealInput) => {
+    try {
+      const deal = await createDeal(input);
+      setDeals((prev) => [deal, ...prev]);
+      setShowNewForm(false);
+      toast.success("Đã thêm deal");
+    } catch {
+      toast.error("Lỗi thêm deal");
     }
   };
 
@@ -185,8 +158,8 @@ export default function PipelinePage() {
           <button className="p-btn p-btn-ghost" onClick={() => setShowFilters(!showFilters)}>
             <Filter size={15} /> Lọc
           </button>
-          <button className="p-btn p-btn-primary" onClick={() => { setQuickAddCol("Khách hỏi"); setTimeout(() => quickNameRef.current?.focus(), 100); }}>
-            <Plus size={15} /> Deal mới <kbd>N</kbd>
+          <button className="p-btn p-btn-primary" onClick={() => { setNewFormStage("Khách hỏi"); setShowNewForm(true); }}>
+            <Plus size={15} /> Thêm yêu cầu <kbd>N</kbd>
           </button>
         </div>
       </div>
@@ -220,46 +193,13 @@ export default function PipelinePage() {
                   <span>{stage.label}</span>
                   <span className="pipeline-col-count">{colDeals.length}</span>
                 </div>
-                {total > 0 && (
-                  <div className="pipeline-col-total">{(total / 1000000).toFixed(1)}tr</div>
-                )}
-                <button
-                  className="pipeline-col-add"
-                  onClick={() => { setQuickAddCol(stage.key); setTimeout(() => quickNameRef.current?.focus(), 100); }}
-                  title="Thêm nhanh"
-                >
+                {total > 0 && <div className="pipeline-col-total">{(total / 1000000).toFixed(1)}tr</div>}
+                <button className="pipeline-col-add" onClick={() => { setNewFormStage(stage.key); setShowNewForm(true); }} title="Thêm">
                   <Plus size={14} />
                 </button>
               </div>
 
               <div className="pipeline-col-body">
-                {/* Quick Add Inline */}
-                {quickAddCol === stage.key && (
-                  <div className="pipeline-quick-add">
-                    <input
-                      ref={quickNameRef}
-                      className="p-input"
-                      placeholder="Tên KH"
-                      value={quickName}
-                      onChange={(e) => setQuickName(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && document.querySelector<HTMLInputElement>(".qa-phone")?.focus()}
-                    />
-                    <input
-                      className="p-input qa-phone"
-                      placeholder="SĐT"
-                      value={quickPhone}
-                      onChange={(e) => setQuickPhone(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleQuickAdd(stage.key)}
-                    />
-                    <div style={{ display: "flex", gap: 4 }}>
-                      <button className="p-btn p-btn-primary" style={{ flex: 1, padding: "6px" }} onClick={() => handleQuickAdd(stage.key)}>Thêm</button>
-                      <button className="p-btn p-btn-ghost" style={{ padding: "6px" }} onClick={() => setQuickAddCol(null)}>
-                        <X size={14} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 {colDeals.map((deal) => {
                   const isOverdue = deal.ngay_hen && deal.ngay_hen < today && deal.giai_doan !== "Hoàn thành";
                   const isToday = deal.ngay_hen === today;
@@ -268,25 +208,19 @@ export default function PipelinePage() {
                       key={deal.id}
                       className={`pipeline-card ${draggedId === deal.id ? "dragging" : ""}`}
                       draggable
-                      onDragStart={() => handleDragStart(deal.id)}
+                      onDragStart={() => setDraggedId(deal.id)}
                       onClick={() => setSelectedDeal(deal)}
                     >
                       <div className="pipeline-card-grip"><GripVertical size={14} /></div>
                       <div className="pipeline-card-name">{deal.ten_kh}</div>
-                      <div className="pipeline-card-phone">
-                        <Phone size={11} /> {deal.sdt}
-                      </div>
+                      <div className="pipeline-card-phone"><Phone size={11} /> {deal.sdt}</div>
                       {deal.loai_con_trung?.length > 0 && (
                         <div className="pipeline-card-tags">
-                          {deal.loai_con_trung.map((t) => (
-                            <span key={t} className="pipeline-card-tag">{t}</span>
-                          ))}
+                          {deal.loai_con_trung.map((t) => <span key={t} className="pipeline-card-tag">{t}</span>)}
                         </div>
                       )}
                       <div className="pipeline-card-bottom">
-                        {deal.gia_tri > 0 && (
-                          <span className="pipeline-card-value">{(deal.gia_tri / 1000000).toFixed(1)}tr</span>
-                        )}
+                        {deal.gia_tri > 0 && <span className="pipeline-card-value">{(deal.gia_tri / 1000000).toFixed(1)}tr</span>}
                         {deal.ngay_hen && (
                           <span className={`pipeline-card-date ${isOverdue ? "overdue" : isToday ? "today" : ""}`}>
                             {isOverdue ? "Quá hạn" : isToday ? "Hôm nay" : formatDate(deal.ngay_hen)}
@@ -296,9 +230,7 @@ export default function PipelinePage() {
                     </div>
                   );
                 })}
-                {colDeals.length === 0 && !quickAddCol && (
-                  <div className="pipeline-col-empty">Kéo thả vào đây</div>
-                )}
+                {colDeals.length === 0 && <div className="pipeline-col-empty">Kéo thả vào đây</div>}
               </div>
             </div>
           );
@@ -326,13 +258,183 @@ export default function PipelinePage() {
             try {
               await addPayment(dealId, payment);
               await loadData();
-              const updated = deals.find((d) => d.id === dealId);
-              if (updated) setSelectedDeal(updated);
               toast.success("Đã thêm thanh toán");
             } catch { toast.error("Lỗi"); }
           }}
         />
       )}
+
+      {/* New Deal Dialog */}
+      {showNewForm && (
+        <NewDealDialog
+          stage={newFormStage as DealStage}
+          users={users}
+          onClose={() => setShowNewForm(false)}
+          onSubmit={handleNewDeal}
+        />
+      )}
+    </div>
+  );
+}
+
+/* =========================================
+   NEW DEAL DIALOG — Form đầy đủ
+   ========================================= */
+function NewDealDialog({
+  stage,
+  users,
+  onClose,
+  onSubmit,
+}: {
+  stage: DealStage;
+  users: User[];
+  onClose: () => void;
+  onSubmit: (input: CreateDealInput) => void;
+}) {
+  const [tenKh, setTenKh] = useState("");
+  const [sdt, setSdt] = useState("");
+  const [email, setEmail] = useState("");
+  const [diaChi, setDiaChi] = useState("");
+  const [loaiKh, setLoaiKh] = useState("Cá nhân");
+  const [tenCongTy, setTenCongTy] = useState("");
+  const [loaiHinh, setLoaiHinh] = useState("");
+  const [bugs, setBugs] = useState<string[]>([]);
+  const [dienTich, setDienTich] = useState("");
+  const [giaTri, setGiaTri] = useState("");
+  const [ghiChu, setGhiChu] = useState("");
+  const [nguoiPhuTrach, setNguoiPhuTrach] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const toggleBug = (b: string) => {
+    setBugs((prev) => prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]);
+  };
+
+  const handleSubmit = async () => {
+    if (!tenKh.trim()) { toast.error("Nhập tên khách hàng"); return; }
+    if (!sdt.trim()) { toast.error("Nhập số điện thoại"); return; }
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        ten_kh: tenKh.trim(),
+        sdt: sdt.trim(),
+        email: email.trim() || undefined,
+        dia_chi: diaChi.trim() || undefined,
+        loai_kh: loaiKh as "Cá nhân" | "Tổ chức",
+        loai_con_trung: bugs.length > 0 ? bugs : undefined,
+        dich_vu: bugs.length > 0 ? bugs.map((b) => `Dịch vụ ${b}`) : undefined,
+        dien_tich: dienTich ? Number(dienTich) : undefined,
+        gia_tri: giaTri ? Number(giaTri) : undefined,
+        ghi_chu: ghiChu.trim() || undefined,
+        nguoi_phu_trach: nguoiPhuTrach || undefined,
+        giai_doan: stage,
+      } as CreateDealInput & { loai_kh: string; giai_doan: DealStage });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="admin-dialog-overlay" onClick={onClose}>
+      <div className="admin-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 580 }}>
+        <div className="admin-dialog-header">
+          <h2>Thêm yêu cầu mới</h2>
+          <button className="admin-dialog-close" onClick={onClose}><X size={20} /></button>
+        </div>
+        <div className="admin-dialog-body">
+          {/* Loại KH */}
+          <div className="new-deal-type-row">
+            <button className={`new-deal-type-btn ${loaiKh === "Cá nhân" ? "active" : ""}`} onClick={() => setLoaiKh("Cá nhân")}>
+              Cá nhân
+            </button>
+            <button className={`new-deal-type-btn ${loaiKh === "Tổ chức" ? "active" : ""}`} onClick={() => setLoaiKh("Tổ chức")}>
+              Tổ chức
+            </button>
+          </div>
+
+          {loaiKh === "Tổ chức" && (
+            <div className="admin-form-group">
+              <label className="admin-label">Tên công ty</label>
+              <input className="p-input" value={tenCongTy} onChange={(e) => setTenCongTy(e.target.value)} placeholder="Công ty TNHH..." />
+            </div>
+          )}
+
+          <div className="admin-form-row">
+            <div className="admin-form-group">
+              <label className="admin-label">Họ tên {loaiKh === "Tổ chức" ? "người liên hệ" : ""} *</label>
+              <input className="p-input" value={tenKh} onChange={(e) => setTenKh(e.target.value)} placeholder="Nguyễn Văn A" />
+            </div>
+            <div className="admin-form-group">
+              <label className="admin-label">Số điện thoại *</label>
+              <input className="p-input" value={sdt} onChange={(e) => setSdt(e.target.value)} placeholder="085 9955 969" />
+            </div>
+          </div>
+          <div className="admin-form-row">
+            <div className="admin-form-group">
+              <label className="admin-label">Email</label>
+              <input className="p-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
+            </div>
+            <div className="admin-form-group">
+              <label className="admin-label">Địa chỉ</label>
+              <input className="p-input" value={diaChi} onChange={(e) => setDiaChi(e.target.value)} placeholder="Số nhà, đường, quận..." />
+            </div>
+          </div>
+
+          <div className="admin-form-group">
+            <label className="admin-label">Loại hình</label>
+            <select className="p-select" value={loaiHinh} onChange={(e) => setLoaiHinh(e.target.value)}>
+              <option value="">— Chọn —</option>
+              {LOAI_HINH_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+
+          {/* Bug chips */}
+          <div className="admin-form-group">
+            <label className="admin-label">Loại côn trùng</label>
+            <div className="new-deal-bug-chips">
+              {BUG_OPTIONS.map((b) => (
+                <button
+                  key={b}
+                  type="button"
+                  className={`new-deal-bug-chip ${bugs.includes(b) ? "active" : ""}`}
+                  onClick={() => toggleBug(b)}
+                >
+                  {b}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="admin-form-row">
+            <div className="admin-form-group">
+              <label className="admin-label">Diện tích (m²)</label>
+              <input className="p-input" type="number" value={dienTich} onChange={(e) => setDienTich(e.target.value)} placeholder="80" />
+            </div>
+            <div className="admin-form-group">
+              <label className="admin-label">Giá trị dự kiến (VNĐ)</label>
+              <input className="p-input" type="number" value={giaTri} onChange={(e) => setGiaTri(e.target.value)} placeholder="0" />
+            </div>
+          </div>
+
+          <div className="admin-form-group">
+            <label className="admin-label">Người phụ trách</label>
+            <select className="p-select" value={nguoiPhuTrach} onChange={(e) => setNguoiPhuTrach(e.target.value)}>
+              <option value="">— Tự động —</option>
+              {users.map((u) => <option key={u.id} value={u.id}>{u.ho_ten}</option>)}
+            </select>
+          </div>
+
+          <div className="admin-form-group">
+            <label className="admin-label">Ghi chú / Mô tả</label>
+            <textarea className="p-textarea" rows={3} value={ghiChu} onChange={(e) => setGhiChu(e.target.value)} placeholder="Mô tả tình trạng, thời gian mong muốn..." />
+          </div>
+        </div>
+        <div className="admin-dialog-footer">
+          <button className="p-btn p-btn-ghost" onClick={onClose}>Hủy</button>
+          <button className="p-btn p-btn-primary" onClick={handleSubmit} disabled={submitting}>
+            {submitting ? "Đang lưu..." : `Thêm vào "${stage}"`}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -375,7 +477,6 @@ function SidePanel({
     <>
       <div className="side-panel-overlay" onClick={onClose} />
       <div className="side-panel">
-        {/* Header */}
         <div className="side-panel-header">
           <div>
             <div className="side-panel-deal-code">{deal.ma_deal}</div>
@@ -383,26 +484,19 @@ function SidePanel({
           </div>
           <div className="side-panel-actions">
             <a href={`tel:${deal.sdt}`} className="sp-action-btn" title="Gọi"><Phone size={16} /></a>
-            {deal.email && <a href={`mailto:${deal.email}`} className="sp-action-btn" title="Email"><Mail size={16} /></a>}
             <button className="sp-action-btn sp-delete" onClick={() => onDelete(deal.id)} title="Xóa"><Trash2 size={16} /></button>
             <button className="sp-action-btn" onClick={onClose} title="Đóng (Esc)"><X size={18} /></button>
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="side-panel-tabs">
           {tabs.map((t) => (
-            <button
-              key={t.key}
-              className={`sp-tab ${tab === t.key ? "active" : ""}`}
-              onClick={() => setTab(t.key)}
-            >
+            <button key={t.key} className={`sp-tab ${tab === t.key ? "active" : ""}`} onClick={() => setTab(t.key)}>
               <t.icon size={14} /> {t.label}
             </button>
           ))}
         </div>
 
-        {/* Tab Content */}
         <div className="side-panel-body">
           {tab === "info" && (
             <div className="sp-fields">
@@ -414,11 +508,7 @@ function SidePanel({
 
               <div className="sp-field">
                 <label>Loại KH</label>
-                <select
-                  className="p-select"
-                  value={deal.loai_kh || "Cá nhân"}
-                  onChange={(e) => onFieldSave(deal.id, "loai_kh", e.target.value)}
-                >
+                <select className="p-select" value={deal.loai_kh || "Cá nhân"} onChange={(e) => onFieldSave(deal.id, "loai_kh", e.target.value)}>
                   <option>Cá nhân</option>
                   <option>Tổ chức</option>
                 </select>
@@ -426,42 +516,26 @@ function SidePanel({
 
               <div className="sp-divider" />
 
-              <InlineField label="Dịch vụ" value={(deal.dich_vu || []).join(", ")}
-                onSave={(v) => onFieldSave(deal.id, "dich_vu", v.split(",").map((s) => s.trim()).filter(Boolean))} />
               <InlineField label="Côn trùng" value={(deal.loai_con_trung || []).join(", ")}
                 onSave={(v) => onFieldSave(deal.id, "loai_con_trung", v.split(",").map((s) => s.trim()).filter(Boolean))} />
-              <InlineField label="Diện tích (m²)" value={String(deal.dien_tich || "")} type="number"
+              <InlineField label="Diện tích" value={String(deal.dien_tich || "")} type="number"
                 onSave={(v) => onFieldSave(deal.id, "dien_tich", v ? Number(v) : null)} />
-              <InlineField label="Giá trị (VNĐ)" value={String(deal.gia_tri || "")} type="number"
+              <InlineField label="Giá trị" value={String(deal.gia_tri || "")} type="number"
                 onSave={(v) => onFieldSave(deal.id, "gia_tri", Number(v) || 0)} />
 
               <div className="sp-divider" />
 
               <div className="sp-field">
                 <label>Ngày hẹn</label>
-                <input
-                  type="date"
-                  className="p-input"
-                  defaultValue={deal.ngay_hen || ""}
-                  onChange={(e) => onFieldSave(deal.id, "ngay_hen", e.target.value || null)}
-                />
+                <input type="date" className="p-input" defaultValue={deal.ngay_hen || ""} onChange={(e) => onFieldSave(deal.id, "ngay_hen", e.target.value || null)} />
               </div>
               <div className="sp-field">
-                <label>Ngày thực hiện</label>
-                <input
-                  type="date"
-                  className="p-input"
-                  defaultValue={deal.ngay_thuc_hien || ""}
-                  onChange={(e) => onFieldSave(deal.id, "ngay_thuc_hien", e.target.value || null)}
-                />
+                <label>Ngày TH</label>
+                <input type="date" className="p-input" defaultValue={deal.ngay_thuc_hien || ""} onChange={(e) => onFieldSave(deal.id, "ngay_thuc_hien", e.target.value || null)} />
               </div>
               <div className="sp-field">
-                <label>Người phụ trách</label>
-                <select
-                  className="p-select"
-                  value={deal.nguoi_phu_trach || ""}
-                  onChange={(e) => onFieldSave(deal.id, "nguoi_phu_trach", e.target.value || null)}
-                >
+                <label>Phụ trách</label>
+                <select className="p-select" value={deal.nguoi_phu_trach || ""} onChange={(e) => onFieldSave(deal.id, "nguoi_phu_trach", e.target.value || null)}>
                   <option value="">— Chọn —</option>
                   {users.map((u) => <option key={u.id} value={u.id}>{u.ho_ten}</option>)}
                 </select>
@@ -471,96 +545,56 @@ function SidePanel({
 
           {tab === "ktv" && (
             <div className="sp-ktv">
-              <p className="sp-hint">Chọn KTV phụ trách deal này:</p>
+              <p className="sp-hint">Chọn KTV phụ trách:</p>
               <div className="sp-ktv-grid">
                 {technicians.map((t) => {
                   const isAssigned = (deal.ktv_phu_trach || []).includes(t.id);
                   return (
-                    <div
-                      key={t.id}
-                      className={`sp-ktv-card ${isAssigned ? "assigned" : ""}`}
+                    <div key={t.id} className={`sp-ktv-card ${isAssigned ? "assigned" : ""}`}
                       onClick={() => {
                         const current = deal.ktv_phu_trach || [];
                         const next = isAssigned ? current.filter((id) => id !== t.id) : [...current, t.id];
                         onFieldSave(deal.id, "ktv_phu_trach", next);
-                      }}
-                    >
+                      }}>
                       <div className="sp-ktv-avatar">{t.ho_ten.charAt(0)}</div>
                       <div>
                         <div className="sp-ktv-name">{t.ho_ten}</div>
                         <div className="sp-ktv-phone">{t.sdt}</div>
-                        {t.chuyen_mon?.length > 0 && (
-                          <div className="sp-ktv-tags">{t.chuyen_mon.join(", ")}</div>
-                        )}
                       </div>
                     </div>
                   );
                 })}
+                {technicians.length === 0 && <p className="sp-hint">Chưa có KTV.</p>}
               </div>
-              {technicians.length === 0 && (
-                <p className="sp-hint">Chưa có KTV. Thêm tại mục Kỹ thuật viên.</p>
-              )}
             </div>
           )}
 
           {tab === "payment" && (
             <div className="sp-payment">
               <div className="sp-payment-summary">
-                <div className="sp-payment-row">
-                  <span>Giá trị deal</span>
-                  <strong>{(deal.gia_tri || 0).toLocaleString("vi-VN")}đ</strong>
-                </div>
-                <div className="sp-payment-row">
-                  <span>Đã thanh toán</span>
-                  <strong style={{ color: "var(--primary-700)" }}>{totalPaid.toLocaleString("vi-VN")}đ</strong>
-                </div>
-                <div className="sp-payment-row">
-                  <span>Còn lại</span>
-                  <strong style={{ color: "var(--danger-500)" }}>
-                    {((deal.gia_tri || 0) - totalPaid).toLocaleString("vi-VN")}đ
-                  </strong>
-                </div>
+                <div className="sp-payment-row"><span>Giá trị</span><strong>{(deal.gia_tri || 0).toLocaleString("vi-VN")}đ</strong></div>
+                <div className="sp-payment-row"><span>Đã TT</span><strong style={{ color: "var(--primary-700)" }}>{totalPaid.toLocaleString("vi-VN")}đ</strong></div>
+                <div className="sp-payment-row"><span>Còn lại</span><strong style={{ color: "var(--danger-500)" }}>{((deal.gia_tri || 0) - totalPaid).toLocaleString("vi-VN")}đ</strong></div>
               </div>
-
-              {/* Quick add payment */}
               <div className="sp-payment-add">
-                <input
-                  className="p-input"
-                  type="number"
-                  placeholder="Số tiền"
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                />
+                <input className="p-input" type="number" placeholder="Số tiền" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
                 <select className="p-select" value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
                   <option>Chuyển khoản</option>
                   <option>Tiền mặt</option>
                   <option>Thẻ</option>
                 </select>
-                <button
-                  className="p-btn p-btn-primary"
-                  disabled={!payAmount}
-                  onClick={() => {
-                    onPayment(deal.id, {
-                      so_tien: Number(payAmount),
-                      ngay_tt: new Date().toISOString().split("T")[0],
-                      hinh_thuc: payMethod,
-                    });
-                    setPayAmount("");
-                  }}
-                >
-                  <Plus size={14} /> Thêm
+                <button className="p-btn p-btn-primary" disabled={!payAmount} onClick={() => {
+                  onPayment(deal.id, { so_tien: Number(payAmount), ngay_tt: new Date().toISOString().split("T")[0], hinh_thuc: payMethod });
+                  setPayAmount("");
+                }}>
+                  <Plus size={14} />
                 </button>
               </div>
-
-              {/* History */}
               {(deal.thanh_toan || []).length > 0 && (
                 <div className="sp-payment-list">
                   {(deal.thanh_toan || []).map((p, i) => (
                     <div key={p.id || i} className="sp-payment-item">
-                      <div>
-                        <strong>{p.so_tien.toLocaleString("vi-VN")}đ</strong>
-                        <span className="sp-payment-method">{p.hinh_thuc}</span>
-                      </div>
+                      <div><strong>{p.so_tien.toLocaleString("vi-VN")}đ</strong> <span className="sp-payment-method">{p.hinh_thuc}</span></div>
                       <span className="sp-payment-date">{formatDate(p.ngay_tt)}</span>
                     </div>
                   ))}
@@ -571,21 +605,15 @@ function SidePanel({
 
           {tab === "notes" && (
             <div className="sp-notes">
-              <textarea
-                className="p-textarea"
-                rows={6}
-                defaultValue={deal.ghi_chu || ""}
-                placeholder="Ghi chú về deal..."
+              <textarea className="p-textarea" rows={8} defaultValue={deal.ghi_chu || ""} placeholder="Ghi chú..."
                 onBlur={(e) => {
                   if (e.target.value !== (deal.ghi_chu || "")) {
                     onFieldSave(deal.id, "ghi_chu", e.target.value || null);
-                    toast.success("Đã lưu ghi chú");
+                    toast.success("Đã lưu");
                   }
                 }}
               />
-              <div className="sp-meta">
-                Tạo: {formatDate(deal.created_at)} · Cập nhật: {formatDate(deal.updated_at)}
-              </div>
+              <div className="sp-meta">Tạo: {formatDate(deal.created_at)} · Cập nhật: {formatDate(deal.updated_at)}</div>
             </div>
           )}
         </div>
@@ -595,18 +623,10 @@ function SidePanel({
 }
 
 /* =========================================
-   INLINE FIELD COMPONENT
+   INLINE FIELD
    ========================================= */
-function InlineField({
-  label,
-  value,
-  type = "text",
-  onSave,
-}: {
-  label: string;
-  value: string;
-  type?: string;
-  onSave: (value: string) => void;
+function InlineField({ label, value, type = "text", onSave }: {
+  label: string; value: string; type?: string; onSave: (value: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(value);
@@ -614,10 +634,7 @@ function InlineField({
 
   useEffect(() => { setVal(value); }, [value]);
 
-  const save = () => {
-    setEditing(false);
-    if (val !== value) onSave(val);
-  };
+  const save = () => { setEditing(false); if (val !== value) onSave(val); };
 
   if (!editing) {
     return (
@@ -631,15 +648,8 @@ function InlineField({
   return (
     <div className="sp-field editing">
       <label>{label}</label>
-      <input
-        ref={inputRef}
-        className="p-input"
-        type={type}
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        onBlur={save}
-        onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setVal(value); setEditing(false); } }}
-      />
+      <input ref={inputRef} className="p-input" type={type} value={val} onChange={(e) => setVal(e.target.value)}
+        onBlur={save} onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setVal(value); setEditing(false); } }} />
     </div>
   );
 }

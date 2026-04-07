@@ -3235,6 +3235,25 @@ ul { list-style: none; }
 .pipeline-col-body { padding: 6px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
 .pipeline-col-empty { text-align: center; padding: 24px 8px; color: var(--neutral-400); font-size: 11px; border: 2px dashed var(--neutral-200); border-radius: var(--radius-sm); }
 
+/* New Deal Form */
+.new-deal-type-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.new-deal-type-btn {
+  flex: 1; padding: 10px; border: 2px solid var(--neutral-200); border-radius: var(--radius-md);
+  background: white; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  color: var(--neutral-600); text-align: center;
+}
+.new-deal-type-btn.active { border-color: var(--primary-500); background: var(--primary-50); color: var(--primary-800); }
+.new-deal-type-btn:hover { border-color: var(--primary-300); }
+
+.new-deal-bug-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.new-deal-bug-chip {
+  padding: 5px 12px; border: 1px solid var(--neutral-200); border-radius: var(--radius-full);
+  background: white; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  color: var(--neutral-600);
+}
+.new-deal-bug-chip.active { border-color: var(--primary-500); background: var(--primary-50); color: var(--primary-800); }
+.new-deal-bug-chip:hover { border-color: var(--primary-300); }
+
 /* Quick Add */
 .pipeline-quick-add {
   display: flex; flex-direction: column; gap: 6px; padding: 8px;
