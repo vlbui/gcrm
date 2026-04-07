@@ -43,10 +43,10 @@ export default function ContactForm() {
       const phone = sanitizePhone(data.sdt);
       const emailVal = data.email ? sanitizeEmail(data.email) : null;
 
-      // Check duplicate by phone
+      // Check duplicate by phone on deals table
       const { data: existing } = await supabase
-        .from("service_requests")
-        .select("ma_yc, ten_kh, created_at")
+        .from("deals")
+        .select("ma_deal, ten_kh, created_at")
         .eq("sdt", phone)
         .order("created_at", { ascending: false })
         .limit(1);
@@ -54,21 +54,27 @@ export default function ContactForm() {
       if (existing && existing.length > 0 && !duplicateWarning) {
         const date = formatDate(existing[0].created_at);
         setDuplicateWarning(
-          `SĐT này đã gửi yêu cầu ${existing[0].ma_yc} (${existing[0].ten_kh}) ngày ${date}. Nhấn "Gửi" lần nữa nếu vẫn muốn tạo yêu cầu mới.`
+          `SĐT này đã gửi yêu cầu ${existing[0].ma_deal} (${existing[0].ten_kh}) ngày ${date}. Nhấn "Gửi" lần nữa nếu vẫn muốn tạo yêu cầu mới.`
         );
         setSubmitting(false);
         return;
       }
 
-      const { error } = await supabase.from("service_requests").insert({
+      // Generate deal code
+      const now = new Date();
+      const ma_deal = `D-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+
+      const { error } = await supabase.from("deals").insert({
+        ma_deal,
+        giai_doan: "Khách hỏi",
         ten_kh: data.ten_kh.trim(),
         sdt: phone,
         email: emailVal || null,
         dia_chi: data.dia_chi?.trim() || null,
         loai_hinh: data.loai_hinh || "Cá nhân / Hộ gia đình",
-        loai_con_trung: data.loai_con_trung || null,
+        loai_con_trung: data.loai_con_trung ? [data.loai_con_trung] : [],
         dien_tich: data.dien_tich ? Number(data.dien_tich) : null,
-        mo_ta: data.mo_ta?.trim() || null,
+        ghi_chu: data.mo_ta?.trim() || null,
       });
 
       if (error) throw error;

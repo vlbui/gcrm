@@ -119,7 +119,6 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
     try {
       const supabase = createClient();
       const now = new Date();
-      const ma_yc = `GS-YC${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
 
       const isPersonal = customerType === "personal";
       const rawPhone = isPersonal ? sdt : sdtOrg;
@@ -127,10 +126,10 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
       const rawEmail = isPersonal ? email : emailCty;
       const emailVal = rawEmail ? sanitizeEmail(rawEmail) : null;
 
-      // Check duplicate by phone
+      // Check duplicate by phone on deals table
       const { data: existing } = await supabase
-        .from("service_requests")
-        .select("ma_yc, ten_kh, created_at")
+        .from("deals")
+        .select("ma_deal, ten_kh, created_at")
         .eq("sdt", phone)
         .order("created_at", { ascending: false })
         .limit(1);
@@ -138,7 +137,7 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
       if (existing && existing.length > 0 && !duplicateWarning) {
         const date = formatDate(existing[0].created_at);
         setDuplicateWarning(
-          `SĐT này đã gửi yêu cầu ${existing[0].ma_yc} (${existing[0].ten_kh}) ngày ${date}. Nhấn "Gửi" lần nữa nếu vẫn muốn tạo yêu cầu mới.`
+          `SĐT này đã gửi yêu cầu ${existing[0].ma_deal} (${existing[0].ten_kh}) ngày ${date}. Nhấn "Gửi" lần nữa nếu vẫn muốn tạo yêu cầu mới.`
         );
         setSubmitting(false);
         return;
@@ -151,19 +150,26 @@ function SmartFormPopup({ onClose, initialLoaiHinh = "" }: { onClose: () => void
         moTaOrg && moTaOrg,
       ].filter(Boolean).join(". ");
 
+      const bugsList = isPersonal ? bugs : bugsOrg;
+      const ma_deal = `D-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+
       const payload = {
-        ma_yc,
+        ma_deal,
+        giai_doan: "Khách hỏi" as const,
+        loai_kh: isPersonal ? "Cá nhân" as const : "Tổ chức" as const,
         ten_kh: (isPersonal ? tenKh : nguoiLienHe).trim(),
         sdt: phone,
         email: emailVal || null,
         dia_chi: (isPersonal ? diaChi : diaChiCty)?.trim() || null,
+        ten_cong_ty: isPersonal ? null : (tenCty?.trim() || null),
+        nguoi_lien_he: isPersonal ? null : (nguoiLienHe?.trim() || null),
         loai_hinh: loaiHinh || (isPersonal ? "Cá nhân / Hộ gia đình" : "Doanh nghiệp / Khu công nghiệp"),
-        loai_con_trung: (isPersonal ? bugs : bugsOrg).join(", ") || null,
-        dien_tich: (isPersonal ? dienTich : dienTichOrg) || null,
-        mo_ta: isPersonal ? (moTa?.trim() || null) : (orgParts || null),
+        loai_con_trung: bugsList.length > 0 ? bugsList : [],
+        dien_tich: Number(isPersonal ? dienTich : dienTichOrg) || null,
+        ghi_chu: isPersonal ? (moTa?.trim() || null) : (orgParts || null),
       };
 
-      const { error } = await supabase.from("service_requests").insert(payload);
+      const { error } = await supabase.from("deals").insert(payload);
       if (error) throw error;
       setSuccess(true);
       setDuplicateWarning("");
