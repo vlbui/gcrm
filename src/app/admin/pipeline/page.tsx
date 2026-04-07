@@ -1,241 +1,302 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
-  fetchPipelineCards,
-  updateCardStatus,
-  updateCardDetails,
-  createCustomerFromCard,
-  createContractFromCard,
-  findExistingCustomer,
-  PIPELINE_COLUMNS,
-  type PipelineCard,
-} from "@/lib/api/pipeline.api";
+  fetchDeals,
+  createDeal,
+  updateDealStage,
+  updateDealField,
+  updateDeal,
+  deleteDeal,
+  addPayment,
+  DEAL_STAGES,
+  type Deal,
+  type DealStage,
+  type PaymentRecord,
+} from "@/lib/api/deals.api";
+import { fetchActiveTechnicians, type Technician } from "@/lib/api/technicians.api";
 import { fetchUsers, type User } from "@/lib/api/users.api";
 import { formatDate } from "@/lib/utils/date";
 import { toast } from "sonner";
-import Link from "next/link";
 import {
   Phone,
-  Mail,
-  MapPin,
-  Bug,
-  Ruler,
-  User as UserIcon,
-  GripVertical,
+  Search,
   X,
-  Filter,
-  ChevronDown,
-  UserPlus,
+  GripVertical,
+  Plus,
+  Trash2,
+  Calendar,
+  DollarSign,
+  User as UserIcon,
+  Bug,
+  MapPin,
+  Mail,
+  Building2,
   FileText,
-  Receipt,
+  Camera,
+  CreditCard,
+  MessageSquare,
+  ChevronDown,
+  Filter,
   ExternalLink,
-  CheckCircle,
 } from "lucide-react";
 
 export default function PipelinePage() {
-  const [cards, setCards] = useState<PipelineCard[]>([]);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [draggedCard, setDraggedCard] = useState<PipelineCard | null>(null);
-  const [selectedCard, setSelectedCard] = useState<PipelineCard | null>(null);
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [search, setSearch] = useState("");
   const [filterUser, setFilterUser] = useState("");
-  const [filterService, setFilterService] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
 
-  // Sync dialog
-  const [syncCard, setSyncCard] = useState<PipelineCard | null>(null);
-  const [syncTarget, setSyncTarget] = useState("");
+  // Quick add
+  const [quickAddCol, setQuickAddCol] = useState<string | null>(null);
+  const [quickName, setQuickName] = useState("");
+  const [quickPhone, setQuickPhone] = useState("");
+  const quickNameRef = useRef<HTMLInputElement>(null);
 
   const loadData = useCallback(async () => {
     try {
-      const [cardsData, usersData] = await Promise.all([
-        fetchPipelineCards(),
+      const [d, t, u] = await Promise.all([
+        fetchDeals(),
+        fetchActiveTechnicians(),
         fetchUsers(),
       ]);
-      setCards(cardsData);
-      setUsers(usersData);
+      setDeals(d);
+      setTechnicians(t);
+      setUsers(u);
     } catch {
-      toast.error("Lỗi tải dữ liệu pipeline");
+      toast.error("Lỗi tải dữ liệu");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
-  const filteredCards = cards.filter((card) => {
-    if (filterUser && card.xu_ly_boi !== filterUser) return false;
-    if (filterService && card.loai_con_trung !== filterService) return false;
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        setQuickAddCol("Khách hỏi");
+        setTimeout(() => quickNameRef.current?.focus(), 100);
+      }
+      if (e.key === "/" ) {
+        e.preventDefault();
+        document.querySelector<HTMLInputElement>(".pipeline-search input")?.focus();
+      }
+      if (e.key === "Escape") {
+        setSelectedDeal(null);
+        setQuickAddCol(null);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const filtered = deals.filter((d) => {
+    if (search) {
+      const q = search.toLowerCase();
+      if (!d.ten_kh.toLowerCase().includes(q) && !d.sdt.includes(q) && !d.ma_deal.toLowerCase().includes(q)) return false;
+    }
+    if (filterUser && d.nguoi_phu_trach !== filterUser) return false;
     return true;
   });
 
-  const getColumnCards = (status: string) =>
-    filteredCards.filter((c) => c.trang_thai === status);
+  const getColDeals = (stage: string) => filtered.filter((d) => d.giai_doan === stage);
+  const getColTotal = (stage: string) => getColDeals(stage).reduce((s, d) => s + (d.gia_tri || 0), 0);
 
-  const getColumnTotal = (status: string) =>
-    getColumnCards(status).reduce((sum, c) => sum + (c.gia_tri || 0), 0);
+  // Drag & Drop
+  const handleDragStart = (id: string) => setDraggedId(id);
 
-  const handleDragStart = (card: PipelineCard) => {
-    setDraggedCard(card);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.currentTarget.classList.add("pipeline-col-drag-over");
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.currentTarget.classList.remove("pipeline-col-drag-over");
-  };
-
-  const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+  const handleDrop = async (e: React.DragEvent, stage: string) => {
     e.preventDefault();
     e.currentTarget.classList.remove("pipeline-col-drag-over");
-    if (!draggedCard || draggedCard.trang_thai === newStatus) return;
+    if (!draggedId) return;
+    const deal = deals.find((d) => d.id === draggedId);
+    if (!deal || deal.giai_doan === stage) { setDraggedId(null); return; }
 
-    // Kéo sang "Chốt đơn" → hỏi tạo KH + HĐ
-    if (newStatus === "Chốt đơn") {
-      setSyncCard(draggedCard);
-      setSyncTarget(newStatus);
-      setDraggedCard(null);
-      return;
-    }
-
-    // Kéo sang "Đã báo giá" → gợi ý tạo báo giá
-    if (newStatus === "Đã báo giá") {
-      setSyncCard(draggedCard);
-      setSyncTarget(newStatus);
-      setDraggedCard(null);
-      return;
-    }
-
-    await moveCard(draggedCard, newStatus);
-  };
-
-  const moveCard = async (card: PipelineCard, newStatus: string) => {
-    const oldStatus = card.trang_thai;
-    setCards((prev) =>
-      prev.map((c) => (c.id === card.id ? { ...c, trang_thai: newStatus } : c))
-    );
-    setDraggedCard(null);
+    // Optimistic update
+    setDeals((prev) => prev.map((d) => d.id === draggedId ? { ...d, giai_doan: stage as DealStage } : d));
+    setDraggedId(null);
 
     try {
-      await updateCardStatus(card.id, newStatus);
-      toast.success(`Chuyển sang "${PIPELINE_COLUMNS.find((c) => c.key === newStatus)?.label || newStatus}"`);
+      await updateDealStage(deal.id, stage as DealStage);
+      toast.success(`→ ${stage}`);
     } catch {
-      setCards((prev) =>
-        prev.map((c) => (c.id === card.id ? { ...c, trang_thai: oldStatus } : c))
-      );
-      toast.error("Lỗi cập nhật trạng thái");
-    }
-  };
-
-  const handleSaveCard = async (updates: Partial<PipelineCard>) => {
-    if (!selectedCard) return;
-    try {
-      await updateCardDetails(selectedCard.id, updates);
-      setCards((prev) =>
-        prev.map((c) => (c.id === selectedCard.id ? { ...c, ...updates } : c))
-      );
-      setSelectedCard(null);
-      toast.success("Đã cập nhật");
-    } catch {
+      setDeals((prev) => prev.map((d) => d.id === deal.id ? { ...d, giai_doan: deal.giai_doan } : d));
       toast.error("Lỗi cập nhật");
     }
   };
 
-  const serviceTypes = [...new Set(cards.map((c) => c.loai_con_trung).filter(Boolean))];
+  // Quick Add
+  const handleQuickAdd = async (stage: string) => {
+    if (!quickName.trim() || !quickPhone.trim()) {
+      toast.error("Nhập tên và SĐT");
+      return;
+    }
+    try {
+      const deal = await createDeal({
+        ten_kh: quickName.trim(),
+        sdt: quickPhone.trim(),
+        giai_doan: stage as DealStage,
+      });
+      setDeals((prev) => [deal, ...prev]);
+      setQuickAddCol(null);
+      setQuickName("");
+      setQuickPhone("");
+      toast.success("Đã thêm");
+    } catch {
+      toast.error("Lỗi thêm deal");
+    }
+  };
 
-  if (loading) {
-    return <div className="empty-state"><p>Đang tải pipeline...</p></div>;
-  }
+  // Auto-save field
+  const handleFieldSave = async (dealId: string, field: string, value: unknown) => {
+    try {
+      await updateDealField(dealId, field, value);
+      setDeals((prev) => prev.map((d) => d.id === dealId ? { ...d, [field]: value } : d));
+      if (selectedDeal?.id === dealId) {
+        setSelectedDeal((prev) => prev ? { ...prev, [field]: value } : null);
+      }
+    } catch {
+      toast.error("Lỗi lưu");
+    }
+  };
+
+  const today = new Date().toISOString().split("T")[0];
+
+  if (loading) return <div className="empty-state"><p>Đang tải...</p></div>;
 
   return (
-    <div>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Sales Pipeline</h1>
-          <p className="admin-page-subtitle">Quản lý quy trình bán hàng</p>
+    <div className="pipeline-page">
+      {/* Header */}
+      <div className="pipeline-header">
+        <div className="pipeline-search">
+          <Search size={16} />
+          <input placeholder="Tìm deal... (nhấn /)" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <button
-          className="admin-btn admin-btn-outline"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter size={16} /> Bộ lọc <ChevronDown size={14} />
-        </button>
+        <div className="pipeline-header-actions">
+          <button className="p-btn p-btn-ghost" onClick={() => setShowFilters(!showFilters)}>
+            <Filter size={15} /> Lọc
+          </button>
+          <button className="p-btn p-btn-primary" onClick={() => { setQuickAddCol("Khách hỏi"); setTimeout(() => quickNameRef.current?.focus(), 100); }}>
+            <Plus size={15} /> Deal mới <kbd>N</kbd>
+          </button>
+        </div>
       </div>
 
       {showFilters && (
         <div className="pipeline-filters">
-          <select value={filterUser} onChange={(e) => setFilterUser(e.target.value)} className="admin-input">
-            <option value="">Tất cả nhân viên</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>{u.ho_ten}</option>
-            ))}
+          <select className="p-select" value={filterUser} onChange={(e) => setFilterUser(e.target.value)}>
+            <option value="">Tất cả NV</option>
+            {users.map((u) => <option key={u.id} value={u.id}>{u.ho_ten}</option>)}
           </select>
-          <select value={filterService} onChange={(e) => setFilterService(e.target.value)} className="admin-input">
-            <option value="">Tất cả dịch vụ</option>
-            {serviceTypes.map((s) => (
-              <option key={s} value={s!}>{s}</option>
-            ))}
-          </select>
-          {(filterUser || filterService) && (
-            <button className="admin-btn admin-btn-ghost" onClick={() => { setFilterUser(""); setFilterService(""); }}>
-              Xóa bộ lọc
-            </button>
-          )}
+          {filterUser && <button className="p-btn p-btn-ghost" onClick={() => setFilterUser("")}>Xóa lọc</button>}
         </div>
       )}
 
+      {/* Board */}
       <div className="pipeline-board">
-        {PIPELINE_COLUMNS.map((col) => {
-          const colCards = getColumnCards(col.key);
-          const total = getColumnTotal(col.key);
+        {DEAL_STAGES.map((stage) => {
+          const colDeals = getColDeals(stage.key);
+          const total = getColTotal(stage.key);
           return (
             <div
-              key={col.key}
+              key={stage.key}
               className="pipeline-column"
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, col.key)}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("pipeline-col-drag-over"); }}
+              onDragLeave={(e) => e.currentTarget.classList.remove("pipeline-col-drag-over")}
+              onDrop={(e) => handleDrop(e, stage.key)}
             >
               <div className="pipeline-col-header">
                 <div className="pipeline-col-title">
-                  <span className="pipeline-col-dot" style={{ background: col.color }} />
-                  {col.label}
-                  <span className="pipeline-col-count">{colCards.length}</span>
+                  <span className="pipeline-col-dot" style={{ background: stage.color }} />
+                  <span>{stage.label}</span>
+                  <span className="pipeline-col-count">{colDeals.length}</span>
                 </div>
                 {total > 0 && (
-                  <div className="pipeline-col-total">{total.toLocaleString("vi-VN")}đ</div>
+                  <div className="pipeline-col-total">{(total / 1000000).toFixed(1)}tr</div>
                 )}
+                <button
+                  className="pipeline-col-add"
+                  onClick={() => { setQuickAddCol(stage.key); setTimeout(() => quickNameRef.current?.focus(), 100); }}
+                  title="Thêm nhanh"
+                >
+                  <Plus size={14} />
+                </button>
               </div>
+
               <div className="pipeline-col-body">
-                {colCards.map((card) => (
-                  <div
-                    key={card.id}
-                    className="pipeline-card"
-                    draggable
-                    onDragStart={() => handleDragStart(card)}
-                    onClick={() => setSelectedCard(card)}
-                  >
-                    <div className="pipeline-card-grip"><GripVertical size={14} /></div>
-                    <div className="pipeline-card-name">{card.ten_kh}</div>
-                    <div className="pipeline-card-phone"><Phone size={12} /> {card.sdt}</div>
-                    {card.loai_con_trung && (
-                      <div className="pipeline-card-service"><Bug size={12} /> {card.loai_con_trung}</div>
-                    )}
-                    {card.gia_tri > 0 && (
-                      <div className="pipeline-card-value">{card.gia_tri.toLocaleString("vi-VN")}đ</div>
-                    )}
-                    {card.users?.ho_ten && (
-                      <div className="pipeline-card-user"><UserIcon size={12} /> {card.users.ho_ten}</div>
-                    )}
+                {/* Quick Add Inline */}
+                {quickAddCol === stage.key && (
+                  <div className="pipeline-quick-add">
+                    <input
+                      ref={quickNameRef}
+                      className="p-input"
+                      placeholder="Tên KH"
+                      value={quickName}
+                      onChange={(e) => setQuickName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && document.querySelector<HTMLInputElement>(".qa-phone")?.focus()}
+                    />
+                    <input
+                      className="p-input qa-phone"
+                      placeholder="SĐT"
+                      value={quickPhone}
+                      onChange={(e) => setQuickPhone(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleQuickAdd(stage.key)}
+                    />
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button className="p-btn p-btn-primary" style={{ flex: 1, padding: "6px" }} onClick={() => handleQuickAdd(stage.key)}>Thêm</button>
+                      <button className="p-btn p-btn-ghost" style={{ padding: "6px" }} onClick={() => setQuickAddCol(null)}>
+                        <X size={14} />
+                      </button>
+                    </div>
                   </div>
-                ))}
-                {colCards.length === 0 && (
+                )}
+
+                {colDeals.map((deal) => {
+                  const isOverdue = deal.ngay_hen && deal.ngay_hen < today && deal.giai_doan !== "Hoàn thành";
+                  const isToday = deal.ngay_hen === today;
+                  return (
+                    <div
+                      key={deal.id}
+                      className={`pipeline-card ${draggedId === deal.id ? "dragging" : ""}`}
+                      draggable
+                      onDragStart={() => handleDragStart(deal.id)}
+                      onClick={() => setSelectedDeal(deal)}
+                    >
+                      <div className="pipeline-card-grip"><GripVertical size={14} /></div>
+                      <div className="pipeline-card-name">{deal.ten_kh}</div>
+                      <div className="pipeline-card-phone">
+                        <Phone size={11} /> {deal.sdt}
+                      </div>
+                      {deal.loai_con_trung?.length > 0 && (
+                        <div className="pipeline-card-tags">
+                          {deal.loai_con_trung.map((t) => (
+                            <span key={t} className="pipeline-card-tag">{t}</span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="pipeline-card-bottom">
+                        {deal.gia_tri > 0 && (
+                          <span className="pipeline-card-value">{(deal.gia_tri / 1000000).toFixed(1)}tr</span>
+                        )}
+                        {deal.ngay_hen && (
+                          <span className={`pipeline-card-date ${isOverdue ? "overdue" : isToday ? "today" : ""}`}>
+                            {isOverdue ? "Quá hạn" : isToday ? "Hôm nay" : formatDate(deal.ngay_hen)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {colDeals.length === 0 && !quickAddCol && (
                   <div className="pipeline-col-empty">Kéo thả vào đây</div>
                 )}
               </div>
@@ -244,33 +305,31 @@ export default function PipelinePage() {
         })}
       </div>
 
-      {/* Detail Dialog */}
-      {selectedCard && (
-        <CardDetailDialog
-          card={selectedCard}
+      {/* Side Panel */}
+      {selectedDeal && (
+        <SidePanel
+          deal={selectedDeal}
           users={users}
-          onClose={() => setSelectedCard(null)}
-          onSave={handleSaveCard}
-          onReload={loadData}
-        />
-      )}
-
-      {/* Sync Dialog */}
-      {syncCard && (
-        <SyncDialog
-          card={syncCard}
-          target={syncTarget}
-          onClose={() => { setSyncCard(null); setSyncTarget(""); }}
-          onDone={async () => {
-            await moveCard(syncCard, syncTarget);
-            setSyncCard(null);
-            setSyncTarget("");
-            await loadData();
+          technicians={technicians}
+          onClose={() => setSelectedDeal(null)}
+          onFieldSave={handleFieldSave}
+          onDelete={async (id) => {
+            if (!confirm("Xóa deal này?")) return;
+            try {
+              await deleteDeal(id);
+              setDeals((prev) => prev.filter((d) => d.id !== id));
+              setSelectedDeal(null);
+              toast.success("Đã xóa");
+            } catch { toast.error("Lỗi xóa"); }
           }}
-          onSkip={async () => {
-            await moveCard(syncCard, syncTarget);
-            setSyncCard(null);
-            setSyncTarget("");
+          onPayment={async (dealId, payment) => {
+            try {
+              await addPayment(dealId, payment);
+              await loadData();
+              const updated = deals.find((d) => d.id === dealId);
+              if (updated) setSelectedDeal(updated);
+              toast.success("Đã thêm thanh toán");
+            } catch { toast.error("Lỗi"); }
           }}
         />
       )}
@@ -279,381 +338,308 @@ export default function PipelinePage() {
 }
 
 /* =========================================
-   SYNC DIALOG - Tạo KH / HĐ / Báo giá
+   SIDE PANEL
    ========================================= */
-function SyncDialog({
-  card,
-  target,
-  onClose,
-  onDone,
-  onSkip,
-}: {
-  card: PipelineCard;
-  target: string;
-  onClose: () => void;
-  onDone: () => Promise<void>;
-  onSkip: () => Promise<void>;
-}) {
-  const [step, setStep] = useState<"check" | "creating" | "done">("check");
-  const [existingCustomer, setExistingCustomer] = useState<{ id: string; ten_kh: string; ma_kh: string } | null>(null);
-  const [createdCustomerId, setCreatedCustomerId] = useState<string | null>(null);
-  const [createdItems, setCreatedItems] = useState<string[]>([]);
-  const [processing, setProcessing] = useState(false);
-
-  useEffect(() => {
-    // Check if customer already exists
-    findExistingCustomer(card.sdt).then((c) => {
-      if (c) setExistingCustomer(c);
-    });
-  }, [card.sdt]);
-
-  const isClosing = target === "Chốt đơn";
-  const isQuoting = target === "Đã báo giá";
-
-  const handleCreateCustomer = async () => {
-    setProcessing(true);
-    try {
-      const id = await createCustomerFromCard(card);
-      setCreatedCustomerId(id);
-      setCreatedItems((prev) => [...prev, "Khách hàng"]);
-      toast.success("Đã tạo khách hàng");
-    } catch {
-      toast.error("Lỗi tạo khách hàng");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleCreateContract = async () => {
-    const custId = createdCustomerId || existingCustomer?.id;
-    if (!custId) {
-      toast.error("Cần tạo/chọn khách hàng trước");
-      return;
-    }
-    setProcessing(true);
-    try {
-      await createContractFromCard(card, custId);
-      setCreatedItems((prev) => [...prev, "Hợp đồng"]);
-      toast.success("Đã tạo hợp đồng");
-    } catch {
-      toast.error("Lỗi tạo hợp đồng");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleDone = async () => {
-    setProcessing(true);
-    await onDone();
-    setProcessing(false);
-  };
-
-  const customerId = createdCustomerId || existingCustomer?.id;
-  const hasCustomer = !!customerId;
-  const hasContract = createdItems.includes("Hợp đồng");
-
-  return (
-    <div className="admin-dialog-overlay" onClick={onClose}>
-      <div className="admin-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
-        <div className="admin-dialog-header">
-          <h2>
-            {isClosing ? "Chốt đơn — Tạo KH & HĐ" : "Báo giá cho khách"}
-          </h2>
-          <button className="admin-dialog-close" onClick={onClose}><X size={20} /></button>
-        </div>
-        <div className="admin-dialog-body">
-          <div className="sync-card-info">
-            <div><strong>{card.ten_kh}</strong></div>
-            <div style={{ fontSize: 13, color: "var(--neutral-500)" }}>
-              {card.sdt} {card.loai_con_trung && `· ${card.loai_con_trung}`}
-              {card.gia_tri > 0 && ` · ${card.gia_tri.toLocaleString("vi-VN")}đ`}
-            </div>
-          </div>
-
-          {isClosing && (
-            <div className="sync-steps">
-              {/* Step 1: Khách hàng */}
-              <div className="sync-step">
-                <div className="sync-step-header">
-                  <UserPlus size={18} />
-                  <span>1. Khách hàng</span>
-                  {hasCustomer && <CheckCircle size={16} style={{ color: "#10B981", marginLeft: "auto" }} />}
-                </div>
-                {existingCustomer && !createdCustomerId ? (
-                  <div className="sync-step-body">
-                    <div className="sync-existing">
-                      <CheckCircle size={14} style={{ color: "#10B981" }} />
-                      Đã có KH: <strong>{existingCustomer.ma_kh} — {existingCustomer.ten_kh}</strong>
-                    </div>
-                  </div>
-                ) : createdCustomerId ? (
-                  <div className="sync-step-body">
-                    <div className="sync-existing">
-                      <CheckCircle size={14} style={{ color: "#10B981" }} />
-                      Đã tạo khách hàng thành công
-                    </div>
-                  </div>
-                ) : (
-                  <div className="sync-step-body">
-                    <p style={{ fontSize: 13, color: "var(--neutral-500)", marginBottom: 8 }}>
-                      Chưa tìm thấy KH với SĐT {card.sdt}
-                    </p>
-                    <button
-                      className="admin-btn admin-btn-primary"
-                      onClick={handleCreateCustomer}
-                      disabled={processing}
-                    >
-                      <UserPlus size={14} /> Tạo khách hàng mới
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Step 2: Hợp đồng */}
-              <div className="sync-step">
-                <div className="sync-step-header">
-                  <FileText size={18} />
-                  <span>2. Hợp đồng</span>
-                  {hasContract && <CheckCircle size={16} style={{ color: "#10B981", marginLeft: "auto" }} />}
-                </div>
-                <div className="sync-step-body">
-                  {hasContract ? (
-                    <div className="sync-existing">
-                      <CheckCircle size={14} style={{ color: "#10B981" }} />
-                      Đã tạo hợp đồng thành công
-                    </div>
-                  ) : (
-                    <button
-                      className="admin-btn admin-btn-primary"
-                      onClick={handleCreateContract}
-                      disabled={processing || !hasCustomer}
-                    >
-                      <FileText size={14} /> Tạo hợp đồng
-                    </button>
-                  )}
-                  {!hasCustomer && !hasContract && (
-                    <p style={{ fontSize: 12, color: "var(--neutral-400)", marginTop: 4 }}>
-                      Cần có khách hàng trước
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {isQuoting && (
-            <div className="sync-steps">
-              <div className="sync-step">
-                <div className="sync-step-header">
-                  <Receipt size={18} />
-                  <span>Tạo báo giá cho yêu cầu này</span>
-                </div>
-                <div className="sync-step-body">
-                  <Link
-                    href={`/admin/bao-gia/tao-moi`}
-                    className="admin-btn admin-btn-primary"
-                  >
-                    <Receipt size={14} /> Tạo báo giá <ExternalLink size={12} />
-                  </Link>
-                  <p style={{ fontSize: 12, color: "var(--neutral-400)", marginTop: 6 }}>
-                    Hoặc bỏ qua nếu đã tạo báo giá bên ngoài
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="admin-dialog-footer">
-          <button className="admin-btn admin-btn-outline" onClick={() => onSkip()}>
-            Bỏ qua, chỉ chuyển trạng thái
-          </button>
-          <button
-            className="admin-btn admin-btn-primary"
-            onClick={handleDone}
-            disabled={processing}
-          >
-            {isClosing
-              ? hasContract ? "Hoàn tất chốt đơn" : "Chuyển sang Chốt đơn"
-              : "Chuyển sang Đã báo giá"
-            }
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* =========================================
-   CARD DETAIL DIALOG
-   ========================================= */
-function CardDetailDialog({
-  card,
+function SidePanel({
+  deal,
   users,
+  technicians,
   onClose,
-  onSave,
-  onReload,
+  onFieldSave,
+  onDelete,
+  onPayment,
 }: {
-  card: PipelineCard;
+  deal: Deal;
   users: User[];
+  technicians: Technician[];
   onClose: () => void;
-  onSave: (updates: Partial<PipelineCard>) => void;
-  onReload: () => void;
+  onFieldSave: (id: string, field: string, value: unknown) => void;
+  onDelete: (id: string) => void;
+  onPayment: (dealId: string, payment: Omit<PaymentRecord, "id">) => void;
 }) {
-  const [giaTriStr, setGiaTriStr] = useState(String(card.gia_tri || ""));
-  const [ghiChu, setGhiChu] = useState(card.ghi_chu_nv || "");
-  const [xuLyBoi, setXuLyBoi] = useState(card.xu_ly_boi || "");
-  const [existingCustomer, setExistingCustomer] = useState<{ id: string; ten_kh: string; ma_kh: string } | null>(null);
+  const [tab, setTab] = useState("info");
+  const [payAmount, setPayAmount] = useState("");
+  const [payMethod, setPayMethod] = useState("Chuyển khoản");
 
-  useEffect(() => {
-    findExistingCustomer(card.sdt).then(setExistingCustomer);
-  }, [card.sdt]);
+  const stageInfo = DEAL_STAGES.find((s) => s.key === deal.giai_doan);
+  const totalPaid = (deal.thanh_toan || []).reduce((s, p) => s + p.so_tien, 0);
 
-  const handleQuickCreateCustomer = async () => {
-    try {
-      await createCustomerFromCard(card);
-      toast.success("Đã tạo khách hàng");
-      const c = await findExistingCustomer(card.sdt);
-      setExistingCustomer(c);
-    } catch {
-      toast.error("Lỗi tạo khách hàng");
-    }
-  };
+  const tabs = [
+    { key: "info", label: "Thông tin", icon: FileText },
+    { key: "ktv", label: "KTV", icon: UserIcon },
+    { key: "payment", label: "Thanh toán", icon: CreditCard },
+    { key: "notes", label: "Ghi chú", icon: MessageSquare },
+  ];
 
   return (
-    <div className="admin-dialog-overlay" onClick={onClose}>
-      <div className="admin-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="admin-dialog-header">
-          <h2>Chi tiết — {card.ma_yc}</h2>
-          <button className="admin-dialog-close" onClick={onClose}><X size={20} /></button>
-        </div>
-        <div className="admin-dialog-body">
-          <div className="pipeline-detail-grid">
-            <div className="pipeline-detail-item">
-              <UserIcon size={16} />
-              <div>
-                <div className="pipeline-detail-label">Khách hàng</div>
-                <div className="pipeline-detail-value">{card.ten_kh}</div>
-              </div>
-            </div>
-            <div className="pipeline-detail-item">
-              <Phone size={16} />
-              <div>
-                <div className="pipeline-detail-label">SĐT</div>
-                <div className="pipeline-detail-value">{card.sdt}</div>
-              </div>
-            </div>
-            {card.email && (
-              <div className="pipeline-detail-item">
-                <Mail size={16} />
-                <div>
-                  <div className="pipeline-detail-label">Email</div>
-                  <div className="pipeline-detail-value">{card.email}</div>
-                </div>
-              </div>
-            )}
-            {card.dia_chi && (
-              <div className="pipeline-detail-item">
-                <MapPin size={16} />
-                <div>
-                  <div className="pipeline-detail-label">Địa chỉ</div>
-                  <div className="pipeline-detail-value">{card.dia_chi}</div>
-                </div>
-              </div>
-            )}
-            {card.loai_con_trung && (
-              <div className="pipeline-detail-item">
-                <Bug size={16} />
-                <div>
-                  <div className="pipeline-detail-label">Loại dịch vụ</div>
-                  <div className="pipeline-detail-value">{card.loai_con_trung}</div>
-                </div>
-              </div>
-            )}
-            {card.dien_tich && (
-              <div className="pipeline-detail-item">
-                <Ruler size={16} />
-                <div>
-                  <div className="pipeline-detail-label">Diện tích</div>
-                  <div className="pipeline-detail-value">{card.dien_tich}</div>
-                </div>
-              </div>
-            )}
+    <>
+      <div className="side-panel-overlay" onClick={onClose} />
+      <div className="side-panel">
+        {/* Header */}
+        <div className="side-panel-header">
+          <div>
+            <div className="side-panel-deal-code">{deal.ma_deal}</div>
+            <div className="side-panel-deal-stage" style={{ background: stageInfo?.color }}>{deal.giai_doan}</div>
           </div>
+          <div className="side-panel-actions">
+            <a href={`tel:${deal.sdt}`} className="sp-action-btn" title="Gọi"><Phone size={16} /></a>
+            {deal.email && <a href={`mailto:${deal.email}`} className="sp-action-btn" title="Email"><Mail size={16} /></a>}
+            <button className="sp-action-btn sp-delete" onClick={() => onDelete(deal.id)} title="Xóa"><Trash2 size={16} /></button>
+            <button className="sp-action-btn" onClick={onClose} title="Đóng (Esc)"><X size={18} /></button>
+          </div>
+        </div>
 
-          {/* Customer status */}
-          <div className="sync-customer-status" style={{ marginTop: 16 }}>
-            {existingCustomer ? (
-              <div className="sync-existing" style={{ padding: "8px 12px", background: "#F0FDF4", borderRadius: 8 }}>
-                <CheckCircle size={14} style={{ color: "#10B981" }} />
-                KH: <strong>{existingCustomer.ma_kh}</strong> — {existingCustomer.ten_kh}
-                <Link href={`/admin/khach-hang`} style={{ marginLeft: "auto", fontSize: 12, color: "var(--primary-700)" }}>
-                  Xem <ExternalLink size={11} />
-                </Link>
+        {/* Tabs */}
+        <div className="side-panel-tabs">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              className={`sp-tab ${tab === t.key ? "active" : ""}`}
+              onClick={() => setTab(t.key)}
+            >
+              <t.icon size={14} /> {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="side-panel-body">
+          {tab === "info" && (
+            <div className="sp-fields">
+              <InlineField label="Tên KH" value={deal.ten_kh} onSave={(v) => onFieldSave(deal.id, "ten_kh", v)} />
+              <InlineField label="SĐT" value={deal.sdt} onSave={(v) => onFieldSave(deal.id, "sdt", v)} />
+              <InlineField label="Email" value={deal.email || ""} onSave={(v) => onFieldSave(deal.id, "email", v || null)} />
+              <InlineField label="Địa chỉ" value={deal.dia_chi || ""} onSave={(v) => onFieldSave(deal.id, "dia_chi", v || null)} />
+              <InlineField label="Công ty" value={deal.ten_cong_ty || ""} onSave={(v) => onFieldSave(deal.id, "ten_cong_ty", v || null)} />
+
+              <div className="sp-field">
+                <label>Loại KH</label>
+                <select
+                  className="p-select"
+                  value={deal.loai_kh || "Cá nhân"}
+                  onChange={(e) => onFieldSave(deal.id, "loai_kh", e.target.value)}
+                >
+                  <option>Cá nhân</option>
+                  <option>Tổ chức</option>
+                </select>
               </div>
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 13, color: "var(--neutral-500)" }}>Chưa có trong danh sách KH</span>
-                <button className="admin-btn admin-btn-outline" style={{ fontSize: 12, padding: "4px 10px" }} onClick={handleQuickCreateCustomer}>
-                  <UserPlus size={12} /> Tạo KH
+
+              <div className="sp-divider" />
+
+              <InlineField label="Dịch vụ" value={(deal.dich_vu || []).join(", ")}
+                onSave={(v) => onFieldSave(deal.id, "dich_vu", v.split(",").map((s) => s.trim()).filter(Boolean))} />
+              <InlineField label="Côn trùng" value={(deal.loai_con_trung || []).join(", ")}
+                onSave={(v) => onFieldSave(deal.id, "loai_con_trung", v.split(",").map((s) => s.trim()).filter(Boolean))} />
+              <InlineField label="Diện tích (m²)" value={String(deal.dien_tich || "")} type="number"
+                onSave={(v) => onFieldSave(deal.id, "dien_tich", v ? Number(v) : null)} />
+              <InlineField label="Giá trị (VNĐ)" value={String(deal.gia_tri || "")} type="number"
+                onSave={(v) => onFieldSave(deal.id, "gia_tri", Number(v) || 0)} />
+
+              <div className="sp-divider" />
+
+              <div className="sp-field">
+                <label>Ngày hẹn</label>
+                <input
+                  type="date"
+                  className="p-input"
+                  defaultValue={deal.ngay_hen || ""}
+                  onChange={(e) => onFieldSave(deal.id, "ngay_hen", e.target.value || null)}
+                />
+              </div>
+              <div className="sp-field">
+                <label>Ngày thực hiện</label>
+                <input
+                  type="date"
+                  className="p-input"
+                  defaultValue={deal.ngay_thuc_hien || ""}
+                  onChange={(e) => onFieldSave(deal.id, "ngay_thuc_hien", e.target.value || null)}
+                />
+              </div>
+              <div className="sp-field">
+                <label>Người phụ trách</label>
+                <select
+                  className="p-select"
+                  value={deal.nguoi_phu_trach || ""}
+                  onChange={(e) => onFieldSave(deal.id, "nguoi_phu_trach", e.target.value || null)}
+                >
+                  <option value="">— Chọn —</option>
+                  {users.map((u) => <option key={u.id} value={u.id}>{u.ho_ten}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {tab === "ktv" && (
+            <div className="sp-ktv">
+              <p className="sp-hint">Chọn KTV phụ trách deal này:</p>
+              <div className="sp-ktv-grid">
+                {technicians.map((t) => {
+                  const isAssigned = (deal.ktv_phu_trach || []).includes(t.id);
+                  return (
+                    <div
+                      key={t.id}
+                      className={`sp-ktv-card ${isAssigned ? "assigned" : ""}`}
+                      onClick={() => {
+                        const current = deal.ktv_phu_trach || [];
+                        const next = isAssigned ? current.filter((id) => id !== t.id) : [...current, t.id];
+                        onFieldSave(deal.id, "ktv_phu_trach", next);
+                      }}
+                    >
+                      <div className="sp-ktv-avatar">{t.ho_ten.charAt(0)}</div>
+                      <div>
+                        <div className="sp-ktv-name">{t.ho_ten}</div>
+                        <div className="sp-ktv-phone">{t.sdt}</div>
+                        {t.chuyen_mon?.length > 0 && (
+                          <div className="sp-ktv-tags">{t.chuyen_mon.join(", ")}</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {technicians.length === 0 && (
+                <p className="sp-hint">Chưa có KTV. Thêm tại mục Kỹ thuật viên.</p>
+              )}
+            </div>
+          )}
+
+          {tab === "payment" && (
+            <div className="sp-payment">
+              <div className="sp-payment-summary">
+                <div className="sp-payment-row">
+                  <span>Giá trị deal</span>
+                  <strong>{(deal.gia_tri || 0).toLocaleString("vi-VN")}đ</strong>
+                </div>
+                <div className="sp-payment-row">
+                  <span>Đã thanh toán</span>
+                  <strong style={{ color: "var(--primary-700)" }}>{totalPaid.toLocaleString("vi-VN")}đ</strong>
+                </div>
+                <div className="sp-payment-row">
+                  <span>Còn lại</span>
+                  <strong style={{ color: "var(--danger-500)" }}>
+                    {((deal.gia_tri || 0) - totalPaid).toLocaleString("vi-VN")}đ
+                  </strong>
+                </div>
+              </div>
+
+              {/* Quick add payment */}
+              <div className="sp-payment-add">
+                <input
+                  className="p-input"
+                  type="number"
+                  placeholder="Số tiền"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                />
+                <select className="p-select" value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
+                  <option>Chuyển khoản</option>
+                  <option>Tiền mặt</option>
+                  <option>Thẻ</option>
+                </select>
+                <button
+                  className="p-btn p-btn-primary"
+                  disabled={!payAmount}
+                  onClick={() => {
+                    onPayment(deal.id, {
+                      so_tien: Number(payAmount),
+                      ngay_tt: new Date().toISOString().split("T")[0],
+                      hinh_thuc: payMethod,
+                    });
+                    setPayAmount("");
+                  }}
+                >
+                  <Plus size={14} /> Thêm
                 </button>
               </div>
-            )}
-          </div>
 
-          {card.mo_ta && (
-            <div style={{ marginTop: 16 }}>
-              <label className="admin-label">Mô tả</label>
-              <p style={{ fontSize: 14, color: "var(--neutral-600)" }}>{card.mo_ta}</p>
+              {/* History */}
+              {(deal.thanh_toan || []).length > 0 && (
+                <div className="sp-payment-list">
+                  {(deal.thanh_toan || []).map((p, i) => (
+                    <div key={p.id || i} className="sp-payment-item">
+                      <div>
+                        <strong>{p.so_tien.toLocaleString("vi-VN")}đ</strong>
+                        <span className="sp-payment-method">{p.hinh_thuc}</span>
+                      </div>
+                      <span className="sp-payment-date">{formatDate(p.ngay_tt)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          <div className="admin-form-row" style={{ marginTop: 16 }}>
-            <div className="admin-form-group">
-              <label className="admin-label">Giá trị dự kiến (VNĐ)</label>
-              <input
-                className="admin-input"
-                type="number"
-                value={giaTriStr}
-                onChange={(e) => setGiaTriStr(e.target.value)}
-                placeholder="0"
+          {tab === "notes" && (
+            <div className="sp-notes">
+              <textarea
+                className="p-textarea"
+                rows={6}
+                defaultValue={deal.ghi_chu || ""}
+                placeholder="Ghi chú về deal..."
+                onBlur={(e) => {
+                  if (e.target.value !== (deal.ghi_chu || "")) {
+                    onFieldSave(deal.id, "ghi_chu", e.target.value || null);
+                    toast.success("Đã lưu ghi chú");
+                  }
+                }}
               />
+              <div className="sp-meta">
+                Tạo: {formatDate(deal.created_at)} · Cập nhật: {formatDate(deal.updated_at)}
+              </div>
             </div>
-            <div className="admin-form-group">
-              <label className="admin-label">Người phụ trách</label>
-              <select className="admin-input" value={xuLyBoi} onChange={(e) => setXuLyBoi(e.target.value)}>
-                <option value="">— Chọn —</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>{u.ho_ten}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="admin-form-group" style={{ marginTop: 12 }}>
-            <label className="admin-label">Ghi chú nhân viên</label>
-            <textarea className="admin-input" rows={3} value={ghiChu} onChange={(e) => setGhiChu(e.target.value)} />
-          </div>
-
-          <div className="pipeline-detail-meta">
-            Ngày tạo: {formatDate(card.created_at)} · Trạng thái: {card.trang_thai}
-          </div>
-        </div>
-        <div className="admin-dialog-footer">
-          <button className="admin-btn admin-btn-outline" onClick={onClose}>Đóng</button>
-          <button
-            className="admin-btn admin-btn-primary"
-            onClick={() =>
-              onSave({
-                gia_tri: Number(giaTriStr) || 0,
-                xu_ly_boi: xuLyBoi || null,
-                ghi_chu_nv: ghiChu || null,
-              })
-            }
-          >
-            Lưu thay đổi
-          </button>
+          )}
         </div>
       </div>
+    </>
+  );
+}
+
+/* =========================================
+   INLINE FIELD COMPONENT
+   ========================================= */
+function InlineField({
+  label,
+  value,
+  type = "text",
+  onSave,
+}: {
+  label: string;
+  value: string;
+  type?: string;
+  onSave: (value: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { setVal(value); }, [value]);
+
+  const save = () => {
+    setEditing(false);
+    if (val !== value) onSave(val);
+  };
+
+  if (!editing) {
+    return (
+      <div className="sp-field" onClick={() => { setEditing(true); setTimeout(() => inputRef.current?.focus(), 50); }}>
+        <label>{label}</label>
+        <span className="sp-field-value">{value || "—"}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sp-field editing">
+      <label>{label}</label>
+      <input
+        ref={inputRef}
+        className="p-input"
+        type={type}
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setVal(value); setEditing(false); } }}
+      />
     </div>
   );
 }

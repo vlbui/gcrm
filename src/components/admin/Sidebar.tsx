@@ -5,23 +5,15 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
-  FileText,
-  History,
-  FlaskConical,
-  Package,
-  UserCog,
-  MessageSquare,
   Globe,
   ChevronDown,
   Shield,
   Kanban,
   Receipt,
-  CreditCard,
-  Wallet,
   CalendarDays,
-  Heart,
   Warehouse,
-  Truck,
+  Wrench,
+  Settings,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -32,52 +24,14 @@ interface SidebarProps {
   collapsed: boolean;
 }
 
-interface NavSection {
-  label: string;
-  links: { href: string; icon: React.ComponentType<{ size?: number }>; label: string }[];
-}
-
-const navSections: NavSection[] = [
-  {
-    label: "Tổng quan",
-    links: [
-      { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-    ],
-  },
-  {
-    label: "Bán hàng",
-    links: [
-      { href: "/admin/pipeline", icon: Kanban, label: "Sales Pipeline" },
-      { href: "/admin/yeu-cau", icon: MessageSquare, label: "Yêu cầu dịch vụ" },
-      { href: "/admin/khach-hang", icon: Users, label: "Khách hàng" },
-      { href: "/admin/bao-gia", icon: Receipt, label: "Báo giá" },
-    ],
-  },
-  {
-    label: "Hợp đồng & Dịch vụ",
-    links: [
-      { href: "/admin/hop-dong", icon: FileText, label: "Hợp đồng" },
-      { href: "/admin/lich-cong-viec", icon: CalendarDays, label: "Lịch công việc" },
-      { href: "/admin/lich-su-dich-vu", icon: History, label: "Lịch sử dịch vụ" },
-      { href: "/admin/cham-soc", icon: Heart, label: "Chăm sóc KH" },
-    ],
-  },
-  {
-    label: "Tài chính",
-    links: [
-      { href: "/admin/thanh-toan", icon: CreditCard, label: "Thanh toán" },
-      { href: "/admin/cong-no", icon: Wallet, label: "Công nợ" },
-    ],
-  },
-  {
-    label: "Kho & Vật tư",
-    links: [
-      { href: "/admin/kho/ton", icon: Warehouse, label: "Tồn kho" },
-      { href: "/admin/hoa-chat", icon: FlaskConical, label: "Hóa chất" },
-      { href: "/admin/vat-tu", icon: Package, label: "Vật tư" },
-      { href: "/admin/nha-cung-cap", icon: Truck, label: "Nhà cung cấp" },
-    ],
-  },
+const mainLinks = [
+  { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/admin/pipeline", icon: Kanban, label: "Pipeline" },
+  { href: "/admin/khach-hang", icon: Users, label: "Khách hàng" },
+  { href: "/admin/kho", icon: Warehouse, label: "Kho" },
+  { href: "/admin/ky-thuat-vien", icon: Wrench, label: "Kỹ thuật viên" },
+  { href: "/admin/lich-cong-viec", icon: CalendarDays, label: "Lịch" },
+  { href: "/admin/bao-gia", icon: Receipt, label: "Báo giá" },
 ];
 
 const cmsLinks = [
@@ -98,7 +52,7 @@ export default function Sidebar({ user, collapsed }: SidebarProps) {
 
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
-    if (href === "/admin/kho/ton") return pathname.startsWith("/admin/kho");
+    if (href === "/admin/kho") return pathname.startsWith("/admin/kho");
     return pathname.startsWith(href);
   };
 
@@ -117,36 +71,17 @@ export default function Sidebar({ user, collapsed }: SidebarProps) {
       </div>
 
       <nav className="sidebar-nav">
-        {navSections.map((section, idx) => (
-          <div key={section.label}>
-            {idx > 0 && <div className="sidebar-section-label">{!collapsed && section.label}</div>}
-            {section.links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn("sidebar-link", isActive(link.href) && "active")}
-                title={collapsed ? link.label : undefined}
-              >
-                <link.icon size={20} />
-                {!collapsed && <span>{link.label}</span>}
-              </Link>
-            ))}
-          </div>
+        {mainLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={cn("sidebar-link", isActive(link.href) && "active")}
+            title={collapsed ? link.label : undefined}
+          >
+            <link.icon size={20} />
+            {!collapsed && <span>{link.label}</span>}
+          </Link>
         ))}
-
-        {user?.vai_tro === "Admin" && (
-          <>
-            <div className="sidebar-divider" />
-            <Link
-              href="/admin/nguoi-dung"
-              className={cn("sidebar-link", isActive("/admin/nguoi-dung") && "active")}
-              title={collapsed ? "Người dùng" : undefined}
-            >
-              <UserCog size={20} />
-              {!collapsed && <span>Người dùng</span>}
-            </Link>
-          </>
-        )}
 
         <div className="sidebar-divider" />
 
@@ -157,11 +92,8 @@ export default function Sidebar({ user, collapsed }: SidebarProps) {
           <Globe size={20} />
           {!collapsed && (
             <>
-              <span>CMS Website</span>
-              <ChevronDown
-                size={16}
-                className={cn("sidebar-chevron", cmsOpen && "open")}
-              />
+              <span>Website</span>
+              <ChevronDown size={16} className={cn("sidebar-chevron", cmsOpen && "open")} />
             </>
           )}
         </button>
@@ -179,7 +111,24 @@ export default function Sidebar({ user, collapsed }: SidebarProps) {
             ))}
           </div>
         )}
+
+        {user?.vai_tro === "Admin" && (
+          <>
+            <div className="sidebar-divider" />
+            <Link href="/admin/nguoi-dung" className={cn("sidebar-link", isActive("/admin/nguoi-dung") && "active")}>
+              <Settings size={20} />
+              {!collapsed && <span>Cài đặt</span>}
+            </Link>
+          </>
+        )}
       </nav>
+
+      {/* Keyboard hint */}
+      {!collapsed && (
+        <div className="sidebar-shortcuts-hint">
+          <kbd>N</kbd> Thêm deal · <kbd>/</kbd> Tìm kiếm
+        </div>
+      )}
     </aside>
   );
 }
