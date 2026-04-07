@@ -14,6 +14,13 @@ import {
   type PaymentRecord,
   type CreateDealInput,
 } from "@/lib/api/deals.api";
+import {
+  fetchDealServices,
+  createDealService,
+  updateDealService,
+  deleteDealService,
+  type DealService,
+} from "@/lib/api/dealServices.api";
 import { fetchActiveTechnicians, type Technician } from "@/lib/api/technicians.api";
 import { fetchUsers, type User } from "@/lib/api/users.api";
 import { formatDate } from "@/lib/utils/date";
@@ -33,6 +40,10 @@ import {
   MessageSquare,
   Filter,
   ChevronDown,
+  ClipboardList,
+  Calendar,
+  CheckCircle,
+  Clock,
 } from "lucide-react";
 
 const BUG_OPTIONS = ["Gián", "Chuột", "Mối", "Muỗi", "Kiến", "Ruồi", "Khác"];
@@ -518,6 +529,7 @@ function SidePanel({
 
   const tabs = [
     { key: "info", label: "Thông tin", icon: FileText },
+    { key: "services", label: "Dịch vụ", icon: ClipboardList },
     { key: "ktv", label: "KTV", icon: UserIcon },
     { key: "payment", label: "Thanh toán", icon: CreditCard },
     { key: "notes", label: "Ghi chú", icon: MessageSquare },
@@ -591,6 +603,10 @@ function SidePanel({
                 </select>
               </div>
             </div>
+          )}
+
+          {tab === "services" && (
+            <ServiceTab deal={deal} technicians={technicians} />
           )}
 
           {tab === "ktv" && (
@@ -703,6 +719,216 @@ function SidePanel({
         </div>
       </div>
     </>
+  );
+}
+
+/* =========================================
+   SERVICE TAB — Quản lý các lần thực hiện DV
+   ========================================= */
+function ServiceTab({ deal, technicians }: { deal: Deal; technicians: Technician[] }) {
+  const [services, setServices] = useState<DealService[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+
+  // Form state
+  const [formDate, setFormDate] = useState(new Date().toISOString().split("T")[0]);
+  const [formStart, setFormStart] = useState("08:00");
+  const [formEnd, setFormEnd] = useState("11:00");
+  const [formKtv, setFormKtv] = useState<string[]>([]);
+  const [formNote, setFormNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchDealServices(deal.id)
+      .then(setServices)
+      .catch(() => toast.error("Lỗi tải lịch sử DV"))
+      .finally(() => setLoading(false));
+  }, [deal.id]);
+
+  const handleCreate = async () => {
+    if (!formDate) { toast.error("Chọn ngày thực hiện"); return; }
+    setSaving(true);
+    try {
+      const svc = await createDealService({
+        deal_id: deal.id,
+        ngay_thuc_hien: formDate,
+        gio_bat_dau: formStart || undefined,
+        gio_ket_thuc: formEnd || undefined,
+        ktv_ids: formKtv,
+        ghi_chu: formNote || undefined,
+      });
+      setServices((prev) => [...prev, svc]);
+      setShowForm(false);
+      setFormNote("");
+      setFormKtv([]);
+      toast.success(`Đã tạo lần ${svc.lan_thu}`);
+    } catch {
+      toast.error("Lỗi tạo");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleStatusChange = async (svc: DealService, ket_qua: string) => {
+    try {
+      const updated = await updateDealService(svc.id, { ket_qua });
+      setServices((prev) => prev.map((s) => s.id === svc.id ? updated : s));
+      toast.success(`Lần ${svc.lan_thu}: ${ket_qua}`);
+    } catch {
+      toast.error("Lỗi cập nhật");
+    }
+  };
+
+  const handleDelete = async (svc: DealService) => {
+    if (!confirm(`Xóa lần thực hiện ${svc.lan_thu}?`)) return;
+    try {
+      await deleteDealService(svc.id);
+      setServices((prev) => prev.filter((s) => s.id !== svc.id));
+      toast.success("Đã xóa");
+    } catch {
+      toast.error("Lỗi xóa");
+    }
+  };
+
+  const completedCount = services.filter((s) => s.ket_qua === "Hoàn thành").length;
+
+  return (
+    <div className="sp-services">
+      {/* Summary */}
+      <div className="sp-svc-summary">
+        <span>Tổng: <strong>{services.length}</strong> lần</span>
+        <span>Xong: <strong style={{ color: "var(--primary-700)" }}>{completedCount}</strong></span>
+        <button className="p-btn p-btn-primary" style={{ marginLeft: "auto", padding: "5px 12px" }} onClick={() => setShowForm(true)}>
+          <Plus size={14} /> Thêm lần DV
+        </button>
+      </div>
+
+      {/* Create Form */}
+      {showForm && (
+        <div className="sp-svc-form">
+          <div className="admin-form-row">
+            <div className="admin-form-group">
+              <label className="admin-label">Ngày thực hiện *</label>
+              <input type="date" className="p-input" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
+            </div>
+            <div className="admin-form-group">
+              <label className="admin-label">Giờ</label>
+              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                <input type="time" className="p-input" value={formStart} onChange={(e) => setFormStart(e.target.value)} />
+                <span>—</span>
+                <input type="time" className="p-input" value={formEnd} onChange={(e) => setFormEnd(e.target.value)} />
+              </div>
+            </div>
+          </div>
+          <div className="admin-form-group">
+            <label className="admin-label">KTV thực hiện</label>
+            <select className="p-select" value="" onChange={(e) => {
+              if (e.target.value && !formKtv.includes(e.target.value)) setFormKtv((p) => [...p, e.target.value]);
+            }}>
+              <option value="">— Chọn KTV —</option>
+              {technicians.filter((t) => !formKtv.includes(t.id)).map((t) => (
+                <option key={t.id} value={t.id}>{t.ho_ten} — {t.sdt}</option>
+              ))}
+            </select>
+            {formKtv.length > 0 && (
+              <div className="multi-select-tags" style={{ marginTop: 6 }}>
+                {formKtv.map((id) => {
+                  const t = technicians.find((x) => x.id === id);
+                  return t ? (
+                    <div key={id} className="multi-select-tag">
+                      <span className="multi-select-tag-avatar">{t.ho_ten.charAt(0)}</span>
+                      <span>{t.ho_ten}</span>
+                      <button type="button" className="multi-select-tag-remove" onClick={() => setFormKtv((p) => p.filter((x) => x !== id))}>
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            )}
+          </div>
+          <div className="admin-form-group">
+            <label className="admin-label">Ghi chú</label>
+            <input className="p-input" value={formNote} onChange={(e) => setFormNote(e.target.value)} placeholder="Ghi chú cho lần thực hiện..." />
+          </div>
+          <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+            <button className="p-btn p-btn-ghost" onClick={() => setShowForm(false)}>Hủy</button>
+            <button className="p-btn p-btn-primary" onClick={handleCreate} disabled={saving}>
+              {saving ? "Đang lưu..." : "Tạo"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Service List */}
+      {loading ? (
+        <p className="sp-hint">Đang tải...</p>
+      ) : services.length === 0 && !showForm ? (
+        <p className="sp-hint" style={{ textAlign: "center", padding: 24 }}>Chưa có lần thực hiện nào</p>
+      ) : (
+        <div className="sp-svc-list">
+          {services.map((svc) => {
+            const ktvNames = (svc.ktv_ids || [])
+              .map((id) => technicians.find((t) => t.id === id)?.ho_ten)
+              .filter(Boolean);
+            return (
+              <div key={svc.id} className={`sp-svc-card ${svc.ket_qua === "Hoàn thành" ? "done" : svc.ket_qua === "Hủy" ? "cancelled" : ""}`}>
+                <div className="sp-svc-card-header">
+                  <div className="sp-svc-card-num">Lần {svc.lan_thu}</div>
+                  <div className="sp-svc-card-date">
+                    <Calendar size={12} />
+                    {svc.ngay_thuc_hien ? formatDate(svc.ngay_thuc_hien) : "Chưa xếp"}
+                    {svc.gio_bat_dau && (
+                      <span style={{ marginLeft: 6 }}>
+                        <Clock size={12} /> {svc.gio_bat_dau.slice(0, 5)}{svc.gio_ket_thuc ? `–${svc.gio_ket_thuc.slice(0, 5)}` : ""}
+                      </span>
+                    )}
+                  </div>
+                  <button className="sp-svc-card-delete" onClick={() => handleDelete(svc)} title="Xóa">
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+
+                {ktvNames.length > 0 && (
+                  <div className="sp-svc-card-ktv">
+                    <UserIcon size={12} /> {ktvNames.join(", ")}
+                  </div>
+                )}
+
+                {svc.ghi_chu && (
+                  <div style={{ fontSize: 12, color: "var(--neutral-500)", marginTop: 4 }}>{svc.ghi_chu}</div>
+                )}
+
+                {/* Status buttons */}
+                <div className="sp-svc-card-actions">
+                  {svc.ket_qua === "Chưa thực hiện" && (
+                    <>
+                      <button className="p-btn p-btn-ghost" style={{ fontSize: 11, padding: "3px 8px" }} onClick={() => handleStatusChange(svc, "Đang làm")}>
+                        <Clock size={12} /> Bắt đầu
+                      </button>
+                      <button className="p-btn p-btn-ghost" style={{ fontSize: 11, padding: "3px 8px", color: "var(--danger-500)" }} onClick={() => handleStatusChange(svc, "Hủy")}>
+                        Hủy
+                      </button>
+                    </>
+                  )}
+                  {svc.ket_qua === "Đang làm" && (
+                    <button className="p-btn p-btn-primary" style={{ fontSize: 11, padding: "3px 10px" }} onClick={() => handleStatusChange(svc, "Hoàn thành")}>
+                      <CheckCircle size={12} /> Hoàn thành
+                    </button>
+                  )}
+                  {svc.ket_qua === "Hoàn thành" && (
+                    <span className="admin-badge green" style={{ fontSize: 11 }}>Đã xong</span>
+                  )}
+                  {svc.ket_qua === "Hủy" && (
+                    <span className="admin-badge gray" style={{ fontSize: 11 }}>Đã hủy</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 

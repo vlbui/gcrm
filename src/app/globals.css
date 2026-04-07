@@ -3397,6 +3397,46 @@ ul { list-style: none; }
 .sp-payment-method { font-size: 11px; color: var(--neutral-500); margin-left: 6px; }
 .sp-payment-date { font-size: 11px; color: var(--neutral-400); }
 
+/* Service Tab */
+.sp-services { display: flex; flex-direction: column; gap: 10px; }
+.sp-svc-summary {
+  display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--neutral-600);
+  padding: 10px 12px; background: var(--neutral-50); border-radius: var(--radius-sm);
+}
+.sp-svc-form {
+  padding: 12px; border: 1px solid var(--primary-200); background: var(--primary-50);
+  border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 10px;
+}
+.sp-svc-list { display: flex; flex-direction: column; gap: 8px; }
+.sp-svc-card {
+  border: 1px solid var(--neutral-200); border-radius: var(--radius-sm);
+  padding: 10px 12px; transition: border-color 0.15s;
+}
+.sp-svc-card:hover { border-color: var(--neutral-300); }
+.sp-svc-card.done { border-color: var(--primary-200); background: #F0FDF4; }
+.sp-svc-card.cancelled { opacity: 0.5; }
+.sp-svc-card-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+}
+.sp-svc-card-num {
+  font-size: 12px; font-weight: 700; color: var(--primary-800);
+  background: var(--primary-50); padding: 1px 8px; border-radius: 8px;
+}
+.sp-svc-card-date {
+  display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--neutral-500); flex: 1;
+}
+.sp-svc-card-delete {
+  border: none; background: transparent; cursor: pointer; color: var(--neutral-400);
+  padding: 2px; border-radius: 4px;
+}
+.sp-svc-card-delete:hover { color: var(--danger-500); background: #FEE2E2; }
+.sp-svc-card-ktv {
+  display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--neutral-600); margin-top: 4px;
+}
+.sp-svc-card-actions {
+  display: flex; gap: 6px; margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--neutral-100);
+}
+
 /* ============================================
    DASHBOARD V2
    ============================================ */
