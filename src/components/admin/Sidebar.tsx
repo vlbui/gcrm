@@ -18,6 +18,9 @@ import {
   Receipt,
   CreditCard,
   Wallet,
+  CalendarDays,
+  Heart,
+  Warehouse,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -37,7 +40,10 @@ const crmLinks = [
   { href: "/admin/bao-gia", icon: Receipt, label: "Báo giá" },
   { href: "/admin/thanh-toan", icon: CreditCard, label: "Thanh toán" },
   { href: "/admin/cong-no", icon: Wallet, label: "Công nợ" },
+  { href: "/admin/lich-cong-viec", icon: CalendarDays, label: "Lịch công việc" },
   { href: "/admin/lich-su-dich-vu", icon: History, label: "Lịch sử dịch vụ" },
+  { href: "/admin/cham-soc", icon: Heart, label: "Chăm sóc KH" },
+  { href: "/admin/kho/ton", icon: Warehouse, label: "Kho" },
   { href: "/admin/hoa-chat", icon: FlaskConical, label: "Hóa chất" },
   { href: "/admin/vat-tu", icon: Package, label: "Vật tư" },
   { href: "/admin/nha-cung-cap", icon: Users, label: "Nhà cung cấp" },
@@ -61,6 +67,7 @@ export default function Sidebar({ user, collapsed }: SidebarProps) {
 
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
+    if (href === "/admin/kho/ton") return pathname.startsWith("/admin/kho");
     return pathname.startsWith(href);
   };
 
