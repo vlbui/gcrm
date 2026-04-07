@@ -94,7 +94,7 @@ export default function InventoryHistoryPage() {
               <thead>
                 <tr>
                   <th>Loại GD</th>
-                  <th>Mặt hàng</th>
+                  <th>Tên</th>
                   <th>Mã</th>
                   <th>Phân loại</th>
                   <th>Số lượng</th>

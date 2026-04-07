@@ -40,6 +40,7 @@ export interface StockItem {
   so_luong_ton: number;
   nguong_canh_bao: number;
   is_low: boolean;
+  cong_dung: string | null;
 }
 
 export async function fetchTransactions(filters?: {
@@ -125,8 +126,8 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
 export async function fetchStock(): Promise<StockItem[]> {
   const supabase = createClient();
   const [chemsRes, suppliesRes] = await Promise.all([
-    supabase.from("chemicals").select("id, ma_hc, ten_thuong_mai, don_vi_tinh, so_luong_ton, nguong_canh_bao"),
-    supabase.from("supplies").select("id, ma_vt, ten_vat_tu, don_vi_tinh, so_luong_ton, nguong_canh_bao"),
+    supabase.from("chemicals").select("id, ma_hc, ten_thuong_mai, doi_tuong, dang_su_dung, don_vi_tinh, so_luong_ton, nguong_canh_bao"),
+    supabase.from("supplies").select("id, ma_vt, ten_vat_tu, loai_vt, don_vi_tinh, so_luong_ton, nguong_canh_bao"),
   ]);
 
   const items: StockItem[] = [];
@@ -143,6 +144,7 @@ export async function fetchStock(): Promise<StockItem[]> {
       so_luong_ton: ton,
       nguong_canh_bao: nguong,
       is_low: ton <= nguong,
+      cong_dung: [c.doi_tuong, c.dang_su_dung].filter(Boolean).join(" · ") || null,
     });
   }
 
@@ -158,6 +160,7 @@ export async function fetchStock(): Promise<StockItem[]> {
       so_luong_ton: ton,
       nguong_canh_bao: nguong,
       is_low: ton <= nguong,
+      cong_dung: s.loai_vt || null,
     });
   }
 

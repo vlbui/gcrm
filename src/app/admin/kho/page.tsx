@@ -176,6 +176,9 @@ export default function KhoPage() {
               </div>
               <div className="stock-card-name">{item.name}</div>
               <div className="stock-card-code">{item.code}</div>
+              {item.cong_dung && (
+                <div className="stock-card-usage">{item.cong_dung}</div>
+              )}
               <div className="stock-card-qty">
                 <span className={item.is_low ? "stock-low" : "stock-ok"}>{item.so_luong_ton}</span>
                 <span className="stock-unit">{item.don_vi || ""}</span>
@@ -238,11 +241,11 @@ export default function KhoPage() {
                 </select>
               </div>
               <div className="admin-form-group">
-                <label className="admin-label">Mặt hàng *</label>
+                <label className="admin-label">{txItemType === "chemicals" ? "Tên hóa chất" : "Tên vật tư"} *</label>
                 <select className="p-select" value={txItemId} onChange={(e) => setTxItemId(e.target.value)}>
                   <option value="">— Chọn —</option>
                   {filteredForSelect.map((i) => (
-                    <option key={i.id} value={i.id}>{i.code} — {i.name} (Tồn: {i.so_luong_ton})</option>
+                    <option key={i.id} value={i.id}>{i.name} ({i.code}) — Tồn: {i.so_luong_ton} {i.don_vi || ""}</option>
                   ))}
                 </select>
               </div>

@@ -91,7 +91,7 @@ export default function ImportInventoryPage() {
           </select>
         </div>
         <div className="admin-form-group">
-          <label className="admin-label">Mặt hàng *</label>
+          <label className="admin-label">{itemType === "chemicals" ? "Tên hóa chất" : "Tên vật tư"} *</label>
           <select className="admin-input" value={itemId} onChange={(e) => setItemId(e.target.value)}>
             <option value="">— Chọn —</option>
             {filteredItems.map((i) => (
