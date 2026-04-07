@@ -430,33 +430,46 @@ function NewDealDialog({
             </select>
           </div>
 
-          {/* KTV Selection */}
+          {/* KTV Selection — Dropdown multi-select */}
           <div className="admin-form-group">
             <label className="admin-label">Kỹ thuật viên phụ trách</label>
             {technicians.length === 0 ? (
               <p style={{ fontSize: 12, color: "var(--neutral-500)" }}>Chưa có KTV. Thêm tại mục Kỹ thuật viên.</p>
             ) : (
-              <div className="new-deal-ktv-grid">
-                {technicians.map((t) => {
-                  const isSelected = selectedKtv.includes(t.id);
-                  return (
-                    <div
-                      key={t.id}
-                      className={`new-deal-ktv-card ${isSelected ? "active" : ""}`}
-                      onClick={() => setSelectedKtv((prev) => isSelected ? prev.filter((id) => id !== t.id) : [...prev, t.id])}
-                    >
-                      <div className="new-deal-ktv-avatar">{t.ho_ten.charAt(0)}</div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{t.ho_ten}</div>
-                        <div style={{ fontSize: 11, color: "var(--neutral-500)" }}>{t.sdt}</div>
-                        {t.chuyen_mon?.length > 0 && (
-                          <div style={{ fontSize: 10, color: "var(--primary-700)", marginTop: 2 }}>{t.chuyen_mon.join(", ")}</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <>
+                <select
+                  className="p-select"
+                  value=""
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    if (id && !selectedKtv.includes(id)) setSelectedKtv((prev) => [...prev, id]);
+                  }}
+                >
+                  <option value="">— Chọn KTV —</option>
+                  {technicians.filter((t) => !selectedKtv.includes(t.id)).map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.ho_ten} — {t.sdt}{t.chuyen_mon?.length ? ` (${t.chuyen_mon.join(", ")})` : ""}
+                    </option>
+                  ))}
+                </select>
+                {selectedKtv.length > 0 && (
+                  <div className="multi-select-tags">
+                    {selectedKtv.map((id) => {
+                      const t = technicians.find((x) => x.id === id);
+                      if (!t) return null;
+                      return (
+                        <div key={id} className="multi-select-tag">
+                          <span className="multi-select-tag-avatar">{t.ho_ten.charAt(0)}</span>
+                          <span>{t.ho_ten}</span>
+                          <button type="button" className="multi-select-tag-remove" onClick={() => setSelectedKtv((prev) => prev.filter((x) => x !== id))}>
+                            <X size={12} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -582,27 +595,61 @@ function SidePanel({
 
           {tab === "ktv" && (
             <div className="sp-ktv">
-              <p className="sp-hint">Chọn KTV phụ trách:</p>
-              <div className="sp-ktv-grid">
-                {technicians.map((t) => {
-                  const isAssigned = (deal.ktv_phu_trach || []).includes(t.id);
-                  return (
-                    <div key={t.id} className={`sp-ktv-card ${isAssigned ? "assigned" : ""}`}
-                      onClick={() => {
-                        const current = deal.ktv_phu_trach || [];
-                        const next = isAssigned ? current.filter((id) => id !== t.id) : [...current, t.id];
-                        onFieldSave(deal.id, "ktv_phu_trach", next);
-                      }}>
-                      <div className="sp-ktv-avatar">{t.ho_ten.charAt(0)}</div>
-                      <div>
-                        <div className="sp-ktv-name">{t.ho_ten}</div>
-                        <div className="sp-ktv-phone">{t.sdt}</div>
-                      </div>
+              {technicians.length === 0 ? (
+                <p className="sp-hint">Chưa có KTV. Thêm tại mục Kỹ thuật viên.</p>
+              ) : (
+                <>
+                  <select
+                    className="p-select"
+                    value=""
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      if (!id) return;
+                      const current = deal.ktv_phu_trach || [];
+                      if (!current.includes(id)) {
+                        onFieldSave(deal.id, "ktv_phu_trach", [...current, id]);
+                      }
+                    }}
+                  >
+                    <option value="">— Thêm KTV —</option>
+                    {technicians.filter((t) => !(deal.ktv_phu_trach || []).includes(t.id)).map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.ho_ten} — {t.sdt}{t.chuyen_mon?.length ? ` (${t.chuyen_mon.join(", ")})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {(deal.ktv_phu_trach || []).length > 0 && (
+                    <div className="multi-select-tags" style={{ marginTop: 10 }}>
+                      {(deal.ktv_phu_trach || []).map((id) => {
+                        const t = technicians.find((x) => x.id === id);
+                        if (!t) return null;
+                        return (
+                          <div key={id} className="multi-select-tag">
+                            <span className="multi-select-tag-avatar">{t.ho_ten.charAt(0)}</span>
+                            <div>
+                              <div>{t.ho_ten}</div>
+                              <div style={{ fontSize: 11, color: "var(--neutral-500)" }}>{t.sdt}</div>
+                            </div>
+                            <button
+                              type="button"
+                              className="multi-select-tag-remove"
+                              onClick={() => {
+                                const next = (deal.ktv_phu_trach || []).filter((x) => x !== id);
+                                onFieldSave(deal.id, "ktv_phu_trach", next);
+                              }}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-                {technicians.length === 0 && <p className="sp-hint">Chưa có KTV.</p>}
-              </div>
+                  )}
+                  {(deal.ktv_phu_trach || []).length === 0 && (
+                    <p className="sp-hint" style={{ marginTop: 8 }}>Chưa phân công KTV nào</p>
+                  )}
+                </>
+              )}
             </div>
           )}
 

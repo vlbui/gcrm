@@ -3262,10 +3262,24 @@ ul { list-style: none; }
 }
 .new-deal-ktv-card:hover { border-color: var(--primary-300); }
 .new-deal-ktv-card.active { border-color: var(--primary-500); background: var(--primary-50); }
-.new-deal-ktv-avatar {
-  width: 32px; height: 32px; border-radius: 50%; background: var(--primary-100); color: var(--primary-800);
-  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0;
+/* Multi-select dropdown tags */
+.multi-select-tags {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
 }
+.multi-select-tag {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; background: var(--primary-50); border: 1px solid var(--primary-200);
+  border-radius: var(--radius-sm); font-size: 13px; color: var(--neutral-800);
+}
+.multi-select-tag-avatar {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--primary-200); color: var(--primary-800);
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0;
+}
+.multi-select-tag-remove {
+  border: none; background: transparent; cursor: pointer; color: var(--neutral-400);
+  display: flex; align-items: center; padding: 2px; border-radius: 50%; margin-left: auto;
+}
+.multi-select-tag-remove:hover { background: var(--neutral-200); color: var(--danger-500); }
 
 /* Quick Add */
 .pipeline-quick-add {
