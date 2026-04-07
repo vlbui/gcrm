@@ -3,9 +3,33 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Search, Plus, Eye, ArrowRightLeft, Phone, Mail, MapPin, Bug, Ruler } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Search, Plus, X, Eye, ArrowRightLeft, Phone, Mail, MapPin, Bug, Ruler,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   fetchServiceRequests,
   updateServiceRequest,
@@ -27,15 +51,26 @@ const LOAI_HINH_OPTIONS = [
   "Trang trại",
 ];
 const STATUS_OPTIONS = [
-  { value: "Mới", label: "Mới", color: "amber" },
-  { value: "Đã liên hệ", label: "Đã liên hệ", color: "blue" },
-  { value: "Đang tư vấn", label: "Đang tư vấn", color: "blue" },
-  { value: "Đã báo giá", label: "Đã báo giá", color: "blue" },
-  { value: "Chốt đơn", label: "Chốt đơn", color: "green" },
-  { value: "Đang triển khai", label: "Đang triển khai", color: "green" },
-  { value: "Hoàn thành", label: "Hoàn thành", color: "green" },
-  { value: "Từ chối", label: "Từ chối", color: "red" },
+  { value: "Mới", label: "Mới" },
+  { value: "Đã liên hệ", label: "Đã liên hệ" },
+  { value: "Đang tư vấn", label: "Đang tư vấn" },
+  { value: "Đã báo giá", label: "Đã báo giá" },
+  { value: "Chốt đơn", label: "Chốt đơn" },
+  { value: "Đang triển khai", label: "Đang triển khai" },
+  { value: "Hoàn thành", label: "Hoàn thành" },
+  { value: "Từ chối", label: "Từ chối" },
 ];
+
+const statusBadgeClass: Record<string, string> = {
+  "Mới": "status-badge moi",
+  "Đã liên hệ": "status-badge dang-xu-ly",
+  "Đang tư vấn": "status-badge dang-xu-ly",
+  "Đã báo giá": "status-badge dang-xu-ly",
+  "Chốt đơn": "status-badge hoan-thanh",
+  "Đang triển khai": "status-badge hoan-thanh",
+  "Hoàn thành": "status-badge hoan-thanh",
+  "Từ chối": "status-badge huy",
+};
 
 export default function YeuCauPage() {
   const router = useRouter();
@@ -48,19 +83,20 @@ export default function YeuCauPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  // View/Edit dialog
+  // Dialogs
   const [selected, setSelected] = useState<ServiceRequest | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(false);
 
-  // Create dialog
-  const [showCreate, setShowCreate] = useState(false);
+  // Create form
   const [newForm, setNewForm] = useState({
     ten_kh: "", sdt: "", email: "", dia_chi: "", loai_hinh: "",
     loai_con_trung: "", dien_tich: "", mo_ta: "",
   });
   const [creating, setCreating] = useState(false);
 
-  // Convert dialog
-  const [showConvert, setShowConvert] = useState(false);
+  // Convert
   const [convertDichVu, setConvertDichVu] = useState("");
   const [converting, setConverting] = useState(false);
 
@@ -76,7 +112,7 @@ export default function YeuCauPage() {
   }
 
   const filtered = data.filter((item) => {
-    if (filterStatus === "active" && (item.trang_thai === "Hoàn thành" || item.trang_thai === "Từ chối" || item.trang_thai === "Chốt đơn")) return false;
+    if (filterStatus === "active" && ["Hoàn thành", "Từ chối", "Chốt đơn"].includes(item.trang_thai)) return false;
     if (filterStatus !== "active" && filterStatus !== "all" && item.trang_thai !== filterStatus) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -86,18 +122,17 @@ export default function YeuCauPage() {
   });
 
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const canEdit = user?.vai_tro !== "Xem";
 
-  // Status update
   const handleStatusChange = async (id: string, trang_thai: string) => {
     try {
       await updateServiceRequest(id, { trang_thai });
       setData((prev) => prev.map((r) => r.id === id ? { ...r, trang_thai } : r));
       if (selected?.id === id) setSelected((prev) => prev ? { ...prev, trang_thai } : null);
-      toast.success(`Trạng thái → ${trang_thai}`);
+      toast.success(`→ ${trang_thai}`);
     } catch { toast.error("Lỗi cập nhật"); }
   };
 
-  // Notes update
   const handleNotesUpdate = async (id: string, ghi_chu_nv: string) => {
     try {
       await updateServiceRequest(id, { ghi_chu_nv });
@@ -105,7 +140,6 @@ export default function YeuCauPage() {
     } catch { toast.error("Lỗi lưu ghi chú"); }
   };
 
-  // Create request
   const handleCreate = async () => {
     if (!newForm.ten_kh.trim() || !newForm.sdt.trim()) { toast.error("Nhập tên và SĐT"); return; }
     setCreating(true);
@@ -121,14 +155,13 @@ export default function YeuCauPage() {
         mo_ta: newForm.mo_ta.trim() || undefined,
       });
       toast.success("Đã tạo yêu cầu");
-      setShowCreate(false);
+      setCreateOpen(false);
       setNewForm({ ten_kh: "", sdt: "", email: "", dia_chi: "", loai_hinh: "", loai_con_trung: "", dien_tich: "", mo_ta: "" });
       await loadData();
     } catch { toast.error("Lỗi tạo yêu cầu"); }
     finally { setCreating(false); }
   };
 
-  // Convert to customer + contract
   const handleConvert = async () => {
     if (!selected) return;
     setConverting(true);
@@ -136,36 +169,28 @@ export default function YeuCauPage() {
       const phone = sanitizePhone(selected.sdt);
       const existing = customers.find((c) => sanitizePhone(c.sdt) === phone);
       let customerId: string;
-
       if (existing) {
         customerId = existing.id;
       } else {
         const cust = await createCustomer({
-          ten_kh: selected.ten_kh,
-          sdt: phone,
-          email: selected.email ?? "",
-          dia_chi: selected.dia_chi ?? "",
-          loai_kh: selected.loai_hinh || "Hộ gia đình",
-          trang_thai: "Đang phục vụ",
+          ten_kh: selected.ten_kh, sdt: phone,
+          email: selected.email ?? "", dia_chi: selected.dia_chi ?? "",
+          loai_kh: selected.loai_hinh || "Hộ gia đình", trang_thai: "Đang phục vụ",
           ghi_chu: `Từ yêu cầu ${selected.ma_yc}`,
         });
         customerId = cust.id;
       }
-
       await createContract({
         customer_id: customerId,
         dich_vu: convertDichVu || selected.loai_con_trung || "Kiểm soát côn trùng",
-        gia_tri: null,
-        trang_thai: "Mới",
-        dien_tich: selected.dien_tich || null,
-        ngay_bat_dau: new Date().toISOString().split("T")[0],
-        ngay_ket_thuc: null,
+        gia_tri: null, trang_thai: "Mới", dien_tich: selected.dien_tich || null,
+        ngay_bat_dau: new Date().toISOString().split("T")[0], ngay_ket_thuc: null,
         ghi_chu: `Từ ${selected.ma_yc}: ${selected.mo_ta || ""}`,
       });
-
       await updateServiceRequest(selected.id, { trang_thai: "Chốt đơn", xu_ly_boi: user?.id ?? null });
-      toast.success(existing ? "Đã tạo hợp đồng cho KH hiện có" : "Đã tạo KH + HĐ thành công");
-      setShowConvert(false);
+      toast.success(existing ? "Đã tạo HĐ cho KH hiện có" : "Đã tạo KH + HĐ");
+      setConvertOpen(false);
+      setDetailOpen(false);
       setSelected(null);
       await loadData();
       router.push("/admin/hop-dong");
@@ -173,8 +198,10 @@ export default function YeuCauPage() {
     finally { setConverting(false); }
   };
 
-  const canEdit = user?.vai_tro !== "Xem";
-  const statusColor = (s: string) => STATUS_OPTIONS.find((o) => o.value === s)?.color || "gray";
+  const openDetail = (item: ServiceRequest) => {
+    setSelected(item);
+    setDetailOpen(true);
+  };
 
   return (
     <div>
@@ -184,255 +211,258 @@ export default function YeuCauPage() {
           <p className="admin-page-subtitle">Quản lý yêu cầu từ khách hàng ({filtered.length})</p>
         </div>
         {canEdit && (
-          <button className="p-btn p-btn-primary" onClick={() => setShowCreate(true)}>
-            <Plus size={15} /> Thêm yêu cầu
-          </button>
+          <Button className="btn-add" onClick={() => setCreateOpen(true)}>
+            <Plus size={16} /> Thêm yêu cầu
+          </Button>
         )}
       </div>
 
-      {/* Toolbar */}
-      <div className="admin-toolbar">
-        <div className="admin-search">
-          <Search size={16} />
-          <input placeholder="Tìm tên, SĐT, mã YC..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+      <div className="data-table-wrapper">
+        <div className="data-table-toolbar">
+          <div className="data-table-search">
+            <Search size={16} />
+            <Input placeholder="Tìm tên, SĐT, mã YC..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+          </div>
+          <div className="data-table-actions">
+            <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setPage(1); }}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Đang xử lý</SelectItem>
+                <SelectItem value="all">Tất cả</SelectItem>
+                {STATUS_OPTIONS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {[
-            { value: "active", label: "Đang xử lý" },
-            { value: "all", label: "Tất cả" },
-            { value: "Mới", label: "Mới" },
-            { value: "Đã liên hệ", label: "Đã liên hệ" },
-            { value: "Đang tư vấn", label: "Đang tư vấn" },
-            { value: "Chốt đơn", label: "Chốt đơn" },
-            { value: "Từ chối", label: "Từ chối" },
-          ].map((f) => (
-            <button key={f.value} className={`p-btn ${filterStatus === f.value ? "p-btn-primary" : "p-btn-ghost"}`}
-              onClick={() => { setFilterStatus(f.value); setPage(1); }}>
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {/* Table */}
-      {loading ? <div className="empty-state"><p>Đang tải...</p></div> : paged.length === 0 ? (
-        <div className="empty-state"><p>Không có yêu cầu nào</p></div>
-      ) : (
-        <>
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Mã YC</th>
-                  <th>Khách hàng</th>
-                  <th>SĐT</th>
-                  <th>Loại côn trùng</th>
-                  <th>Loại hình</th>
-                  <th>Trạng thái</th>
-                  <th>Ngày tạo</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
+        {loading ? (
+          <div className="empty-state"><p>Đang tải...</p></div>
+        ) : filtered.length === 0 ? (
+          <div className="empty-state"><p>Không có yêu cầu nào</p></div>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mã YC</TableHead>
+                  <TableHead>Khách hàng</TableHead>
+                  <TableHead>SĐT</TableHead>
+                  <TableHead>Loại côn trùng</TableHead>
+                  <TableHead>Loại hình</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead>Ngày tạo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {paged.map((item) => (
-                  <tr key={item.id}>
-                    <td className="font-medium">{item.ma_yc}</td>
-                    <td>
+                  <TableRow key={item.id} onClick={() => openDetail(item)} style={{ cursor: "pointer" }}>
+                    <TableCell className="font-medium">{item.ma_yc}</TableCell>
+                    <TableCell>
                       <div style={{ fontWeight: 600 }}>{item.ten_kh}</div>
                       {item.email && <div style={{ fontSize: 11, color: "var(--neutral-500)" }}>{item.email}</div>}
-                    </td>
-                    <td>{item.sdt}</td>
-                    <td>{item.loai_con_trung || "—"}</td>
-                    <td style={{ fontSize: 12 }}>{item.loai_hinh || "—"}</td>
-                    <td>
-                      {canEdit ? (
-                        <select className="p-select" style={{ width: 130, fontSize: 12, padding: "3px 6px" }}
-                          value={item.trang_thai} onChange={(e) => handleStatusChange(item.id, e.target.value)}>
-                          {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                        </select>
-                      ) : (
-                        <span className={`admin-badge ${statusColor(item.trang_thai)}`}>{item.trang_thai}</span>
-                      )}
-                    </td>
-                    <td style={{ fontSize: 12 }}>{formatDate(item.created_at)}</td>
-                    <td>
-                      <button className="admin-action-btn" title="Xem chi tiết" onClick={() => setSelected(item)}>
-                        <Eye size={16} />
-                      </button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell>{item.sdt}</TableCell>
+                    <TableCell>{item.loai_con_trung || "—"}</TableCell>
+                    <TableCell style={{ fontSize: 12 }}>{item.loai_hinh || "—"}</TableCell>
+                    <TableCell>
+                      <span className={statusBadgeClass[item.trang_thai] ?? "status-badge"}>
+                        {item.trang_thai}
+                      </span>
+                    </TableCell>
+                    <TableCell>{formatDate(item.created_at)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
-        </>
-      )}
+              </TableBody>
+            </Table>
+            <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
+        )}
+      </div>
 
       {/* Detail Dialog */}
-      {selected && (
-        <div className="admin-dialog-overlay" onClick={() => setSelected(null)}>
-          <div className="admin-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 550 }}>
-            <div className="admin-dialog-header">
-              <h2>{selected.ma_yc} — {selected.ten_kh}</h2>
-              <button className="admin-dialog-close" onClick={() => setSelected(null)}><X size={20} /></button>
-            </div>
-            <div className="admin-dialog-body">
-              <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-                <span className={`admin-badge ${statusColor(selected.trang_thai)}`}>{selected.trang_thai}</span>
-                <span style={{ fontSize: 12, color: "var(--neutral-500)" }}>Ngày tạo: {formatDate(selected.created_at)}</span>
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{selected?.ma_yc} — {selected?.ten_kh}</DialogTitle>
+            <DialogDescription>
+              <span className={statusBadgeClass[selected?.trang_thai ?? ""] ?? "status-badge"}>
+                {selected?.trang_thai}
+              </span>
+              {" "}· Ngày tạo: {selected ? formatDate(selected.created_at) : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selected && (
+            <>
+              <div className="form-grid">
+                <div className="form-field">
+                  <Label>SĐT</Label>
+                  <p style={{ display: "flex", alignItems: "center", gap: 4 }}><Phone size={14} /> {selected.sdt}</p>
+                </div>
+                {selected.email && (
+                  <div className="form-field">
+                    <Label>Email</Label>
+                    <p style={{ display: "flex", alignItems: "center", gap: 4 }}><Mail size={14} /> {selected.email}</p>
+                  </div>
+                )}
+                {selected.dia_chi && (
+                  <div className="form-field full-width">
+                    <Label>Địa chỉ</Label>
+                    <p style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={14} /> {selected.dia_chi}</p>
+                  </div>
+                )}
+                {selected.loai_con_trung && (
+                  <div className="form-field">
+                    <Label>Côn trùng</Label>
+                    <p style={{ display: "flex", alignItems: "center", gap: 4 }}><Bug size={14} /> {selected.loai_con_trung}</p>
+                  </div>
+                )}
+                {selected.loai_hinh && (
+                  <div className="form-field">
+                    <Label>Loại hình</Label>
+                    <p>{selected.loai_hinh}</p>
+                  </div>
+                )}
+                {selected.dien_tich && (
+                  <div className="form-field">
+                    <Label>Diện tích</Label>
+                    <p style={{ display: "flex", alignItems: "center", gap: 4 }}><Ruler size={14} /> {selected.dien_tich} m²</p>
+                  </div>
+                )}
+                {selected.mo_ta && (
+                  <div className="form-field full-width">
+                    <Label>Mô tả</Label>
+                    <p style={{ fontSize: 13, color: "var(--neutral-600)" }}>{selected.mo_ta}</p>
+                  </div>
+                )}
+
+                {canEdit && (
+                  <div className="form-field">
+                    <Label>Trạng thái</Label>
+                    <select className="native-select" value={selected.trang_thai}
+                      onChange={(e) => handleStatusChange(selected.id, e.target.value)}>
+                      {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {canEdit && (
+                  <div className="form-field full-width">
+                    <Label>Ghi chú nhân viên</Label>
+                    <Textarea rows={3} defaultValue={selected.ghi_chu_nv || ""}
+                      onBlur={(e) => {
+                        if (e.target.value !== (selected.ghi_chu_nv || "")) handleNotesUpdate(selected.id, e.target.value);
+                      }}
+                      placeholder="Ghi chú xử lý..."
+                    />
+                  </div>
+                )}
               </div>
 
-              <div className="pipeline-detail-grid">
-                <div className="pipeline-detail-item"><Phone size={15} /><div><div className="pipeline-detail-label">SĐT</div><div className="pipeline-detail-value">{selected.sdt}</div></div></div>
-                {selected.email && <div className="pipeline-detail-item"><Mail size={15} /><div><div className="pipeline-detail-label">Email</div><div className="pipeline-detail-value">{selected.email}</div></div></div>}
-                {selected.dia_chi && <div className="pipeline-detail-item"><MapPin size={15} /><div><div className="pipeline-detail-label">Địa chỉ</div><div className="pipeline-detail-value">{selected.dia_chi}</div></div></div>}
-                {selected.loai_con_trung && <div className="pipeline-detail-item"><Bug size={15} /><div><div className="pipeline-detail-label">Côn trùng</div><div className="pipeline-detail-value">{selected.loai_con_trung}</div></div></div>}
-                {selected.loai_hinh && <div className="pipeline-detail-item"><div><div className="pipeline-detail-label">Loại hình</div><div className="pipeline-detail-value">{selected.loai_hinh}</div></div></div>}
-                {selected.dien_tich && <div className="pipeline-detail-item"><Ruler size={15} /><div><div className="pipeline-detail-label">Diện tích</div><div className="pipeline-detail-value">{selected.dien_tich} m²</div></div></div>}
+              <div className="form-actions">
+                <Button variant="outline" onClick={() => setDetailOpen(false)}>Đóng</Button>
+                {canEdit && !["Chốt đơn", "Hoàn thành"].includes(selected.trang_thai) && (
+                  <Button onClick={() => {
+                    setConvertDichVu(selected.loai_con_trung ? `Dịch vụ ${selected.loai_con_trung}` : "");
+                    setConvertOpen(true);
+                  }}>
+                    <ArrowRightLeft size={14} /> Chuyển thành KH + HĐ
+                  </Button>
+                )}
               </div>
-
-              {selected.mo_ta && (
-                <div style={{ marginTop: 12 }}>
-                  <label className="admin-label">Mô tả</label>
-                  <p style={{ fontSize: 13, color: "var(--neutral-600)" }}>{selected.mo_ta}</p>
-                </div>
-              )}
-
-              {/* Status change */}
-              {canEdit && (
-                <div className="admin-form-group" style={{ marginTop: 16 }}>
-                  <label className="admin-label">Trạng thái</label>
-                  <select className="p-select" value={selected.trang_thai} onChange={(e) => handleStatusChange(selected.id, e.target.value)}>
-                    {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                  </select>
-                </div>
-              )}
-
-              {/* Notes */}
-              {canEdit && (
-                <div className="admin-form-group" style={{ marginTop: 8 }}>
-                  <label className="admin-label">Ghi chú nhân viên</label>
-                  <textarea className="p-textarea" rows={3} defaultValue={selected.ghi_chu_nv || ""}
-                    onBlur={(e) => {
-                      if (e.target.value !== (selected.ghi_chu_nv || "")) handleNotesUpdate(selected.id, e.target.value);
-                    }}
-                    placeholder="Ghi chú xử lý..."
-                  />
-                </div>
-              )}
-            </div>
-            <div className="admin-dialog-footer">
-              <button className="p-btn p-btn-ghost" onClick={() => setSelected(null)}>Đóng</button>
-              {canEdit && selected.trang_thai !== "Chốt đơn" && selected.trang_thai !== "Hoàn thành" && (
-                <button className="p-btn p-btn-primary" onClick={() => {
-                  setConvertDichVu(selected.loai_con_trung ? `Dịch vụ ${selected.loai_con_trung}` : "");
-                  setShowConvert(true);
-                }}>
-                  <ArrowRightLeft size={14} /> Chuyển thành KH + HĐ
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Convert Dialog */}
-      {showConvert && selected && (
-        <div className="admin-dialog-overlay" onClick={() => setShowConvert(false)}>
-          <div className="admin-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
-            <div className="admin-dialog-header">
-              <h2>Chuyển đổi thành KH + HĐ</h2>
-              <button className="admin-dialog-close" onClick={() => setShowConvert(false)}><X size={20} /></button>
+      <Dialog open={convertOpen} onOpenChange={setConvertOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chuyển đổi thành KH + HĐ</DialogTitle>
+            <DialogDescription>
+              {selected?.ten_kh} — {selected?.sdt}
+            </DialogDescription>
+          </DialogHeader>
+          {selected && customers.find((c) => sanitizePhone(c.sdt) === sanitizePhone(selected.sdt)) && (
+            <div style={{ padding: "8px 12px", background: "#F0FDF4", borderRadius: 8, fontSize: 13, color: "var(--primary-800)" }}>
+              KH đã tồn tại — sẽ tạo HĐ mới cho KH này
             </div>
-            <div className="admin-dialog-body">
-              <div className="sync-card-info">
-                <strong>{selected.ten_kh}</strong> — {selected.sdt}
-                {selected.loai_con_trung && <div style={{ fontSize: 12, color: "var(--neutral-500)" }}>{selected.loai_con_trung}</div>}
-              </div>
-              {customers.find((c) => sanitizePhone(c.sdt) === sanitizePhone(selected.sdt)) && (
-                <div className="sync-existing" style={{ padding: "8px 12px", background: "#F0FDF4", borderRadius: 8, marginBottom: 12 }}>
-                  KH đã tồn tại — sẽ tạo HĐ mới cho KH này
-                </div>
-              )}
-              <div className="admin-form-group">
-                <label className="admin-label">Dịch vụ HĐ</label>
-                <input className="p-input" value={convertDichVu} onChange={(e) => setConvertDichVu(e.target.value)} placeholder="Kiểm soát côn trùng" />
-              </div>
-            </div>
-            <div className="admin-dialog-footer">
-              <button className="p-btn p-btn-ghost" onClick={() => setShowConvert(false)}>Hủy</button>
-              <button className="p-btn p-btn-primary" onClick={handleConvert} disabled={converting}>
-                {converting ? "Đang xử lý..." : "Tạo KH + HĐ"}
-              </button>
+          )}
+          <div className="form-grid">
+            <div className="form-field full-width">
+              <Label>Dịch vụ hợp đồng</Label>
+              <Input value={convertDichVu} onChange={(e) => setConvertDichVu(e.target.value)} placeholder="Kiểm soát côn trùng" />
             </div>
           </div>
-        </div>
-      )}
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setConvertOpen(false)}>Hủy</Button>
+            <Button onClick={handleConvert} disabled={converting}>
+              {converting ? "Đang xử lý..." : "Tạo KH + HĐ"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Create Dialog */}
-      {showCreate && (
-        <div className="admin-dialog-overlay" onClick={() => setShowCreate(false)}>
-          <div className="admin-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 580 }}>
-            <div className="admin-dialog-header">
-              <h2>Thêm yêu cầu mới</h2>
-              <button className="admin-dialog-close" onClick={() => setShowCreate(false)}><X size={20} /></button>
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Thêm yêu cầu mới</DialogTitle>
+            <DialogDescription>Nhập thông tin yêu cầu dịch vụ từ khách hàng</DialogDescription>
+          </DialogHeader>
+          <div className="form-grid">
+            <div className="form-field">
+              <Label>Họ tên *</Label>
+              <Input value={newForm.ten_kh} onChange={(e) => setNewForm({ ...newForm, ten_kh: e.target.value })} placeholder="Nguyễn Văn A" />
             </div>
-            <div className="admin-dialog-body">
-              <div className="admin-form-row">
-                <div className="admin-form-group">
-                  <label className="admin-label">Họ tên *</label>
-                  <input className="p-input" value={newForm.ten_kh} onChange={(e) => setNewForm({ ...newForm, ten_kh: e.target.value })} placeholder="Nguyễn Văn A" />
-                </div>
-                <div className="admin-form-group">
-                  <label className="admin-label">SĐT *</label>
-                  <input className="p-input" value={newForm.sdt} onChange={(e) => setNewForm({ ...newForm, sdt: e.target.value })} placeholder="085 9955 969" />
-                </div>
-              </div>
-              <div className="admin-form-row">
-                <div className="admin-form-group">
-                  <label className="admin-label">Email</label>
-                  <input className="p-input" type="email" value={newForm.email} onChange={(e) => setNewForm({ ...newForm, email: e.target.value })} />
-                </div>
-                <div className="admin-form-group">
-                  <label className="admin-label">Địa chỉ</label>
-                  <input className="p-input" value={newForm.dia_chi} onChange={(e) => setNewForm({ ...newForm, dia_chi: e.target.value })} />
-                </div>
-              </div>
-              <div className="admin-form-row">
-                <div className="admin-form-group">
-                  <label className="admin-label">Loại hình</label>
-                  <select className="p-select" value={newForm.loai_hinh} onChange={(e) => setNewForm({ ...newForm, loai_hinh: e.target.value })}>
-                    <option value="">— Chọn —</option>
-                    {LOAI_HINH_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-                <div className="admin-form-group">
-                  <label className="admin-label">Loại côn trùng</label>
-                  <select className="p-select" value={newForm.loai_con_trung} onChange={(e) => setNewForm({ ...newForm, loai_con_trung: e.target.value })}>
-                    <option value="">— Chọn —</option>
-                    {BUG_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="admin-form-group">
-                <label className="admin-label">Diện tích (m²)</label>
-                <input className="p-input" type="number" value={newForm.dien_tich} onChange={(e) => setNewForm({ ...newForm, dien_tich: e.target.value })} placeholder="80" />
-              </div>
-              <div className="admin-form-group">
-                <label className="admin-label">Mô tả</label>
-                <textarea className="p-textarea" rows={3} value={newForm.mo_ta} onChange={(e) => setNewForm({ ...newForm, mo_ta: e.target.value })} placeholder="Mô tả tình trạng..." />
-              </div>
+            <div className="form-field">
+              <Label>SĐT *</Label>
+              <Input value={newForm.sdt} onChange={(e) => setNewForm({ ...newForm, sdt: e.target.value })} placeholder="085 9955 969" />
             </div>
-            <div className="admin-dialog-footer">
-              <button className="p-btn p-btn-ghost" onClick={() => setShowCreate(false)}>Hủy</button>
-              <button className="p-btn p-btn-primary" onClick={handleCreate} disabled={creating}>
-                {creating ? "Đang lưu..." : "Tạo yêu cầu"}
-              </button>
+            <div className="form-field">
+              <Label>Email</Label>
+              <Input type="email" value={newForm.email} onChange={(e) => setNewForm({ ...newForm, email: e.target.value })} placeholder="email@example.com" />
+            </div>
+            <div className="form-field">
+              <Label>Địa chỉ</Label>
+              <Input value={newForm.dia_chi} onChange={(e) => setNewForm({ ...newForm, dia_chi: e.target.value })} placeholder="Số nhà, đường, quận..." />
+            </div>
+            <div className="form-field">
+              <Label>Loại hình</Label>
+              <select className="native-select" value={newForm.loai_hinh} onChange={(e) => setNewForm({ ...newForm, loai_hinh: e.target.value })}>
+                <option value="">— Chọn —</option>
+                {LOAI_HINH_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="form-field">
+              <Label>Loại côn trùng</Label>
+              <select className="native-select" value={newForm.loai_con_trung} onChange={(e) => setNewForm({ ...newForm, loai_con_trung: e.target.value })}>
+                <option value="">— Chọn —</option>
+                {BUG_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            <div className="form-field">
+              <Label>Diện tích (m²)</Label>
+              <Input type="number" value={newForm.dien_tich} onChange={(e) => setNewForm({ ...newForm, dien_tich: e.target.value })} placeholder="80" />
+            </div>
+            <div className="form-field full-width">
+              <Label>Mô tả</Label>
+              <Textarea rows={3} value={newForm.mo_ta} onChange={(e) => setNewForm({ ...newForm, mo_ta: e.target.value })} placeholder="Mô tả tình trạng..." />
             </div>
           </div>
-        </div>
-      )}
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Hủy</Button>
+            <Button onClick={handleCreate} disabled={creating}>
+              {creating ? "Đang lưu..." : "Tạo yêu cầu"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
