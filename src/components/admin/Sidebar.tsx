@@ -19,6 +19,8 @@ import {
   Wallet,
   Bell,
   Truck,
+  MessageSquare,
+  ClipboardList,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -31,9 +33,10 @@ interface SidebarProps {
 
 const mainLinks = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/admin/pipeline", icon: Kanban, label: "Pipeline" },
+  { href: "/admin/yeu-cau", icon: MessageSquare, label: "Yêu cầu" },
   { href: "/admin/khach-hang", icon: Users, label: "Khách hàng" },
   { href: "/admin/hop-dong", icon: FileText, label: "Hợp đồng" },
+  { href: "/admin/lich-su-dich-vu", icon: ClipboardList, label: "Lịch sử DV" },
   { href: "/admin/lich-cong-viec", icon: CalendarDays, label: "Lịch" },
   { href: "/admin/thanh-toan", icon: CreditCard, label: "Thanh toán" },
   { href: "/admin/cong-no", icon: Wallet, label: "Công nợ" },
