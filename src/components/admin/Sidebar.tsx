@@ -14,6 +14,10 @@ import {
   Globe,
   ChevronDown,
   Shield,
+  Kanban,
+  Receipt,
+  CreditCard,
+  Wallet,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -26,9 +30,13 @@ interface SidebarProps {
 
 const crmLinks = [
   { href: "/admin", icon: LayoutDashboard, label: "Tổng quan" },
+  { href: "/admin/pipeline", icon: Kanban, label: "Sales Pipeline" },
   { href: "/admin/yeu-cau", icon: MessageSquare, label: "Yêu cầu" },
   { href: "/admin/khach-hang", icon: Users, label: "Khách hàng" },
   { href: "/admin/hop-dong", icon: FileText, label: "Hợp đồng" },
+  { href: "/admin/bao-gia", icon: Receipt, label: "Báo giá" },
+  { href: "/admin/thanh-toan", icon: CreditCard, label: "Thanh toán" },
+  { href: "/admin/cong-no", icon: Wallet, label: "Công nợ" },
   { href: "/admin/lich-su-dich-vu", icon: History, label: "Lịch sử dịch vụ" },
   { href: "/admin/hoa-chat", icon: FlaskConical, label: "Hóa chất" },
   { href: "/admin/vat-tu", icon: Package, label: "Vật tư" },
