@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { logActivity } from "./activityLog.api";
+import { createCustomer } from "./customers.api";
+import { createContract } from "./contracts.api";
 
 export interface PipelineCard {
   id: string;
@@ -68,4 +70,48 @@ export async function updateCardDetails(id: string, updates: Partial<PipelineCar
     .update(dbUpdates)
     .eq("id", id);
   if (error) throw error;
+}
+
+/** Tạo KH từ card pipeline, trả về customer id */
+export async function createCustomerFromCard(card: PipelineCard): Promise<string> {
+  const customer = await createCustomer({
+    ten_kh: card.ten_kh,
+    sdt: card.sdt,
+    email: card.email ?? "",
+    dia_chi: card.dia_chi ?? "",
+    loai_kh: card.loai_hinh || "Hộ gia đình",
+    trang_thai: "Đang phục vụ",
+    ghi_chu: `Từ yêu cầu ${card.ma_yc}`,
+  });
+  return customer.id;
+}
+
+/** Tạo HĐ từ card pipeline */
+export async function createContractFromCard(
+  card: PipelineCard,
+  customerId: string
+): Promise<string> {
+  const contract = await createContract({
+    customer_id: customerId,
+    dich_vu: card.loai_con_trung ? `Dịch vụ ${card.loai_con_trung}` : "Dịch vụ kiểm soát côn trùng",
+    gia_tri: card.gia_tri || 0,
+    trang_thai: "Mới",
+    dien_tich: card.dien_tich || null,
+    ngay_bat_dau: new Date().toISOString().split("T")[0],
+    ngay_ket_thuc: null,
+    ghi_chu: `Từ pipeline ${card.ma_yc}`,
+  });
+  return contract.id;
+}
+
+/** Tìm KH trùng SĐT */
+export async function findExistingCustomer(sdt: string): Promise<{ id: string; ten_kh: string; ma_kh: string } | null> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("customers")
+    .select("id, ten_kh, ma_kh")
+    .eq("sdt", sdt)
+    .limit(1)
+    .maybeSingle();
+  return data;
 }

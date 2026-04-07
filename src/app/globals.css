@@ -2437,6 +2437,51 @@ ul { list-style: none; }
   border-top: 1px solid var(--neutral-100);
 }
 
+/* Pipeline Sync Dialog */
+.sync-card-info {
+  background: var(--neutral-50);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--neutral-200);
+}
+
+.sync-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sync-step {
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.sync-step-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--neutral-800);
+  background: var(--neutral-50);
+  border-bottom: 1px solid var(--neutral-100);
+}
+
+.sync-step-body {
+  padding: 12px 14px;
+}
+
+.sync-existing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--neutral-700);
+}
+
 /* ============================================
    QUOTATION FORM
    ============================================ */
