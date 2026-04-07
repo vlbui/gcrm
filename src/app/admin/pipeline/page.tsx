@@ -269,6 +269,7 @@ export default function PipelinePage() {
         <NewDealDialog
           stage={newFormStage as DealStage}
           users={users}
+          technicians={technicians}
           onClose={() => setShowNewForm(false)}
           onSubmit={handleNewDeal}
         />
@@ -283,11 +284,13 @@ export default function PipelinePage() {
 function NewDealDialog({
   stage,
   users,
+  technicians,
   onClose,
   onSubmit,
 }: {
   stage: DealStage;
   users: User[];
+  technicians: Technician[];
   onClose: () => void;
   onSubmit: (input: CreateDealInput) => void;
 }) {
@@ -303,6 +306,7 @@ function NewDealDialog({
   const [giaTri, setGiaTri] = useState("");
   const [ghiChu, setGhiChu] = useState("");
   const [nguoiPhuTrach, setNguoiPhuTrach] = useState("");
+  const [selectedKtv, setSelectedKtv] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const toggleBug = (b: string) => {
@@ -319,15 +323,18 @@ function NewDealDialog({
         sdt: sdt.trim(),
         email: email.trim() || undefined,
         dia_chi: diaChi.trim() || undefined,
-        loai_kh: loaiKh as "Cá nhân" | "Tổ chức",
+        loai_kh: loaiKh,
+        ten_cong_ty: tenCongTy.trim() || undefined,
+        loai_hinh: loaiHinh || undefined,
         loai_con_trung: bugs.length > 0 ? bugs : undefined,
         dich_vu: bugs.length > 0 ? bugs.map((b) => `Dịch vụ ${b}`) : undefined,
         dien_tich: dienTich ? Number(dienTich) : undefined,
         gia_tri: giaTri ? Number(giaTri) : undefined,
         ghi_chu: ghiChu.trim() || undefined,
         nguoi_phu_trach: nguoiPhuTrach || undefined,
+        ktv_phu_trach: selectedKtv.length > 0 ? selectedKtv : undefined,
         giai_doan: stage,
-      } as CreateDealInput & { loai_kh: string; giai_doan: DealStage });
+      } as CreateDealInput);
     } finally {
       setSubmitting(false);
     }
@@ -421,6 +428,36 @@ function NewDealDialog({
               <option value="">— Tự động —</option>
               {users.map((u) => <option key={u.id} value={u.id}>{u.ho_ten}</option>)}
             </select>
+          </div>
+
+          {/* KTV Selection */}
+          <div className="admin-form-group">
+            <label className="admin-label">Kỹ thuật viên phụ trách</label>
+            {technicians.length === 0 ? (
+              <p style={{ fontSize: 12, color: "var(--neutral-500)" }}>Chưa có KTV. Thêm tại mục Kỹ thuật viên.</p>
+            ) : (
+              <div className="new-deal-ktv-grid">
+                {technicians.map((t) => {
+                  const isSelected = selectedKtv.includes(t.id);
+                  return (
+                    <div
+                      key={t.id}
+                      className={`new-deal-ktv-card ${isSelected ? "active" : ""}`}
+                      onClick={() => setSelectedKtv((prev) => isSelected ? prev.filter((id) => id !== t.id) : [...prev, t.id])}
+                    >
+                      <div className="new-deal-ktv-avatar">{t.ho_ten.charAt(0)}</div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{t.ho_ten}</div>
+                        <div style={{ fontSize: 11, color: "var(--neutral-500)" }}>{t.sdt}</div>
+                        {t.chuyen_mon?.length > 0 && (
+                          <div style={{ fontSize: 10, color: "var(--primary-700)", marginTop: 2 }}>{t.chuyen_mon.join(", ")}</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="admin-form-group">

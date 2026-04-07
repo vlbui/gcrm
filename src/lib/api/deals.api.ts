@@ -72,6 +72,7 @@ export type CreateDealInput = {
   gia_tri?: number;
   ghi_chu?: string;
   nguoi_phu_trach?: string;
+  ktv_phu_trach?: string[];
 };
 
 async function generateMaDeal(): Promise<string> {
