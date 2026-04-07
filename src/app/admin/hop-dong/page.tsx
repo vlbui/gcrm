@@ -222,17 +222,37 @@ export default function HopDongPage() {
         toast.success("Cập nhật hợp đồng thành công");
       } else {
         const contract = await createContract(input);
-        // Auto generate visits for periodic contracts
-        if (formData.loai_hd === "Định kỳ" && formData.so_lan_du_kien > 1 && formData.ngay_bat_dau) {
-          const { generateVisitsAndReminders } = await import("@/lib/utils/autoGenerateVisits");
-          await generateVisitsAndReminders(
-            contract.id,
-            formData.customer_id,
-            formData.so_lan_du_kien,
-            formData.ngay_bat_dau,
-            formData.tan_suat || "1 tháng"
-          );
-          toast.success(`Đã tạo ${formData.so_lan_du_kien} lần dịch vụ tự động`);
+        if (formData.ngay_bat_dau) {
+          if (formData.loai_hd === "Định kỳ" && formData.so_lan_du_kien > 1) {
+            // Định kỳ: tạo N lần DV + reminders
+            const { generateVisitsAndReminders } = await import("@/lib/utils/autoGenerateVisits");
+            await generateVisitsAndReminders(
+              contract.id,
+              formData.customer_id,
+              formData.so_lan_du_kien,
+              formData.ngay_bat_dau,
+              formData.tan_suat || "1 tháng"
+            );
+            toast.success(`Đã tạo ${formData.so_lan_du_kien} lần dịch vụ tự động`);
+          } else {
+            // Một lần: tạo 1 lần DV + 1 reminder
+            const { createVisit } = await import("@/lib/api/serviceVisits.api");
+            const { createReminder } = await import("@/lib/api/reminders.api");
+            await createVisit({
+              contract_id: contract.id,
+              ngay_du_kien: formData.ngay_bat_dau,
+            });
+            const reminderDate = new Date(formData.ngay_bat_dau);
+            reminderDate.setDate(reminderDate.getDate() - 3);
+            await createReminder({
+              customer_id: formData.customer_id,
+              contract_id: contract.id,
+              loai: "Lần DV tiếp theo",
+              ngay_nhac: reminderDate.toISOString().split("T")[0],
+              noi_dung: `Lần DV dự kiến ngày ${formData.ngay_bat_dau}`,
+            });
+            toast.success("Đã tạo lịch dịch vụ");
+          }
         }
         toast.success("Thêm hợp đồng thành công");
       }
