@@ -11,16 +11,31 @@ import {
 import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
 import { formatDate } from "@/lib/utils/date";
 import { toast } from "sonner";
-import Pagination from "@/components/admin/Pagination";
+import { Plus, Search, Trash2, CreditCard, Banknote, Building2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Plus,
-  Search,
-  Trash2,
-  CreditCard,
-  Banknote,
-  Building2,
-  X,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import Pagination from "@/components/admin/Pagination";
+import SearchSelect from "@/components/admin/SearchSelect";
+
+function formatCurrency(value: number): string {
+  return value.toLocaleString("vi-VN") + "đ";
+}
 
 const HINH_THUC_ICON: Record<string, React.ReactNode> = {
   "Tiền mặt": <Banknote size={14} />,
@@ -34,8 +49,10 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(15);
-  const [showForm, setShowForm] = useState(false);
+  const [pageSize, setPageSize] = useState(20);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<Payment | null>(null);
 
   // Form state
   const [contractId, setContractId] = useState("");
@@ -45,34 +62,26 @@ export default function PaymentsPage() {
   const [ghiChu, setGhiChu] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     try {
       const [p, c] = await Promise.all([fetchPayments(), fetchContracts()]);
       setPayments(p);
       setContracts(c);
-    } catch {
-      toast.error("Lỗi tải dữ liệu");
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error("Lỗi tải dữ liệu"); }
+    finally { setLoading(false); }
   }
 
-  const filtered = payments.filter(
-    (p) =>
-      !search ||
-      p.ma_tt.toLowerCase().includes(search.toLowerCase()) ||
-      p.contracts?.ma_hd.toLowerCase().includes(search.toLowerCase()) ||
-      p.contracts?.customers?.ten_kh.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = payments.filter((p) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return p.ma_tt.toLowerCase().includes(q)
+      || (p.contracts?.ma_hd ?? "").toLowerCase().includes(q)
+      || (p.contracts?.customers?.ten_kh ?? "").toLowerCase().includes(q);
+  });
 
-  const paginated = filtered.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const resetForm = () => {
     setContractId("");
@@ -82,6 +91,11 @@ export default function PaymentsPage() {
     setGhiChu("");
   };
 
+  const openAdd = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
   async function handleSubmit() {
     if (!contractId || !soTien) {
       toast.error("Vui lòng chọn hợp đồng và nhập số tiền");
@@ -89,35 +103,34 @@ export default function PaymentsPage() {
     }
     setSaving(true);
     try {
-      const input: CreatePaymentInput = {
+      await createPayment({
         contract_id: contractId,
         so_tien: Number(soTien),
         ngay_tt: ngayTT,
         hinh_thuc: hinhThuc,
         ghi_chu: ghiChu || undefined,
-      };
-      await createPayment(input);
+      });
       toast.success("Đã thêm thanh toán");
-      setShowForm(false);
+      setDialogOpen(false);
       resetForm();
       await loadData();
-    } catch {
-      toast.error("Lỗi thêm thanh toán");
-    } finally {
-      setSaving(false);
-    }
+    } catch { toast.error("Lỗi thêm thanh toán"); }
+    finally { setSaving(false); }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Xóa giao dịch thanh toán này?")) return;
+  async function handleDelete() {
+    if (!deletingItem) return;
     try {
-      await deletePayment(id);
+      await deletePayment(deletingItem.id);
       toast.success("Đã xóa");
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
       await loadData();
-    } catch {
-      toast.error("Lỗi xóa thanh toán");
-    }
+    } catch { toast.error("Lỗi xóa thanh toán"); }
   }
+
+  // Tổng
+  const totalAmount = filtered.reduce((s, p) => s + (p.so_tien || 0), 0);
 
   return (
     <div>
@@ -125,172 +138,146 @@ export default function PaymentsPage() {
         <div>
           <h1 className="admin-page-title">Thanh toán</h1>
           <p className="admin-page-subtitle">
-            Lịch sử thanh toán ({filtered.length})
+            Lịch sử thanh toán ({filtered.length}) — Tổng: {formatCurrency(totalAmount)}
           </p>
         </div>
-        <button
-          className="admin-btn admin-btn-primary"
-          onClick={() => setShowForm(true)}
-        >
+        <Button className="btn-add" onClick={openAdd}>
           <Plus size={16} /> Thêm thanh toán
-        </button>
+        </Button>
       </div>
 
-      <div className="admin-toolbar">
-        <div className="admin-search">
-          <Search size={16} />
-          <input
-            placeholder="Tìm mã TT, hợp đồng, khách hàng..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          />
+      <div className="data-table-wrapper">
+        <div className="data-table-toolbar">
+          <div className="data-table-search">
+            <Search size={16} />
+            <Input
+              placeholder="Tìm mã TT, hợp đồng, khách hàng..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            />
+          </div>
         </div>
-      </div>
 
-      {loading ? (
-        <div className="empty-state"><p>Đang tải...</p></div>
-      ) : paginated.length === 0 ? (
-        <div className="empty-state">
-          <CreditCard size={48} strokeWidth={1} />
-          <p>Chưa có thanh toán nào</p>
-        </div>
-      ) : (
-        <>
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Mã TT</th>
-                  <th>Hợp đồng</th>
-                  <th>Khách hàng</th>
-                  <th>Số tiền</th>
-                  <th>Hình thức</th>
-                  <th>Ngày TT</th>
-                  <th>Ghi chú</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginated.map((p) => (
-                  <tr key={p.id}>
-                    <td className="font-medium">{p.ma_tt}</td>
-                    <td>{p.contracts?.ma_hd || "—"}</td>
-                    <td>{p.contracts?.customers?.ten_kh || "—"}</td>
-                    <td className="font-medium" style={{ color: "var(--primary-700)" }}>
-                      {p.so_tien.toLocaleString("vi-VN")}đ
-                    </td>
-                    <td>
-                      <span className="admin-badge gray" style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
+        {loading ? (
+          <div className="empty-state"><p>Đang tải...</p></div>
+        ) : filtered.length === 0 ? (
+          <div className="empty-state">
+            <CreditCard size={48} strokeWidth={1} />
+            <p>Chưa có thanh toán nào</p>
+          </div>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mã TT</TableHead>
+                  <TableHead>Hợp đồng</TableHead>
+                  <TableHead>Khách hàng</TableHead>
+                  <TableHead>Số tiền</TableHead>
+                  <TableHead>Hình thức</TableHead>
+                  <TableHead>Ngày TT</TableHead>
+                  <TableHead>Ghi chú</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paged.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.ma_tt}</TableCell>
+                    <TableCell>{p.contracts?.ma_hd || "—"}</TableCell>
+                    <TableCell>{p.contracts?.customers?.ten_kh || "—"}</TableCell>
+                    <TableCell className="font-medium" style={{ color: "var(--primary-700)" }}>
+                      {formatCurrency(p.so_tien)}
+                    </TableCell>
+                    <TableCell>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13 }}>
                         {HINH_THUC_ICON[p.hinh_thuc]} {p.hinh_thuc}
                       </span>
-                    </td>
-                    <td>{formatDate(p.ngay_tt)}</td>
-                    <td style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>
+                    </TableCell>
+                    <TableCell>{formatDate(p.ngay_tt)}</TableCell>
+                    <TableCell style={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {p.ghi_chu || "—"}
-                    </td>
-                    <td>
-                      <button
-                        className="admin-action-btn text-red-600"
-                        onClick={() => handleDelete(p.id)}
-                        title="Xóa"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
-        </>
-      )}
+              </TableBody>
+            </Table>
+            <Pagination total={filtered.length} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
+        )}
+      </div>
 
       {/* Add Payment Dialog */}
-      {showForm && (
-        <div className="admin-dialog-overlay" onClick={() => setShowForm(false)}>
-          <div className="admin-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="admin-dialog-header">
-              <h2>Thêm thanh toán</h2>
-              <button className="admin-dialog-close" onClick={() => setShowForm(false)}>
-                <X size={20} />
-              </button>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Thêm thanh toán</DialogTitle>
+          </DialogHeader>
+          <div className="form-grid">
+            <div className="form-field full-width">
+              <Label>Hợp đồng *</Label>
+              <SearchSelect
+                placeholder="Tìm theo mã HĐ, tên KH..."
+                value={contractId}
+                onChange={(v) => setContractId(v)}
+                options={contracts.map((c) => ({
+                  value: c.id,
+                  label: `${c.ma_hd} — ${c.customers?.ten_kh ?? ""} (${formatCurrency(c.gia_tri || 0)})`,
+                }))}
+              />
             </div>
-            <div className="admin-dialog-body">
-              <div className="admin-form-group">
-                <label className="admin-label">Hợp đồng *</label>
-                <select
-                  className="admin-input"
-                  value={contractId}
-                  onChange={(e) => setContractId(e.target.value)}
-                >
-                  <option value="">— Chọn hợp đồng —</option>
-                  {contracts.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.ma_hd} — {c.customers?.ten_kh} ({(c.gia_tri || 0).toLocaleString("vi-VN")}đ)
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="admin-form-row">
-                <div className="admin-form-group">
-                  <label className="admin-label">Số tiền (VNĐ) *</label>
-                  <input
-                    className="admin-input"
-                    type="number"
-                    min={0}
-                    value={soTien}
-                    onChange={(e) => setSoTien(e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="admin-form-group">
-                  <label className="admin-label">Ngày thanh toán</label>
-                  <input
-                    className="admin-input"
-                    type="date"
-                    value={ngayTT}
-                    onChange={(e) => setNgayTT(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="admin-form-group">
-                <label className="admin-label">Hình thức</label>
-                <select
-                  className="admin-input"
-                  value={hinhThuc}
-                  onChange={(e) => setHinhThuc(e.target.value)}
-                >
-                  <option>Chuyển khoản</option>
-                  <option>Tiền mặt</option>
-                  <option>Thẻ</option>
-                </select>
-              </div>
-              <div className="admin-form-group">
-                <label className="admin-label">Ghi chú</label>
-                <textarea
-                  className="admin-input"
-                  rows={2}
-                  value={ghiChu}
-                  onChange={(e) => setGhiChu(e.target.value)}
-                />
-              </div>
+            <div className="form-field">
+              <Label>Số tiền (VNĐ) *</Label>
+              <Input
+                type="number"
+                min={0}
+                value={soTien}
+                onChange={(e) => setSoTien(e.target.value)}
+                placeholder="0"
+              />
             </div>
-            <div className="admin-dialog-footer">
-              <button className="admin-btn admin-btn-outline" onClick={() => setShowForm(false)}>
-                Hủy
-              </button>
-              <button
-                className="admin-btn admin-btn-primary"
-                onClick={handleSubmit}
-                disabled={saving}
-              >
-                {saving ? "Đang lưu..." : "Thêm thanh toán"}
-              </button>
+            <div className="form-field">
+              <Label>Ngày thanh toán</Label>
+              <Input
+                type="date"
+                value={ngayTT}
+                onChange={(e) => setNgayTT(e.target.value)}
+              />
+            </div>
+            <div className="form-field">
+              <Label>Hình thức</Label>
+              <select className="native-select" value={hinhThuc} onChange={(e) => setHinhThuc(e.target.value)}>
+                <option>Chuyển khoản</option>
+                <option>Tiền mặt</option>
+                <option>Thẻ</option>
+              </select>
+            </div>
+            <div className="form-field full-width">
+              <Label>Ghi chú</Label>
+              <Textarea rows={2} value={ghiChu} onChange={(e) => setGhiChu(e.target.value)} placeholder="Ghi chú thanh toán..." />
             </div>
           </div>
-        </div>
-      )}
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Hủy</Button>
+            <Button onClick={handleSubmit} disabled={saving}>
+              {saving ? "Đang lưu..." : "Thêm thanh toán"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+          </DialogHeader>
+          <p>Xóa thanh toán <strong>{deletingItem?.ma_tt}</strong>?</p>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
+            <Button variant="destructive" onClick={handleDelete}>Xóa</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
