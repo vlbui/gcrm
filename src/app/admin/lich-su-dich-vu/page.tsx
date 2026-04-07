@@ -25,7 +25,7 @@ import {
   deleteVisit,
   type ServiceVisit,
 } from "@/lib/api/serviceVisits.api";
-import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
+import { fetchContracts, deleteContract, type Contract } from "@/lib/api/contracts.api";
 import { fetchActiveTechnicians, type Technician } from "@/lib/api/technicians.api";
 import { fetchChemicals, type Chemical } from "@/lib/api/chemicals.api";
 import { fetchSupplies, type Supply } from "@/lib/api/supplies.api";
@@ -63,9 +63,13 @@ export default function LichSuDichVuPage() {
   const [vatTuRows, setVatTuRows] = useState<{ id: string; ten: string; so_luong: number; don_vi: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  // Delete
+  // Delete visit
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingVisit, setDeletingVisit] = useState<ServiceVisit | null>(null);
+
+  // Delete contract
+  const [deleteContractOpen, setDeleteContractOpen] = useState(false);
+  const [deletingContract, setDeletingContract] = useState<Contract | null>(null);
 
   // Expanded contract rows
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -214,6 +218,19 @@ export default function LichSuDichVuPage() {
     } catch { toast.error("Lỗi xóa"); }
   };
 
+  const handleDeleteContract = async () => {
+    if (!deletingContract) return;
+    try {
+      await deleteContract(deletingContract.id);
+      setContracts((prev) => prev.filter((c) => c.id !== deletingContract.id));
+      setContractVisits((prev) => { const next = new Map(prev); next.delete(deletingContract.id); return next; });
+      setExpanded((prev) => { const next = new Set(prev); next.delete(deletingContract.id); return next; });
+      setDeleteContractOpen(false);
+      setDeletingContract(null);
+      toast.success("Đã xóa hợp đồng");
+    } catch { toast.error("Không thể xóa HĐ (có thể còn dữ liệu liên quan)"); }
+  };
+
   const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Nhân viên";
 
   const statusColor = (s: string) => {
@@ -269,6 +286,15 @@ export default function LichSuDichVuPage() {
                     <span className={`admin-badge ${c.loai_hd === "Định kỳ" ? "blue" : "gray"}`}>
                       {c.loai_hd || "Một lần"}
                     </span>
+                    {canEdit && (
+                      <button
+                        className="btn-action danger"
+                        title="Xóa hợp đồng"
+                        onClick={(e) => { e.stopPropagation(); setDeletingContract(c); setDeleteContractOpen(true); }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -495,18 +521,35 @@ export default function LichSuDichVuPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
+      {/* Delete Visit Confirmation */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="dialog-bordered">
           <DialogHeader>
-            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogTitle>Xóa lần dịch vụ</DialogTitle>
             <DialogDescription>
-              Xóa lần dịch vụ {deletingVisit?.lan_thu}? Không thể hoàn tác.
+              Xóa lần dịch vụ <strong>{deletingVisit?.lan_thu}</strong>? Không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <div className="form-actions">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
-            <Button variant="destructive" onClick={handleDelete}>Xóa</Button>
+            <Button variant="destructive" onClick={handleDelete}>Xóa lần DV</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Contract Confirmation */}
+      <Dialog open={deleteContractOpen} onOpenChange={setDeleteContractOpen}>
+        <DialogContent className="dialog-bordered">
+          <DialogHeader>
+            <DialogTitle>Xóa hợp đồng</DialogTitle>
+            <DialogDescription>
+              Xóa hợp đồng <strong>{deletingContract?.ma_hd}</strong> ({deletingContract?.customers?.ten_kh})?
+              Tất cả lần dịch vụ liên quan cũng sẽ bị xóa. Không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteContractOpen(false)}>Hủy</Button>
+            <Button variant="destructive" onClick={handleDeleteContract}>Xóa hợp đồng</Button>
           </div>
         </DialogContent>
       </Dialog>
