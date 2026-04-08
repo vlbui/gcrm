@@ -24,6 +24,7 @@ import { fetchChemicals, type Chemical } from "@/lib/api/chemicals.api";
 import { fetchSupplies, type Supply } from "@/lib/api/supplies.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatDate } from "@/lib/utils/date";
+import DateInput from "@/components/admin/DateInput";
 import SearchSelect from "@/components/admin/SearchSelect";
 
 function fmt(v: number) { return v.toLocaleString("vi-VN") + "đ"; }
@@ -438,7 +439,7 @@ export default function LichSuDichVuPage() {
             {/* === Section 1: Ngày giờ địa điểm === */}
             <div className="form-field">
               <Label>Ngày dự kiến *</Label>
-              <input type="date" className="p-input" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
+              <DateInput value={formDate} onChange={(v) => setFormDate(v)} />
             </div>
             <div className="form-field">
               <Label>Giờ thực hiện</Label>

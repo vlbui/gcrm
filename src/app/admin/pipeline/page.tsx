@@ -24,6 +24,7 @@ import {
 import { fetchActiveTechnicians, type Technician } from "@/lib/api/technicians.api";
 import { fetchUsers, type User } from "@/lib/api/users.api";
 import { formatDate } from "@/lib/utils/date";
+import DateInput from "@/components/admin/DateInput";
 import { toast } from "sonner";
 import {
   Phone,
@@ -589,11 +590,11 @@ function SidePanel({
 
               <div className="sp-field">
                 <label>Ngày hẹn</label>
-                <input type="date" className="p-input" defaultValue={deal.ngay_hen || ""} onChange={(e) => onFieldSave(deal.id, "ngay_hen", e.target.value || null)} />
+                <DateInput value={deal.ngay_hen || ""} onChange={(v) => onFieldSave(deal.id, "ngay_hen", v || null)} />
               </div>
               <div className="sp-field">
                 <label>Ngày TH</label>
-                <input type="date" className="p-input" defaultValue={deal.ngay_thuc_hien || ""} onChange={(e) => onFieldSave(deal.id, "ngay_thuc_hien", e.target.value || null)} />
+                <DateInput value={deal.ngay_thuc_hien || ""} onChange={(v) => onFieldSave(deal.id, "ngay_thuc_hien", v || null)} />
               </div>
               <div className="sp-field">
                 <label>Phụ trách</label>
@@ -809,7 +810,7 @@ function ServiceTab({ deal, technicians }: { deal: Deal; technicians: Technician
           <div className="admin-form-row">
             <div className="admin-form-group">
               <label className="admin-label">Ngày thực hiện *</label>
-              <input type="date" className="p-input" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
+              <DateInput value={formDate} onChange={(v) => setFormDate(v)} />
             </div>
             <div className="admin-form-group">
               <label className="admin-label">Giờ</label>

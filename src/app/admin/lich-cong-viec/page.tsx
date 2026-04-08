@@ -24,6 +24,7 @@ import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
 import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils/date";
+import DateInput from "@/components/admin/DateInput";
 import {
   ChevronLeft,
   ChevronRight,
@@ -417,8 +418,7 @@ export default function SchedulePage() {
                   <div className="admin-form-row">
                     <div className="admin-form-group">
                       <label className="admin-label">Ngày thực hiện *</label>
-                      <input type="date" className="admin-input" value={scheduleForm.ngay_thuc_hien}
-                        onChange={(e) => setScheduleForm({ ...scheduleForm, ngay_thuc_hien: e.target.value })} />
+                      <DateInput value={scheduleForm.ngay_thuc_hien} onChange={(v) => setScheduleForm({ ...scheduleForm, ngay_thuc_hien: v })} />
                     </div>
                     <div className="admin-form-group">
                       <label className="admin-label">KTV phụ trách</label>
@@ -483,8 +483,7 @@ export default function SchedulePage() {
                     </div>
                     <div className="admin-form-group">
                       <label className="admin-label">Ngày nhắc *</label>
-                      <input type="date" className="admin-input" value={reminderForm.ngay_nhac}
-                        onChange={(e) => setReminderForm({ ...reminderForm, ngay_nhac: e.target.value })} />
+                      <DateInput value={reminderForm.ngay_nhac} onChange={(v) => setReminderForm({ ...reminderForm, ngay_nhac: v })} />
                     </div>
                   </div>
                   <div className="admin-form-row">

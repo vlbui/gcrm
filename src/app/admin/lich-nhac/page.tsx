@@ -13,6 +13,7 @@ import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
 import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
 import { fetchUsers, type User } from "@/lib/api/users.api";
 import { formatDate } from "@/lib/utils/date";
+import DateInput from "@/components/admin/DateInput";
 import { toast } from "sonner";
 import Pagination from "@/components/admin/Pagination";
 import {
@@ -204,7 +205,7 @@ export default function RemindersPage() {
                 </div>
                 <div className="admin-form-group">
                   <label className="admin-label">Ngày nhắc *</label>
-                  <input type="date" className="p-input" value={form.ngay_nhac} onChange={(e) => setForm({ ...form, ngay_nhac: e.target.value })} />
+                  <DateInput value={form.ngay_nhac} onChange={(v) => setForm({ ...form, ngay_nhac: v })} />
                 </div>
               </div>
               <div className="admin-form-row">

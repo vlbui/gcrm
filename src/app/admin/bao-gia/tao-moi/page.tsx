@@ -16,6 +16,7 @@ import {
   Save,
 } from "lucide-react";
 import Link from "next/link";
+import DateInput from "@/components/admin/DateInput";
 
 const DEFAULT_DIEU_KHOAN = `1. Báo giá có hiệu lực 30 ngày kể từ ngày phát hành.
 2. Thanh toán 50% khi ký hợp đồng, 50% sau khi hoàn thành.
@@ -175,12 +176,7 @@ export default function CreateQuotationPage() {
           <div className="admin-form-row">
             <div className="admin-form-group">
               <label className="admin-label">Ngày hiệu lực</label>
-              <input
-                type="date"
-                className="admin-input"
-                value={ngayHieuLuc}
-                onChange={(e) => setNgayHieuLuc(e.target.value)}
-              />
+              <DateInput value={ngayHieuLuc} onChange={(v) => setNgayHieuLuc(v)} />
             </div>
             <div className="admin-form-group">
               <label className="admin-label">Thuế VAT (%)</label>

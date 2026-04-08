@@ -10,6 +10,7 @@ import {
   type CreateTechnicianInput,
 } from "@/lib/api/technicians.api";
 import { formatDate } from "@/lib/utils/date";
+import DateInput from "@/components/admin/DateInput";
 import { toast } from "sonner";
 import {
   Plus,
@@ -197,7 +198,7 @@ export default function KTVPage() {
               <div className="admin-form-row">
                 <div className="admin-form-group">
                   <label className="admin-label">Ngày vào làm</label>
-                  <input className="p-input" type="date" value={form.ngay_vao_lam || ""} onChange={(e) => setForm({ ...form, ngay_vao_lam: e.target.value })} />
+                  <DateInput value={form.ngay_vao_lam || ""} onChange={(v) => setForm({ ...form, ngay_vao_lam: v })} />
                 </div>
                 <div className="admin-form-group">
                   <label className="admin-label">Trạng thái</label>

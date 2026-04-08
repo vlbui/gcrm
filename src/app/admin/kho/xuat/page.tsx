@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, ArrowUpCircle } from "lucide-react";
+import { isoToVi } from "@/lib/utils/date";
 import SearchSelect from "@/components/admin/SearchSelect";
 
 export default function ExportInventoryPage() {
@@ -173,7 +174,7 @@ export default function ExportInventoryPage() {
                   <option value="">— Chọn lần DV —</option>
                   {visits.map((v) => (
                     <option key={v.id} value={v.id}>
-                      Lần {v.lan_thu} — {v.ngay_du_kien || "Chưa xếp"} ({v.trang_thai})
+                      Lần {v.lan_thu} — {v.ngay_du_kien ? isoToVi(v.ngay_du_kien) : "Chưa xếp"} ({v.trang_thai})
                     </option>
                   ))}
                 </select>

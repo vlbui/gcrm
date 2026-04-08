@@ -19,6 +19,7 @@ import {
   ChevronDown, ChevronRight, TrendingDown, Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import DateInput from "@/components/admin/DateInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -542,11 +543,7 @@ export default function PaymentsPage() {
             </div>
             <div className="form-field">
               <Label>Ngày thanh toán</Label>
-              <Input
-                type="date"
-                value={ngayTT}
-                onChange={(e) => setNgayTT(e.target.value)}
-              />
+              <DateInput value={ngayTT} onChange={(v) => setNgayTT(v)} />
             </div>
             <div className="form-field">
               <Label>Hình thức</Label>

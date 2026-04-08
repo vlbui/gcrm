@@ -13,6 +13,7 @@ import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
 import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
 import { fetchUsers, type User } from "@/lib/api/users.api";
 import { formatDate } from "@/lib/utils/date";
+import DateInput from "@/components/admin/DateInput";
 import { toast } from "sonner";
 import Pagination from "@/components/admin/Pagination";
 import {
@@ -333,12 +334,7 @@ export default function CareTasksPage() {
               <div className="admin-form-row">
                 <div className="admin-form-group">
                   <label className="admin-label">Ngày hẹn *</label>
-                  <input
-                    type="date"
-                    className="admin-input"
-                    value={formData.ngay_hen}
-                    onChange={(e) => setFormData({ ...formData, ngay_hen: e.target.value })}
-                  />
+                  <DateInput value={formData.ngay_hen} onChange={(v) => setFormData({ ...formData, ngay_hen: v })} />
                 </div>
                 <div className="admin-form-group">
                   <label className="admin-label">Người phụ trách</label>
