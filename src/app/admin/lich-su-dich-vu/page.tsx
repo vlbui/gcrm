@@ -228,8 +228,10 @@ export default function LichSuDichVuPage() {
       }
       setDialogOpen(false);
       await loadVisits(selectedContract.id);
-    } catch { toast.error("Lỗi lưu"); }
-    finally { setSubmitting(false); }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : JSON.stringify(err);
+      toast.error(`Lỗi lưu: ${msg}`);
+    } finally { setSubmitting(false); }
   };
 
   const handleComplete = async (visit: ServiceVisit) => {
@@ -267,7 +269,10 @@ export default function LichSuDichVuPage() {
       await completeVisit(visit.id);
       toast.success(`Đã hoàn thành + xuất kho${extraPaid > 0 ? " + ghi nhận thanh toán" : ""}`);
       await loadVisits(visit.contract_id);
-    } catch { toast.error("Lỗi"); }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : JSON.stringify(err);
+      toast.error(`Lỗi: ${msg}`);
+    }
   };
 
   const handleDelete = async () => {
