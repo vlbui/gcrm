@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,13 +26,7 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import {
   fetchContracts,
   createContract,
@@ -295,8 +289,6 @@ export default function HopDongPage() {
     switch (status) {
       case "Mới": return "moi";
       case "Đang phục vụ": return "dang-phu-vu";
-      case "Đang thực hiện": return "dang-xu-ly";
-      case "Kết thúc": return "ket-thuc";
       case "Hoàn thành": return "hoan-thanh";
       case "Hủy": return "huy";
       default: return "";
@@ -326,8 +318,6 @@ export default function HopDongPage() {
             <option value="">Tất cả trạng thái</option>
             <option value="Mới">Mới</option>
             <option value="Đang phục vụ">Đang phục vụ</option>
-            <option value="Đang thực hiện">Đang thực hiện</option>
-            <option value="Kết thúc">Kết thúc</option>
             <option value="Hoàn thành">Hoàn thành</option>
             <option value="Hủy">Hủy</option>
           </select>
@@ -493,8 +483,6 @@ export default function HopDongPage() {
                 <select className="native-select" value={watch("trang_thai")} onChange={(e) => setValue("trang_thai", e.target.value)}>
                   <option value="Mới">Mới</option>
                   <option value="Đang phục vụ">Đang phục vụ</option>
-                  <option value="Đang thực hiện">Đang thực hiện</option>
-                  <option value="Kết thúc">Kết thúc</option>
                   <option value="Hoàn thành">Hoàn thành</option>
                   <option value="Hủy">Hủy</option>
                 </select>

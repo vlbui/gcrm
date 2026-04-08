@@ -129,8 +129,8 @@ export async function updateContract(
  *
  * Logic:
  *  - Có visit "Đang làm" hoặc "Đã lên lịch" → "Đang phục vụ"
- *  - ngay_ket_thuc đã qua → "Kết thúc"
- *  - Tất cả visits ở trạng thái cuối (Hoàn thành/Hủy/Hoãn) → "Kết thúc"
+ *  - ngay_ket_thuc đã qua → "Hoàn thành"
+ *  - Tất cả visits ở trạng thái cuối (Hoàn thành/Hủy/Hoãn) → "Hoàn thành"
  *  - Không có visit → giữ nguyên
  *  - Hợp đồng đã "Hủy" → không thay đổi
  */
@@ -161,7 +161,7 @@ export async function syncContractStatus(contractId: string): Promise<void> {
   if (hasActive) {
     newStatus = "Đang phục vụ";
   } else if (allDone || (contract.ngay_ket_thuc && contract.ngay_ket_thuc < today)) {
-    newStatus = "Kết thúc";
+    newStatus = "Hoàn thành";
   }
 
   if (newStatus && newStatus !== contract.trang_thai) {

@@ -316,8 +316,6 @@ export default function LichSuDichVuPage() {
           <option value="">Tất cả trạng thái</option>
           <option value="Mới">Mới</option>
           <option value="Đang phục vụ">Đang phục vụ</option>
-          <option value="Đang thực hiện">Đang thực hiện</option>
-          <option value="Kết thúc">Kết thúc</option>
           <option value="Hoàn thành">Hoàn thành</option>
           <option value="Hủy">Hủy</option>
         </select>
