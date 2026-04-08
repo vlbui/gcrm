@@ -268,8 +268,8 @@ export default function LichSuDichVuPage() {
                   setRows(u);
                 }}
                 options={type === "hc"
-                  ? chemicals.map((c) => ({ value: c.id, label: `${c.ten_thuong_mai} (${c.so_luong_ton ?? 0})` }))
-                  : supplies.map((s) => ({ value: s.id, label: `${s.ten_vat_tu} (${s.so_luong_ton ?? 0})` }))}
+                  ? chemicals.map((c) => ({ value: c.id, label: `${c.ten_thuong_mai}${c.quy_cach ? ` - ${c.quy_cach}` : ""} (Tồn: ${c.so_luong_ton ?? 0})` }))
+                  : supplies.map((s) => ({ value: s.id, label: `${s.ten_vat_tu}${s.quy_cach ? ` - ${s.quy_cach}` : ""} (Tồn: ${s.so_luong_ton ?? 0})` }))}
               />
             </div>
             <input className="p-input" style={{ width: 55 }} type="number" min={0} placeholder="SL"

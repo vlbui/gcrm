@@ -11,6 +11,7 @@ export interface Chemical {
   don_vi_tinh: string | null;
   nha_cung_cap: string | null;
   supplier_id?: string | null;
+  quy_cach?: string | null;
   don_gia?: number;
   vat_pct?: number;
   so_luong_ton?: number;

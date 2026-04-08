@@ -70,7 +70,7 @@ export default function KhoPage() {
   const [editingChem, setEditingChem] = useState<Chemical | null>(null);
   const [chemForm, setChemForm] = useState({
     ten_thuong_mai: "", hoat_chat: "", doi_tuong: "", dang_su_dung: "",
-    don_vi_tinh: "", supplier_id: "", don_gia: 0, vat_pct: 0, so_luong_ton: 0, nguong_canh_bao: 5, ghi_chu: "",
+    don_vi_tinh: "", supplier_id: "", quy_cach: "", don_gia: 0, vat_pct: 0, so_luong_ton: 0, nguong_canh_bao: 5, ghi_chu: "",
   });
 
   // Supply form
@@ -78,7 +78,7 @@ export default function KhoPage() {
   const [editingSup, setEditingSup] = useState<Supply | null>(null);
   const [supForm, setSupForm] = useState({
     ten_vat_tu: "", loai_vt: "", don_vi_tinh: "", supplier_id: "",
-    don_gia: 0, vat_pct: 0, so_luong_ton: 0, nguong_canh_bao: 5, ghi_chu: "",
+    quy_cach: "", don_gia: 0, vat_pct: 0, so_luong_ton: 0, nguong_canh_bao: 5, ghi_chu: "",
   });
 
   // Delete
@@ -143,7 +143,7 @@ export default function KhoPage() {
   // === Chemical CRUD ===
   const openAddChem = () => {
     setEditingChem(null);
-    setChemForm({ ten_thuong_mai: "", hoat_chat: "", doi_tuong: "", dang_su_dung: "", don_vi_tinh: "", supplier_id: "", don_gia: 0, vat_pct: 0, so_luong_ton: 0, nguong_canh_bao: 5, ghi_chu: "" });
+    setChemForm({ ten_thuong_mai: "", hoat_chat: "", doi_tuong: "", dang_su_dung: "", don_vi_tinh: "", supplier_id: "", quy_cach: "", don_gia: 0, vat_pct: 0, so_luong_ton: 0, nguong_canh_bao: 5, ghi_chu: "" });
     setChemDialogOpen(true);
   };
   const openEditChem = (c: Chemical) => {
@@ -151,7 +151,7 @@ export default function KhoPage() {
     setChemForm({
       ten_thuong_mai: c.ten_thuong_mai, hoat_chat: c.hoat_chat ?? "", doi_tuong: c.doi_tuong ?? "",
       dang_su_dung: c.dang_su_dung ?? "", don_vi_tinh: c.don_vi_tinh ?? "",
-      supplier_id: c.supplier_id ?? "", don_gia: c.don_gia ?? 0, vat_pct: c.vat_pct ?? 0,
+      supplier_id: c.supplier_id ?? "", quy_cach: c.quy_cach ?? "", don_gia: c.don_gia ?? 0, vat_pct: c.vat_pct ?? 0,
       so_luong_ton: c.so_luong_ton ?? 0, nguong_canh_bao: c.nguong_canh_bao ?? 5, ghi_chu: c.ghi_chu ?? "",
     });
     setChemDialogOpen(true);
@@ -165,7 +165,8 @@ export default function KhoPage() {
         ten_thuong_mai: chemForm.ten_thuong_mai, hoat_chat: chemForm.hoat_chat || null,
         doi_tuong: chemForm.doi_tuong || null, dang_su_dung: chemForm.dang_su_dung || null,
         don_vi_tinh: chemForm.don_vi_tinh, supplier_id: chemForm.supplier_id || null,
-        nha_cung_cap: sup?.ten_ncc || null, don_gia: chemForm.don_gia || 0, vat_pct: chemForm.vat_pct || 0,
+        nha_cung_cap: sup?.ten_ncc || null, quy_cach: chemForm.quy_cach || null,
+        don_gia: chemForm.don_gia || 0, vat_pct: chemForm.vat_pct || 0,
         so_luong_ton: chemForm.so_luong_ton, nguong_canh_bao: chemForm.nguong_canh_bao, ghi_chu: chemForm.ghi_chu || null,
       };
       if (editingChem) { await updateChemical(editingChem.id, input); toast.success("Đã cập nhật"); }
@@ -179,14 +180,14 @@ export default function KhoPage() {
   // === Supply CRUD ===
   const openAddSup = () => {
     setEditingSup(null);
-    setSupForm({ ten_vat_tu: "", loai_vt: "", don_vi_tinh: "", supplier_id: "", don_gia: 0, vat_pct: 0, so_luong_ton: 0, nguong_canh_bao: 5, ghi_chu: "" });
+    setSupForm({ ten_vat_tu: "", loai_vt: "", don_vi_tinh: "", supplier_id: "", quy_cach: "", don_gia: 0, vat_pct: 0, so_luong_ton: 0, nguong_canh_bao: 5, ghi_chu: "" });
     setSupDialogOpen(true);
   };
   const openEditSup = (s: Supply) => {
     setEditingSup(s);
     setSupForm({
       ten_vat_tu: s.ten_vat_tu, loai_vt: s.loai_vt ?? "", don_vi_tinh: s.don_vi_tinh ?? "",
-      supplier_id: s.supplier_id ?? "", don_gia: s.don_gia ?? 0, vat_pct: s.vat_pct ?? 0,
+      supplier_id: s.supplier_id ?? "", quy_cach: s.quy_cach ?? "", don_gia: s.don_gia ?? 0, vat_pct: s.vat_pct ?? 0,
       so_luong_ton: s.so_luong_ton ?? 0, nguong_canh_bao: s.nguong_canh_bao ?? 5, ghi_chu: s.ghi_chu ?? "",
     });
     setSupDialogOpen(true);
@@ -199,7 +200,8 @@ export default function KhoPage() {
       const input: CreateSupplyInput = {
         ten_vat_tu: supForm.ten_vat_tu, loai_vt: supForm.loai_vt || null,
         don_vi_tinh: supForm.don_vi_tinh, supplier_id: supForm.supplier_id || null,
-        nha_cung_cap: sup?.ten_ncc || null, don_gia: supForm.don_gia || 0, vat_pct: supForm.vat_pct || 0,
+        nha_cung_cap: sup?.ten_ncc || null, quy_cach: supForm.quy_cach || null,
+        don_gia: supForm.don_gia || 0, vat_pct: supForm.vat_pct || 0,
         so_luong_ton: supForm.so_luong_ton, nguong_canh_bao: supForm.nguong_canh_bao, ghi_chu: supForm.ghi_chu || null,
       };
       if (editingSup) { await updateSupply(editingSup.id, input); toast.success("Đã cập nhật"); }
@@ -418,9 +420,11 @@ export default function KhoPage() {
                       <TableRow>
                         <TableHead>Mã</TableHead>
                         <TableHead>Tên thương mại</TableHead>
+                        <TableHead>Quy cách</TableHead>
                         <TableHead>Hoạt chất</TableHead>
                         <TableHead>Đối tượng</TableHead>
                         <TableHead>ĐVT</TableHead>
+                        <TableHead>Đơn giá (có VAT)</TableHead>
                         <TableHead>Tồn kho</TableHead>
                         <TableHead>NCC</TableHead>
                         {canEdit && <TableHead style={{ width: 50 }}></TableHead>}
@@ -431,9 +435,18 @@ export default function KhoPage() {
                         <TableRow key={c.id} onClick={() => openEditChem(c)} style={{ cursor: "pointer" }}>
                           <TableCell className="font-medium">{c.ma_hc}</TableCell>
                           <TableCell>{c.ten_thuong_mai}</TableCell>
+                          <TableCell>{c.quy_cach ?? "—"}</TableCell>
                           <TableCell>{c.hoat_chat ?? "—"}</TableCell>
                           <TableCell>{c.doi_tuong ?? "—"}</TableCell>
                           <TableCell>{c.don_vi_tinh ?? "—"}</TableCell>
+                          <TableCell>
+                            {c.don_gia ? (
+                              <span style={{ fontWeight: 600 }}>
+                                {((c.don_gia) * (1 + (c.vat_pct ?? 0) / 100)).toLocaleString("vi-VN")}đ
+                                {(c.vat_pct ?? 0) > 0 && <span style={{ fontSize: 11, color: "var(--neutral-500)", marginLeft: 4 }}>VAT {c.vat_pct}%</span>}
+                              </span>
+                            ) : "—"}
+                          </TableCell>
                           <TableCell>
                             <span style={{ color: (c.so_luong_ton ?? 0) <= (c.nguong_canh_bao ?? 5) ? "var(--danger-500)" : "var(--primary-700)", fontWeight: 600 }}>
                               {c.so_luong_ton ?? 0}
@@ -478,8 +491,10 @@ export default function KhoPage() {
                       <TableRow>
                         <TableHead>Mã</TableHead>
                         <TableHead>Tên vật tư</TableHead>
+                        <TableHead>Quy cách</TableHead>
                         <TableHead>Loại</TableHead>
                         <TableHead>ĐVT</TableHead>
+                        <TableHead>Đơn giá (có VAT)</TableHead>
                         <TableHead>Tồn kho</TableHead>
                         <TableHead>NCC</TableHead>
                         {canEdit && <TableHead style={{ width: 50 }}></TableHead>}
@@ -490,8 +505,17 @@ export default function KhoPage() {
                         <TableRow key={s.id} onClick={() => openEditSup(s)} style={{ cursor: "pointer" }}>
                           <TableCell className="font-medium">{s.ma_vt}</TableCell>
                           <TableCell>{s.ten_vat_tu}</TableCell>
+                          <TableCell>{s.quy_cach ?? "—"}</TableCell>
                           <TableCell>{s.loai_vt ?? "—"}</TableCell>
                           <TableCell>{s.don_vi_tinh ?? "—"}</TableCell>
+                          <TableCell>
+                            {s.don_gia ? (
+                              <span style={{ fontWeight: 600 }}>
+                                {((s.don_gia) * (1 + (s.vat_pct ?? 0) / 100)).toLocaleString("vi-VN")}đ
+                                {(s.vat_pct ?? 0) > 0 && <span style={{ fontSize: 11, color: "var(--neutral-500)", marginLeft: 4 }}>VAT {s.vat_pct}%</span>}
+                              </span>
+                            ) : "—"}
+                          </TableCell>
                           <TableCell>
                             <span style={{ color: (s.so_luong_ton ?? 0) <= (s.nguong_canh_bao ?? 5) ? "var(--danger-500)" : "var(--primary-700)", fontWeight: 600 }}>
                               {s.so_luong_ton ?? 0}
@@ -543,6 +567,10 @@ export default function KhoPage() {
             <div className="form-field">
               <Label>Đơn vị tính *</Label>
               <Input value={chemForm.don_vi_tinh} onChange={(e) => setChemForm({ ...chemForm, don_vi_tinh: e.target.value })} placeholder="VD: Lít, Kg" />
+            </div>
+            <div className="form-field">
+              <Label>Quy cách</Label>
+              <Input value={chemForm.quy_cach} onChange={(e) => setChemForm({ ...chemForm, quy_cach: e.target.value })} placeholder="VD: Chai 1L, Hộp 500ml" />
             </div>
             <div className="form-field">
               <Label>Nhà cung cấp</Label>
@@ -609,6 +637,10 @@ export default function KhoPage() {
             <div className="form-field">
               <Label>Đơn vị tính *</Label>
               <Input value={supForm.don_vi_tinh} onChange={(e) => setSupForm({ ...supForm, don_vi_tinh: e.target.value })} placeholder="VD: Cái, Hộp" />
+            </div>
+            <div className="form-field">
+              <Label>Quy cách</Label>
+              <Input value={supForm.quy_cach} onChange={(e) => setSupForm({ ...supForm, quy_cach: e.target.value })} placeholder="VD: Hộp 10 cái, Túi 5kg" />
             </div>
             <div className="form-field">
               <Label>Nhà cung cấp</Label>
