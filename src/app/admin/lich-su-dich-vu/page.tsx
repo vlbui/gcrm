@@ -25,7 +25,8 @@ import {
   deleteVisit,
   type ServiceVisit,
 } from "@/lib/api/serviceVisits.api";
-import { fetchContracts, deleteContract, type Contract } from "@/lib/api/contracts.api";
+import { fetchContracts, deleteContract, updateContract, type Contract } from "@/lib/api/contracts.api";
+import { createPayment } from "@/lib/api/payments.api";
 import { fetchActiveTechnicians, type Technician } from "@/lib/api/technicians.api";
 import { fetchChemicals, type Chemical } from "@/lib/api/chemicals.api";
 import { fetchSupplies, type Supply } from "@/lib/api/supplies.api";
@@ -174,6 +175,10 @@ export default function LichSuDichVuPage() {
       });
 
       if (editing) {
+        const prevPaid = editing.da_thanh_toan || 0;
+        const newPaid = formPaid || 0;
+        const paidDiff = newPaid - prevPaid;
+
         await updateVisit(editing.id, {
           ngay_du_kien: formDate || null,
           gio_bat_dau: formStart || null,
@@ -186,7 +191,26 @@ export default function LichSuDichVuPage() {
           ghi_chu_truoc: formNoteBefore || null,
           ghi_chu_sau: formNoteAfter || null,
         });
-        toast.success("Đã cập nhật");
+
+        // Create payment record if amount increased
+        if (paidDiff > 0) {
+          await createPayment({
+            contract_id: selectedContract.id,
+            so_tien: paidDiff,
+            ngay_tt: new Date().toISOString().split("T")[0],
+            hinh_thuc: "Chuyển khoản",
+            ghi_chu: `Thanh toán lần DV ${editing.lan_thu}`,
+          });
+
+          // Update contract status
+          const loai = selectedContract.loai_hd;
+          const trang_thai = (loai === "Một lần" || !loai) ? "Hoàn thành" : "Đang thực hiện";
+          await updateContract(selectedContract.id, { trang_thai });
+
+          toast.success("Đã cập nhật + ghi nhận thanh toán");
+        } else {
+          toast.success("Đã cập nhật");
+        }
       } else {
         await createVisit({
           contract_id: selectedContract.id,
