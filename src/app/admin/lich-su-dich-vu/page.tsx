@@ -56,6 +56,7 @@ export default function LichSuDichVuPage() {
   const [vatTuRows, setVatTuRows] = useState<MatRow[]>([]);
   const [formLaborCost, setFormLaborCost] = useState(0);
   const [formPaid, setFormPaid] = useState(0);
+  const [formHinhThuc, setFormHinhThuc] = useState("Tiền mặt");
   const [submitting, setSubmitting] = useState(false);
 
   // Deletes
@@ -107,7 +108,7 @@ export default function LichSuDichVuPage() {
     setFormDate(new Date().toISOString().split("T")[0]);
     setFormStart("08:00"); setFormEnd("11:00"); setFormLocation("");
     setFormKtv([]); setFormNoteBefore(""); setFormNoteAfter("");
-    setFormResult("Đã lên lịch"); setFormLaborCost(0); setFormPaid(0);
+    setFormResult("Đã lên lịch"); setFormLaborCost(0); setFormPaid(0); setFormHinhThuc("Tiền mặt");
     setHoaChatRows([]); setVatTuRows([]);
     setDialogOpen(true);
   };
@@ -121,7 +122,7 @@ export default function LichSuDichVuPage() {
     setFormKtv(visit.ktv_ids || []);
     setFormNoteBefore(visit.ghi_chu_truoc || ""); setFormNoteAfter(visit.ghi_chu_sau || "");
     setFormResult(visit.trang_thai);
-    setFormLaborCost(visit.tien_cong || 0); setFormPaid(visit.da_thanh_toan || 0);
+    setFormLaborCost(visit.tien_cong || 0); setFormPaid(visit.da_thanh_toan || 0); setFormHinhThuc("Tiền mặt");
     setHoaChatRows((visit.hoa_chat || []).map((h) => ({ id: h.id, ten: h.ten, so_luong: h.so_luong, don_vi: h.don_vi || "", don_gia: h.don_gia || 0, vat_pct: h.vat_pct || 0 })));
     setVatTuRows((visit.vat_tu || []).map((v) => ({ id: v.id, ten: v.ten, so_luong: v.so_luong, don_vi: v.don_vi || "", don_gia: v.don_gia || 0, vat_pct: v.vat_pct || 0 })));
     setDialogOpen(true);
@@ -180,7 +181,7 @@ export default function LichSuDichVuPage() {
             contract_id: selectedContract.id,
             so_tien: paidDiff,
             ngay_tt: new Date().toISOString().split("T")[0],
-            hinh_thuc: "Chuyển khoản",
+            hinh_thuc: formHinhThuc,
             ghi_chu: `Thanh toán lần DV ${editing?.lan_thu ?? "mới"}`,
           });
           const loai = selectedContract.loai_hd;
@@ -498,6 +499,14 @@ export default function LichSuDichVuPage() {
             <div className="form-field">
               <Label>Đã thanh toán (VNĐ)</Label>
               <Input type="number" min={0} placeholder="0" value={formPaid || ""} onChange={(e) => setFormPaid(Number(e.target.value) || 0)} />
+            </div>
+            <div className="form-field">
+              <Label>Hình thức thanh toán</Label>
+              <select className="p-select" value={formHinhThuc} onChange={(e) => setFormHinhThuc(e.target.value)}>
+                <option>Tiền mặt</option>
+                <option>Chuyển khoản</option>
+                <option>Thẻ</option>
+              </select>
             </div>
 
             {/* Cost summary */}
