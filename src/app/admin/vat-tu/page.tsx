@@ -239,6 +239,7 @@ export default function VatTuPage() {
                 <TableHead>Đơn vị tính</TableHead>
                 <TableHead>Tồn kho</TableHead>
                 <TableHead>Nhà cung cấp</TableHead>
+                {user?.vai_tro !== "Xem" && <TableHead style={{ width: 50 }}></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -255,6 +256,17 @@ export default function VatTuPage() {
                     {" "}{item.don_vi_tinh ?? ""}
                   </TableCell>
                   <TableCell>{item.nha_cung_cap ?? "—"}</TableCell>
+                  {canEdit(item) && (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="btn-action danger"
+                        title="Xóa"
+                        onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

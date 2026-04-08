@@ -249,6 +249,7 @@ export default function HoaChatPage() {
                 <TableHead>Đối tượng</TableHead>
                 <TableHead>Dạng sử dụng</TableHead>
                 <TableHead>Tồn kho</TableHead>
+                {user?.vai_tro !== "Xem" && <TableHead style={{ width: 50 }}></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -265,6 +266,17 @@ export default function HoaChatPage() {
                     </span>
                     {" "}{item.don_vi_tinh ?? ""}
                   </TableCell>
+                  {canEdit(item) && (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="btn-action danger"
+                        title="Xóa"
+                        onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
