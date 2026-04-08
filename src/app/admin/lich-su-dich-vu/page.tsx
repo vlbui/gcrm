@@ -32,6 +32,7 @@ import { fetchSupplies, type Supply } from "@/lib/api/supplies.api";
 import { uploadFile, getPublicUrl } from "@/lib/api/storage.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatDate } from "@/lib/utils/date";
+import SearchSelect from "@/components/admin/SearchSelect";
 
 export default function LichSuDichVuPage() {
   const { user } = useCurrentUser();
@@ -432,15 +433,19 @@ export default function LichSuDichVuPage() {
               <Label>Hóa chất sử dụng</Label>
               {hoaChatRows.map((row, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
-                  <select className="p-select" style={{ flex: 2 }} value={row.id} onChange={(e) => {
-                    const chem = chemicals.find((c) => c.id === e.target.value);
-                    const updated = [...hoaChatRows];
-                    updated[i] = { id: e.target.value, ten: chem?.ten_thuong_mai ?? "", so_luong: row.so_luong, don_vi: chem?.don_vi_tinh ?? "" };
-                    setHoaChatRows(updated);
-                  }}>
-                    <option value="">Chọn hóa chất</option>
-                    {chemicals.map((c) => <option key={c.id} value={c.id}>{c.ten_thuong_mai} (Tồn: {c.so_luong_ton ?? 0})</option>)}
-                  </select>
+                  <div style={{ flex: 2 }}>
+                    <SearchSelect
+                      placeholder="Tìm hóa chất..."
+                      value={row.id}
+                      onChange={(v) => {
+                        const chem = chemicals.find((c) => c.id === v);
+                        const updated = [...hoaChatRows];
+                        updated[i] = { id: v, ten: chem?.ten_thuong_mai ?? "", so_luong: row.so_luong, don_vi: chem?.don_vi_tinh ?? "" };
+                        setHoaChatRows(updated);
+                      }}
+                      options={chemicals.map((c) => ({ value: c.id, label: `${c.ten_thuong_mai} (Tồn: ${c.so_luong_ton ?? 0})` }))}
+                    />
+                  </div>
                   <input className="p-input" style={{ width: 80 }} type="number" min={0} placeholder="SL"
                     value={row.so_luong} onChange={(e) => { const u = [...hoaChatRows]; u[i] = { ...row, so_luong: Number(e.target.value) }; setHoaChatRows(u); }} />
                   <span style={{ fontSize: 12, color: "var(--neutral-500)", minWidth: 30 }}>{row.don_vi}</span>
@@ -459,15 +464,19 @@ export default function LichSuDichVuPage() {
               <Label>Vật tư sử dụng</Label>
               {vatTuRows.map((row, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
-                  <select className="p-select" style={{ flex: 2 }} value={row.id} onChange={(e) => {
-                    const sup = supplies.find((s) => s.id === e.target.value);
-                    const u = [...vatTuRows];
-                    u[i] = { id: e.target.value, ten: sup?.ten_vat_tu ?? "", so_luong: row.so_luong, don_vi: sup?.don_vi_tinh ?? "" };
-                    setVatTuRows(u);
-                  }}>
-                    <option value="">Chọn vật tư</option>
-                    {supplies.map((s) => <option key={s.id} value={s.id}>{s.ten_vat_tu} (Tồn: {s.so_luong_ton ?? 0})</option>)}
-                  </select>
+                  <div style={{ flex: 2 }}>
+                    <SearchSelect
+                      placeholder="Tìm vật tư..."
+                      value={row.id}
+                      onChange={(v) => {
+                        const sup = supplies.find((s) => s.id === v);
+                        const u = [...vatTuRows];
+                        u[i] = { id: v, ten: sup?.ten_vat_tu ?? "", so_luong: row.so_luong, don_vi: sup?.don_vi_tinh ?? "" };
+                        setVatTuRows(u);
+                      }}
+                      options={supplies.map((s) => ({ value: s.id, label: `${s.ten_vat_tu} (Tồn: ${s.so_luong_ton ?? 0})` }))}
+                    />
+                  </div>
                   <input className="p-input" style={{ width: 80 }} type="number" min={0} placeholder="SL"
                     value={row.so_luong} onChange={(e) => { const u = [...vatTuRows]; u[i] = { ...row, so_luong: Number(e.target.value) }; setVatTuRows(u); }} />
                   <span style={{ fontSize: 12, color: "var(--neutral-500)", minWidth: 30 }}>{row.don_vi}</span>
