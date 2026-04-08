@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { logActivity } from "./activityLog.api";
+import { createPayment } from "./payments.api";
 
 export interface MaterialUsage {
   id: string;
@@ -137,49 +138,25 @@ export async function completeVisit(id: string): Promise<void> {
     ngay_thuc_te: new Date().toISOString().split("T")[0],
   }).eq("id", id);
 
-  // If payment amount > 0, create payment record + update contract
+  // If payment amount > 0, create payment record via payments API
+  // (createPayment auto-updates contract payment status + so_tien_da_tra)
   const paid = visit.da_thanh_toan || 0;
   if (paid > 0) {
-    // Generate payment code
-    const { count } = await supabase.from("payments").select("*", { count: "exact", head: true });
-    const ma_tt = `TT-${String((count ?? 0) + 1).padStart(4, "0")}`;
-
-    await supabase.from("payments").insert({
-      ma_tt,
+    await createPayment({
       contract_id: visit.contract_id,
       so_tien: paid,
       ngay_tt: new Date().toISOString().split("T")[0],
       hinh_thuc: "Chuyển khoản",
       ghi_chu: `Thanh toán lần DV ${visit.lan_thu}`,
-      created_by: user?.id ?? null,
     });
 
-    // Update contract: so_tien_da_tra
-    const { data: contract } = await supabase.from("contracts").select("so_tien_da_tra, loai_hd, gia_tri").eq("id", visit.contract_id).single();
+    // Update contract status based on type
+    const { data: contract } = await supabase.from("contracts").select("loai_hd").eq("id", visit.contract_id).single();
     if (contract) {
-      const totalPaid = (contract.so_tien_da_tra || 0) + paid;
-      const contractValue = contract.gia_tri || 0;
-
-      // Determine payment status
-      let trang_thai_thanh_toan = "Đã cọc";
-      if (contractValue > 0 && totalPaid >= contractValue) {
-        trang_thai_thanh_toan = "Đã TT";
-      }
-
-      // Determine contract status based on type
-      let trang_thai: string | undefined;
-      if (contract.loai_hd === "Một lần" || !contract.loai_hd) {
-        trang_thai = "Hoàn thành";
-      } else {
-        // Định kỳ → Đang thực hiện
-        trang_thai = "Đang thực hiện";
-      }
-
-      await supabase.from("contracts").update({
-        so_tien_da_tra: totalPaid,
-        trang_thai_thanh_toan,
-        trang_thai,
-      }).eq("id", visit.contract_id);
+      const trang_thai = (contract.loai_hd === "Một lần" || !contract.loai_hd)
+        ? "Hoàn thành"
+        : "Đang thực hiện";
+      await supabase.from("contracts").update({ trang_thai }).eq("id", visit.contract_id);
     }
   }
 
