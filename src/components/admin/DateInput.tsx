@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { CalendarDays } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { isoToVi, parseViDate } from "@/lib/utils/date";
 
@@ -11,11 +12,12 @@ interface DateInputProps {
 }
 
 /**
- * Date input that displays dd/mm/yyyy format.
+ * Date input that displays dd/mm/yyyy format with a native date picker button.
  * Accepts and emits ISO yyyy-mm-dd strings.
  */
 export default function DateInput({ value, onChange, placeholder = "dd/mm/yyyy" }: DateInputProps) {
   const [display, setDisplay] = useState(() => isoToVi(value));
+  const pickerRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setDisplay(isoToVi(value));
@@ -43,13 +45,56 @@ export default function DateInput({ value, onChange, placeholder = "dd/mm/yyyy" 
     }
   };
 
+  const handlePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const iso = e.target.value; // yyyy-mm-dd
+    if (iso) {
+      setDisplay(isoToVi(iso));
+      onChange?.(iso);
+    }
+  };
+
   return (
-    <Input
-      type="text"
-      inputMode="numeric"
-      placeholder={placeholder}
-      value={display}
-      onChange={handleChange}
-    />
+    <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+      <Input
+        type="text"
+        inputMode="numeric"
+        placeholder={placeholder}
+        value={display}
+        onChange={handleChange}
+        style={{ paddingRight: 36 }}
+      />
+      <button
+        type="button"
+        onClick={() => pickerRef.current?.showPicker()}
+        style={{
+          position: "absolute",
+          right: 8,
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 2,
+          display: "flex",
+          alignItems: "center",
+          color: "var(--muted-foreground, #888)",
+        }}
+      >
+        <CalendarDays size={16} />
+      </button>
+      <input
+        ref={pickerRef}
+        type="date"
+        value={value || ""}
+        onChange={handlePickerChange}
+        style={{
+          position: "absolute",
+          right: 8,
+          width: 20,
+          height: 20,
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+        tabIndex={-1}
+      />
+    </div>
   );
 }

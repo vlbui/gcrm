@@ -465,14 +465,14 @@ export default function HopDongPage() {
               )}
               <div className="form-field">
                 <Label>Ngày bắt đầu *</Label>
-                <DateInput value={watch("ngay_bat_dau")} onChange={(v) => setValue("ngay_bat_dau", v)} />
+                <DateInput value={watch("ngay_bat_dau")} onChange={(v) => setValue("ngay_bat_dau", v, { shouldValidate: true })} />
                 {errors.ngay_bat_dau && (
                   <span className="error">{errors.ngay_bat_dau.message}</span>
                 )}
               </div>
               <div className="form-field">
                 <Label>Ngày kết thúc</Label>
-                <DateInput value={watch("ngay_ket_thuc") ?? ""} onChange={(v) => setValue("ngay_ket_thuc", v || null)} />
+                <DateInput value={watch("ngay_ket_thuc") ?? ""} onChange={(v) => setValue("ngay_ket_thuc", v || null, { shouldValidate: true })} />
               </div>
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>

@@ -23,6 +23,7 @@ export interface ServiceVisit {
   anh_truoc: string[];
   anh_sau: string[];
   trang_thai: string;
+  da_thanh_toan: number;
   ghi_chu_truoc: string | null;
   ghi_chu_sau: string | null;
   created_at: string;
@@ -95,8 +96,8 @@ export async function updateVisit(id: string, updates: Partial<ServiceVisit>): P
 export async function completeVisit(id: string): Promise<void> {
   const supabase = createClient();
 
-  // Get visit with materials
-  const { data: visit } = await supabase.from("service_visits").select("hoa_chat, vat_tu").eq("id", id).single();
+  // Get visit with materials + payment amount
+  const { data: visit } = await supabase.from("service_visits").select("contract_id, lan_thu, hoa_chat, vat_tu, da_thanh_toan").eq("id", id).single();
   if (!visit) throw new Error("Visit not found");
 
   // Auto xuất kho for chemicals
@@ -130,13 +131,59 @@ export async function completeVisit(id: string): Promise<void> {
     }
   }
 
-  // Update status
+  // Update visit status
   await supabase.from("service_visits").update({
     trang_thai: "Hoàn thành",
     ngay_thuc_te: new Date().toISOString().split("T")[0],
   }).eq("id", id);
 
-  await logActivity({ hanh_dong: "Hoàn thành DV", module: "service_visits", chi_tiet: "" });
+  // If payment amount > 0, create payment record + update contract
+  const paid = visit.da_thanh_toan || 0;
+  if (paid > 0) {
+    // Generate payment code
+    const { count } = await supabase.from("payments").select("*", { count: "exact", head: true });
+    const ma_tt = `TT-${String((count ?? 0) + 1).padStart(4, "0")}`;
+
+    await supabase.from("payments").insert({
+      ma_tt,
+      contract_id: visit.contract_id,
+      so_tien: paid,
+      ngay_tt: new Date().toISOString().split("T")[0],
+      hinh_thuc: "Chuyển khoản",
+      ghi_chu: `Thanh toán lần DV ${visit.lan_thu}`,
+      created_by: user?.id ?? null,
+    });
+
+    // Update contract: so_tien_da_tra
+    const { data: contract } = await supabase.from("contracts").select("so_tien_da_tra, loai_hd, gia_tri").eq("id", visit.contract_id).single();
+    if (contract) {
+      const totalPaid = (contract.so_tien_da_tra || 0) + paid;
+      const contractValue = contract.gia_tri || 0;
+
+      // Determine payment status
+      let trang_thai_thanh_toan = "Đã cọc";
+      if (contractValue > 0 && totalPaid >= contractValue) {
+        trang_thai_thanh_toan = "Đã TT";
+      }
+
+      // Determine contract status based on type
+      let trang_thai: string | undefined;
+      if (contract.loai_hd === "Một lần" || !contract.loai_hd) {
+        trang_thai = "Hoàn thành";
+      } else {
+        // Định kỳ → Đang thực hiện
+        trang_thai = "Đang thực hiện";
+      }
+
+      await supabase.from("contracts").update({
+        so_tien_da_tra: totalPaid,
+        trang_thai_thanh_toan,
+        trang_thai,
+      }).eq("id", visit.contract_id);
+    }
+  }
+
+  await logActivity({ hanh_dong: "Hoàn thành DV", module: "service_visits", chi_tiet: `Lần ${visit.lan_thu}${paid > 0 ? ` - TT ${paid.toLocaleString("vi-VN")}đ` : ""}` });
 }
 
 export async function deleteVisit(id: string): Promise<void> {

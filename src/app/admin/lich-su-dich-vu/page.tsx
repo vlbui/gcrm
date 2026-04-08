@@ -62,6 +62,7 @@ export default function LichSuDichVuPage() {
   const [formResult, setFormResult] = useState("Đã lên lịch");
   const [hoaChatRows, setHoaChatRows] = useState<{ id: string; ten: string; so_luong: number; don_vi: string }[]>([]);
   const [vatTuRows, setVatTuRows] = useState<{ id: string; ten: string; so_luong: number; don_vi: string }[]>([]);
+  const [formPaid, setFormPaid] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
   // Delete visit
@@ -133,6 +134,7 @@ export default function LichSuDichVuPage() {
     setFormNoteBefore("");
     setFormNoteAfter("");
     setFormResult("Đã lên lịch");
+    setFormPaid(0);
     setHoaChatRows([]);
     setVatTuRows([]);
     setDialogOpen(true);
@@ -148,6 +150,7 @@ export default function LichSuDichVuPage() {
     setFormNoteBefore(visit.ghi_chu_truoc || "");
     setFormNoteAfter(visit.ghi_chu_sau || "");
     setFormResult(visit.trang_thai);
+    setFormPaid(visit.da_thanh_toan || 0);
     setHoaChatRows((visit.hoa_chat || []).map((h) => ({
       id: h.id, ten: h.ten, so_luong: h.so_luong, don_vi: h.don_vi || "",
     })));
@@ -179,6 +182,7 @@ export default function LichSuDichVuPage() {
           hoa_chat: hcParsed,
           vat_tu: vtParsed,
           trang_thai: formResult,
+          da_thanh_toan: formPaid,
           ghi_chu_truoc: formNoteBefore || null,
           ghi_chu_sau: formNoteAfter || null,
         });
@@ -342,6 +346,12 @@ export default function LichSuDichVuPage() {
                                 </div>
                               )}
 
+                              {(v.da_thanh_toan || 0) > 0 && (
+                                <div className="sv-visit-note" style={{ color: "var(--primary-700)", fontWeight: 600 }}>
+                                  Đã TT: {(v.da_thanh_toan || 0).toLocaleString("vi-VN")}đ
+                                </div>
+                              )}
+
                               {v.ghi_chu_truoc && <div className="sv-visit-note">Trước: {v.ghi_chu_truoc}</div>}
                               {v.ghi_chu_sau && <div className="sv-visit-note">Sau: {v.ghi_chu_sau}</div>}
 
@@ -488,6 +498,11 @@ export default function LichSuDichVuPage() {
               <button type="button" className="p-btn p-btn-ghost" style={{ fontSize: 12 }} onClick={() => setVatTuRows([...vatTuRows, { id: "", ten: "", so_luong: 0, don_vi: "" }])}>
                 <Plus size={14} /> Thêm vật tư
               </button>
+            </div>
+
+            <div className="form-field">
+              <Label>Đã thanh toán (VNĐ)</Label>
+              <Input type="number" min={0} placeholder="0" value={formPaid || ""} onChange={(e) => setFormPaid(Number(e.target.value) || 0)} />
             </div>
 
             {editing && (

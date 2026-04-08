@@ -163,8 +163,8 @@ export default function HoaChatPage() {
     try {
       const input: CreateChemicalInput = {
         ten_thuong_mai: formData.ten_thuong_mai,
-        hoat_chat: formData.hoat_chat || null,
-        doi_tuong: formData.doi_tuong || null,
+        hoat_chat: formData.hoat_chat || "",
+        doi_tuong: formData.doi_tuong || "",
         dang_su_dung: formData.dang_su_dung || null,
         don_vi_tinh: formData.don_vi_tinh || null,
         supplier_id: formData.supplier_id || null,
