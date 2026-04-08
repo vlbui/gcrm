@@ -58,22 +58,20 @@ export async function fetchChemical(id: string): Promise<Chemical> {
 export async function createChemical(input: CreateChemicalInput): Promise<Chemical> {
   const supabase = createClient();
   const {
-    data: { user }, error: authErr,
+    data: { user },
   } = await supabase.auth.getUser();
-  console.log("[createChemical] auth:", authErr ? `ERR: ${authErr.message}` : `OK user=${user?.id}`);
 
   const ma_hc = await generateMaHC();
-  const payload = { ma_hc, ...input, created_by: user?.id ?? null };
-  console.log("[createChemical] insert payload:", JSON.stringify(payload, null, 2));
   const { data, error } = await supabase
     .from("chemicals")
-    .insert(payload)
+    .insert({
+      ma_hc,
+      ...input,
+      created_by: user?.id ?? null,
+    })
     .select()
     .single();
-  if (error) {
-    console.error("[createChemical] DB error:", error);
-    throw error;
-  }
+  if (error) throw error;
 
   await logActivity({
     hanh_dong: "Thêm hóa chất",
