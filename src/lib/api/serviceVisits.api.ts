@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
 import { logActivity } from "./activityLog.api";
-import { createPayment } from "./payments.api";
 
 export interface MaterialUsage {
   id: string;
@@ -138,29 +137,16 @@ export async function completeVisit(id: string): Promise<void> {
     ngay_thuc_te: new Date().toISOString().split("T")[0],
   }).eq("id", id);
 
-  // If payment amount > 0, create payment record via payments API
-  // (createPayment auto-updates contract payment status + so_tien_da_tra)
-  const paid = visit.da_thanh_toan || 0;
-  if (paid > 0) {
-    await createPayment({
-      contract_id: visit.contract_id,
-      so_tien: paid,
-      ngay_tt: new Date().toISOString().split("T")[0],
-      hinh_thuc: "Chuyển khoản",
-      ghi_chu: `Thanh toán lần DV ${visit.lan_thu}`,
-    });
-
-    // Update contract status based on type
-    const { data: contract } = await supabase.from("contracts").select("loai_hd").eq("id", visit.contract_id).single();
-    if (contract) {
-      const trang_thai = (contract.loai_hd === "Một lần" || !contract.loai_hd)
-        ? "Hoàn thành"
-        : "Đang thực hiện";
-      await supabase.from("contracts").update({ trang_thai }).eq("id", visit.contract_id);
-    }
+  // Update contract status based on type
+  const { data: contract } = await supabase.from("contracts").select("loai_hd").eq("id", visit.contract_id).single();
+  if (contract) {
+    const trang_thai = (contract.loai_hd === "Một lần" || !contract.loai_hd)
+      ? "Hoàn thành"
+      : "Đang thực hiện";
+    await supabase.from("contracts").update({ trang_thai }).eq("id", visit.contract_id);
   }
 
-  await logActivity({ hanh_dong: "Hoàn thành DV", module: "service_visits", chi_tiet: `Lần ${visit.lan_thu}${paid > 0 ? ` - TT ${paid.toLocaleString("vi-VN")}đ` : ""}` });
+  await logActivity({ hanh_dong: "Hoàn thành DV", module: "service_visits", chi_tiet: `Lần ${visit.lan_thu}` });
 }
 
 export async function deleteVisit(id: string): Promise<void> {

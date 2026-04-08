@@ -229,10 +229,39 @@ export default function LichSuDichVuPage() {
   };
 
   const handleComplete = async (visit: ServiceVisit) => {
+    const currentPaid = visit.da_thanh_toan || 0;
+    let extraPaid = 0;
+
+    // Ask for payment if not yet paid
+    if (currentPaid === 0) {
+      const input = prompt("Số tiền khách thanh toán (VNĐ)? Nhập 0 hoặc bỏ trống nếu chưa TT.");
+      if (input === null) return; // cancelled
+      extraPaid = Number(input) || 0;
+    }
+
     if (!confirm("Hoàn thành lần DV này? Hóa chất/vật tư sẽ được tự động xuất kho.")) return;
+
     try {
+      // Save payment amount first if entered
+      if (extraPaid > 0) {
+        await updateVisit(visit.id, { da_thanh_toan: currentPaid + extraPaid });
+        const contract = contracts.find((c) => c.id === visit.contract_id);
+        await createPayment({
+          contract_id: visit.contract_id,
+          so_tien: extraPaid,
+          ngay_tt: new Date().toISOString().split("T")[0],
+          hinh_thuc: "Chuyển khoản",
+          ghi_chu: `Thanh toán lần DV ${visit.lan_thu}`,
+        });
+        if (contract) {
+          const loai = contract.loai_hd;
+          const trang_thai = (loai === "Một lần" || !loai) ? "Hoàn thành" : "Đang thực hiện";
+          await updateContract(contract.id, { trang_thai });
+        }
+      }
+
       await completeVisit(visit.id);
-      toast.success("Đã hoàn thành + xuất kho tự động");
+      toast.success(`Đã hoàn thành + xuất kho${extraPaid > 0 ? " + ghi nhận thanh toán" : ""}`);
       await loadVisits(visit.contract_id);
     } catch { toast.error("Lỗi"); }
   };
