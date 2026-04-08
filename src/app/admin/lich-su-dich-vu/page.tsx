@@ -3,26 +3,18 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  Search, Plus, X, Trash2, CheckCircle, Clock, Calendar,
-  Phone, ChevronDown, ChevronRight, Camera, Upload,
+  Search, Plus, X, Trash2, CheckCircle, Calendar,
+  ChevronDown, ChevronRight, MapPin, DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  fetchVisitsByContract,
-  createVisit,
-  updateVisit,
-  completeVisit,
-  deleteVisit,
+  fetchVisitsByContract, createVisit, updateVisit, completeVisit, deleteVisit,
   type ServiceVisit,
 } from "@/lib/api/serviceVisits.api";
 import { fetchContracts, deleteContract, updateContract, type Contract } from "@/lib/api/contracts.api";
@@ -30,10 +22,13 @@ import { createPayment } from "@/lib/api/payments.api";
 import { fetchActiveTechnicians, type Technician } from "@/lib/api/technicians.api";
 import { fetchChemicals, type Chemical } from "@/lib/api/chemicals.api";
 import { fetchSupplies, type Supply } from "@/lib/api/supplies.api";
-import { uploadFile, getPublicUrl } from "@/lib/api/storage.api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatDate } from "@/lib/utils/date";
 import SearchSelect from "@/components/admin/SearchSelect";
+
+function fmt(v: number) { return v.toLocaleString("vi-VN") + "đ"; }
+
+type MatRow = { id: string; ten: string; so_luong: number; don_vi: string; don_gia: number; vat_pct: number };
 
 export default function LichSuDichVuPage() {
   const { user } = useCurrentUser();
@@ -44,41 +39,32 @@ export default function LichSuDichVuPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  // Selected contract + visits
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [visits, setVisits] = useState<ServiceVisit[]>([]);
-  const [loadingVisits, setLoadingVisits] = useState(false);
-
-  // Form dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ServiceVisit | null>(null);
 
-  // Form state
+  // Form
   const [formDate, setFormDate] = useState("");
   const [formStart, setFormStart] = useState("08:00");
   const [formEnd, setFormEnd] = useState("11:00");
+  const [formLocation, setFormLocation] = useState("");
   const [formKtv, setFormKtv] = useState<string[]>([]);
   const [formNoteBefore, setFormNoteBefore] = useState("");
   const [formNoteAfter, setFormNoteAfter] = useState("");
   const [formResult, setFormResult] = useState("Đã lên lịch");
-  const [hoaChatRows, setHoaChatRows] = useState<{ id: string; ten: string; so_luong: number; don_vi: string; don_gia: number; vat_pct: number }[]>([]);
-  const [vatTuRows, setVatTuRows] = useState<{ id: string; ten: string; so_luong: number; don_vi: string; don_gia: number; vat_pct: number }[]>([]);
+  const [hoaChatRows, setHoaChatRows] = useState<MatRow[]>([]);
+  const [vatTuRows, setVatTuRows] = useState<MatRow[]>([]);
   const [formLaborCost, setFormLaborCost] = useState(0);
   const [formPaid, setFormPaid] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
-  // Delete visit
+  // Deletes
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingVisit, setDeletingVisit] = useState<ServiceVisit | null>(null);
-
-  // Delete contract
   const [deleteContractOpen, setDeleteContractOpen] = useState(false);
   const [deletingContract, setDeletingContract] = useState<Contract | null>(null);
 
-  // Expanded contract rows
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-
-  // Contract visits cache
   const [contractVisits, setContractVisits] = useState<Map<string, ServiceVisit[]>>(new Map());
 
   useEffect(() => { loadInitial(); }, []);
@@ -86,15 +72,9 @@ export default function LichSuDichVuPage() {
   async function loadInitial() {
     try {
       const [c, t, ch, su] = await Promise.all([
-        fetchContracts(),
-        fetchActiveTechnicians(),
-        fetchChemicals(),
-        fetchSupplies(),
+        fetchContracts(), fetchActiveTechnicians(), fetchChemicals(), fetchSupplies(),
       ]);
-      setContracts(c);
-      setTechnicians(t);
-      setChemicals(ch);
-      setSupplies(su);
+      setContracts(c); setTechnicians(t); setChemicals(ch); setSupplies(su);
     } catch { toast.error("Lỗi tải dữ liệu"); }
     finally { setLoading(false); }
   }
@@ -108,62 +88,53 @@ export default function LichSuDichVuPage() {
 
   const toggleExpand = async (contractId: string) => {
     const next = new Set(expanded);
-    if (next.has(contractId)) {
-      next.delete(contractId);
-    } else {
-      next.add(contractId);
-      if (!contractVisits.has(contractId)) await loadVisits(contractId);
-    }
+    if (next.has(contractId)) { next.delete(contractId); }
+    else { next.add(contractId); if (!contractVisits.has(contractId)) await loadVisits(contractId); }
     setExpanded(next);
   };
 
   const filteredContracts = contracts.filter((c) => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return c.ma_hd.toLowerCase().includes(q)
-      || (c.customers?.ten_kh ?? "").toLowerCase().includes(q)
-      || c.dich_vu.toLowerCase().includes(q);
+    return c.ma_hd.toLowerCase().includes(q) || (c.customers?.ten_kh ?? "").toLowerCase().includes(q) || c.dich_vu.toLowerCase().includes(q);
   });
 
-  // Open form
+  const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Nhân viên";
+
+  // === Form open ===
   const openCreate = (contract: Contract) => {
-    setEditing(null);
-    setSelectedContract(contract);
+    setEditing(null); setSelectedContract(contract);
     setFormDate(new Date().toISOString().split("T")[0]);
-    setFormStart("08:00");
-    setFormEnd("11:00");
-    setFormKtv([]);
-    setFormNoteBefore("");
-    setFormNoteAfter("");
-    setFormResult("Đã lên lịch");
-    setFormLaborCost(0);
-    setFormPaid(0);
-    setHoaChatRows([]);
-    setVatTuRows([]);
+    setFormStart("08:00"); setFormEnd("11:00"); setFormLocation("");
+    setFormKtv([]); setFormNoteBefore(""); setFormNoteAfter("");
+    setFormResult("Đã lên lịch"); setFormLaborCost(0); setFormPaid(0);
+    setHoaChatRows([]); setVatTuRows([]);
     setDialogOpen(true);
   };
 
   const openEdit = (visit: ServiceVisit, contract: Contract) => {
-    setEditing(visit);
-    setSelectedContract(contract);
+    setEditing(visit); setSelectedContract(contract);
     setFormDate(visit.ngay_du_kien || visit.ngay_thuc_te || "");
     setFormStart(visit.gio_bat_dau?.slice(0, 5) || "08:00");
     setFormEnd(visit.gio_ket_thuc?.slice(0, 5) || "11:00");
+    setFormLocation("");
     setFormKtv(visit.ktv_ids || []);
-    setFormNoteBefore(visit.ghi_chu_truoc || "");
-    setFormNoteAfter(visit.ghi_chu_sau || "");
+    setFormNoteBefore(visit.ghi_chu_truoc || ""); setFormNoteAfter(visit.ghi_chu_sau || "");
     setFormResult(visit.trang_thai);
-    setFormLaborCost(visit.tien_cong || 0);
-    setFormPaid(visit.da_thanh_toan || 0);
-    setHoaChatRows((visit.hoa_chat || []).map((h) => ({
-      id: h.id, ten: h.ten, so_luong: h.so_luong, don_vi: h.don_vi || "", don_gia: h.don_gia || 0, vat_pct: h.vat_pct || 0,
-    })));
-    setVatTuRows((visit.vat_tu || []).map((v) => ({
-      id: v.id, ten: v.ten, so_luong: v.so_luong, don_vi: v.don_vi || "", don_gia: v.don_gia || 0, vat_pct: v.vat_pct || 0,
-    })));
+    setFormLaborCost(visit.tien_cong || 0); setFormPaid(visit.da_thanh_toan || 0);
+    setHoaChatRows((visit.hoa_chat || []).map((h) => ({ id: h.id, ten: h.ten, so_luong: h.so_luong, don_vi: h.don_vi || "", don_gia: h.don_gia || 0, vat_pct: h.vat_pct || 0 })));
+    setVatTuRows((visit.vat_tu || []).map((v) => ({ id: v.id, ten: v.ten, so_luong: v.so_luong, don_vi: v.don_vi || "", don_gia: v.don_gia || 0, vat_pct: v.vat_pct || 0 })));
     setDialogOpen(true);
   };
 
+  // === Cost calculations ===
+  const calcRowCost = (r: MatRow) => (r.don_gia || 0) * r.so_luong * (1 + (r.vat_pct || 0) / 100);
+  const hcCost = hoaChatRows.reduce((s, r) => s + calcRowCost(r), 0);
+  const vtCost = vatTuRows.reduce((s, r) => s + calcRowCost(r), 0);
+  const totalCost = (formLaborCost || 0) + hcCost + vtCost;
+  const contractValue = selectedContract?.gia_tri || 0;
+
+  // === Submit ===
   const handleSubmit = async () => {
     if (!selectedContract) return;
     setSubmitting(true);
@@ -177,55 +148,48 @@ export default function LichSuDichVuPage() {
         return { id: r.id, ten: r.ten, ma: sup?.ma_vt ?? "", so_luong: r.so_luong, don_vi: r.don_vi, don_gia: r.don_gia || sup?.don_gia || 0, vat_pct: r.vat_pct || sup?.vat_pct || 0 };
       });
 
+      const prevPaid = editing ? (editing.da_thanh_toan || 0) : 0;
+      const newPaid = formPaid || 0;
+      const paidDiff = newPaid - prevPaid;
+
       if (editing) {
-        const prevPaid = editing.da_thanh_toan || 0;
-        const newPaid = formPaid || 0;
-        const paidDiff = newPaid - prevPaid;
-
         await updateVisit(editing.id, {
-          ngay_du_kien: formDate || null,
-          gio_bat_dau: formStart || null,
-          gio_ket_thuc: formEnd || null,
-          ktv_ids: formKtv,
-          hoa_chat: hcParsed,
-          vat_tu: vtParsed,
-          trang_thai: formResult,
-          tien_cong: formLaborCost,
-          da_thanh_toan: formPaid,
-          ghi_chu_truoc: formNoteBefore || null,
-          ghi_chu_sau: formNoteAfter || null,
+          ngay_du_kien: formDate || null, gio_bat_dau: formStart || null, gio_ket_thuc: formEnd || null,
+          ktv_ids: formKtv, hoa_chat: hcParsed, vat_tu: vtParsed,
+          trang_thai: formResult, tien_cong: formLaborCost, da_thanh_toan: formPaid,
+          ghi_chu_truoc: formNoteBefore || null, ghi_chu_sau: formNoteAfter || null,
         });
-
-        // Create payment record if amount increased
-        if (paidDiff > 0) {
-          await createPayment({
-            contract_id: selectedContract.id,
-            so_tien: paidDiff,
-            ngay_tt: new Date().toISOString().split("T")[0],
-            hinh_thuc: "Chuyển khoản",
-            ghi_chu: `Thanh toán lần DV ${editing.lan_thu}`,
-          });
-
-          // Update contract status
-          const loai = selectedContract.loai_hd;
-          const trang_thai = (loai === "Một lần" || !loai) ? "Hoàn thành" : "Đang thực hiện";
-          await updateContract(selectedContract.id, { trang_thai });
-
-          toast.success("Đã cập nhật + ghi nhận thanh toán");
-        } else {
-          toast.success("Đã cập nhật");
-        }
       } else {
-        await createVisit({
+        const created = await createVisit({
           contract_id: selectedContract.id,
-          ngay_du_kien: formDate || undefined,
-          gio_bat_dau: formStart || undefined,
-          gio_ket_thuc: formEnd || undefined,
-          ktv_ids: formKtv,
-          ghi_chu_truoc: formNoteBefore || undefined,
+          ngay_du_kien: formDate || undefined, gio_bat_dau: formStart || undefined, gio_ket_thuc: formEnd || undefined,
+          ktv_ids: formKtv, ghi_chu_truoc: formNoteBefore || undefined,
         });
-        toast.success("Đã tạo lần DV mới");
+        // Update with materials + cost after creation
+        if (hcParsed.length > 0 || vtParsed.length > 0 || formLaborCost > 0 || formPaid > 0) {
+          await updateVisit(created.id, {
+            hoa_chat: hcParsed, vat_tu: vtParsed, tien_cong: formLaborCost, da_thanh_toan: formPaid,
+          });
+        }
       }
+
+      // Create payment if amount increased
+      if (paidDiff > 0) {
+        await createPayment({
+          contract_id: selectedContract.id,
+          so_tien: paidDiff,
+          ngay_tt: new Date().toISOString().split("T")[0],
+          hinh_thuc: "Chuyển khoản",
+          ghi_chu: `Thanh toán lần DV ${editing?.lan_thu || "mới"}`,
+        });
+        const loai = selectedContract.loai_hd;
+        const trang_thai = (loai === "Một lần" || !loai) ? "Hoàn thành" : "Đang thực hiện";
+        await updateContract(selectedContract.id, { trang_thai });
+        toast.success(editing ? "Đã cập nhật + ghi nhận thanh toán" : "Đã tạo lần DV + ghi nhận thanh toán");
+      } else {
+        toast.success(editing ? "Đã cập nhật" : "Đã tạo lần DV mới");
+      }
+
       setDialogOpen(false);
       await loadVisits(selectedContract.id);
     } catch (err) {
@@ -234,78 +198,96 @@ export default function LichSuDichVuPage() {
     } finally { setSubmitting(false); }
   };
 
+  // === Complete ===
   const handleComplete = async (visit: ServiceVisit) => {
     const currentPaid = visit.da_thanh_toan || 0;
     let extraPaid = 0;
-
-    // Ask for payment if not yet paid
     if (currentPaid === 0) {
-      const input = prompt("Số tiền khách thanh toán (VNĐ)? Nhập 0 hoặc bỏ trống nếu chưa TT.");
-      if (input === null) return; // cancelled
+      const input = prompt("Số tiền khách thanh toán (VNĐ)? Nhập 0 nếu chưa TT.");
+      if (input === null) return;
       extraPaid = Number(input) || 0;
     }
-
     if (!confirm("Hoàn thành lần DV này? Hóa chất/vật tư sẽ được tự động xuất kho.")) return;
-
     try {
-      // Save payment amount first if entered
       if (extraPaid > 0) {
         await updateVisit(visit.id, { da_thanh_toan: currentPaid + extraPaid });
         const contract = contracts.find((c) => c.id === visit.contract_id);
         await createPayment({
-          contract_id: visit.contract_id,
-          so_tien: extraPaid,
-          ngay_tt: new Date().toISOString().split("T")[0],
-          hinh_thuc: "Chuyển khoản",
+          contract_id: visit.contract_id, so_tien: extraPaid,
+          ngay_tt: new Date().toISOString().split("T")[0], hinh_thuc: "Chuyển khoản",
           ghi_chu: `Thanh toán lần DV ${visit.lan_thu}`,
         });
         if (contract) {
           const loai = contract.loai_hd;
-          const trang_thai = (loai === "Một lần" || !loai) ? "Hoàn thành" : "Đang thực hiện";
-          await updateContract(contract.id, { trang_thai });
+          await updateContract(contract.id, { trang_thai: (loai === "Một lần" || !loai) ? "Hoàn thành" : "Đang thực hiện" });
         }
       }
-
       await completeVisit(visit.id);
-      toast.success(`Đã hoàn thành + xuất kho${extraPaid > 0 ? " + ghi nhận thanh toán" : ""}`);
+      toast.success(`Đã hoàn thành + xuất kho${extraPaid > 0 ? " + TT" : ""}`);
       await loadVisits(visit.contract_id);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : JSON.stringify(err);
-      toast.error(`Lỗi: ${msg}`);
+      toast.error(`Lỗi: ${err instanceof Error ? err.message : "Unknown"}`);
     }
   };
 
   const handleDelete = async () => {
     if (!deletingVisit) return;
-    try {
-      await deleteVisit(deletingVisit.id);
-      toast.success("Đã xóa");
-      setDeleteDialogOpen(false);
-      await loadVisits(deletingVisit.contract_id);
-    } catch { toast.error("Lỗi xóa"); }
+    try { await deleteVisit(deletingVisit.id); toast.success("Đã xóa"); setDeleteDialogOpen(false); await loadVisits(deletingVisit.contract_id); }
+    catch { toast.error("Lỗi xóa"); }
   };
 
   const handleDeleteContract = async () => {
     if (!deletingContract) return;
     try {
       await deleteContract(deletingContract.id);
-      setContracts((prev) => prev.filter((c) => c.id !== deletingContract.id));
-      setContractVisits((prev) => { const next = new Map(prev); next.delete(deletingContract.id); return next; });
-      setExpanded((prev) => { const next = new Set(prev); next.delete(deletingContract.id); return next; });
-      setDeleteContractOpen(false);
-      setDeletingContract(null);
+      setContracts((p) => p.filter((c) => c.id !== deletingContract.id));
+      setDeleteContractOpen(false); setDeletingContract(null);
       toast.success("Đã xóa hợp đồng");
-    } catch { toast.error("Không thể xóa HĐ (có thể còn dữ liệu liên quan)"); }
+    } catch { toast.error("Không thể xóa HĐ"); }
   };
 
-  const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Nhân viên";
+  const statusColor = (s: string) => s === "Hoàn thành" ? "green" : s === "Đang làm" ? "blue" : s === "Hủy" || s === "Hoãn" ? "gray" : "amber";
 
-  const statusColor = (s: string) => {
-    if (s === "Hoàn thành") return "green";
-    if (s === "Đang làm") return "blue";
-    if (s === "Hủy" || s === "Hoãn") return "gray";
-    return "amber";
-  };
+  // === Material row component ===
+  const renderMatRow = (rows: MatRow[], setRows: (r: MatRow[]) => void, type: "hc" | "vt") => (
+    <>
+      {rows.map((row, i) => {
+        const cost = calcRowCost(row);
+        return (
+          <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ flex: 2, minWidth: 140 }}>
+              <SearchSelect
+                placeholder={type === "hc" ? "Tìm hóa chất..." : "Tìm vật tư..."}
+                value={row.id}
+                onChange={(v) => {
+                  const item = type === "hc" ? chemicals.find((c) => c.id === v) : supplies.find((s) => s.id === v);
+                  const u = [...rows];
+                  u[i] = type === "hc"
+                    ? { id: v, ten: (item as Chemical)?.ten_thuong_mai ?? "", so_luong: row.so_luong, don_vi: item?.don_vi_tinh ?? "", don_gia: item?.don_gia ?? 0, vat_pct: item?.vat_pct ?? 0 }
+                    : { id: v, ten: (item as Supply)?.ten_vat_tu ?? "", so_luong: row.so_luong, don_vi: item?.don_vi_tinh ?? "", don_gia: item?.don_gia ?? 0, vat_pct: item?.vat_pct ?? 0 };
+                  setRows(u);
+                }}
+                options={type === "hc"
+                  ? chemicals.map((c) => ({ value: c.id, label: `${c.ten_thuong_mai} (${c.so_luong_ton ?? 0})` }))
+                  : supplies.map((s) => ({ value: s.id, label: `${s.ten_vat_tu} (${s.so_luong_ton ?? 0})` }))}
+              />
+            </div>
+            <input className="p-input" style={{ width: 55 }} type="number" min={0} placeholder="SL"
+              value={row.so_luong} onChange={(e) => { const u = [...rows]; u[i] = { ...row, so_luong: Number(e.target.value) }; setRows(u); }} />
+            <span style={{ fontSize: 11, color: "var(--neutral-500)" }}>{row.don_vi}</span>
+            {cost > 0 && <span style={{ fontSize: 11, color: "var(--primary-700)", fontWeight: 600, marginLeft: "auto" }}>{fmt(Math.round(cost))}</span>}
+            <button type="button" className="p-btn p-btn-ghost" style={{ padding: 3 }} onClick={() => setRows(rows.filter((_, j) => j !== i))}>
+              <X size={13} />
+            </button>
+          </div>
+        );
+      })}
+      <button type="button" className="p-btn p-btn-ghost" style={{ fontSize: 12 }}
+        onClick={() => setRows([...rows, { id: "", ten: "", so_luong: 0, don_vi: "", don_gia: 0, vat_pct: 0 }])}>
+        <Plus size={14} /> Thêm {type === "hc" ? "hóa chất" : "vật tư"}
+      </button>
+    </>
+  );
 
   return (
     <div>
@@ -329,6 +311,7 @@ export default function LichSuDichVuPage() {
             const isExpanded = expanded.has(c.id);
             const cvs = contractVisits.get(c.id) || [];
             const completedCount = cvs.filter((v) => v.trang_thai === "Hoàn thành").length;
+            const totalPaid = cvs.reduce((s, v) => s + (v.da_thanh_toan || 0), 0);
 
             return (
               <div key={c.id} className="sv-contract-card">
@@ -342,23 +325,19 @@ export default function LichSuDichVuPage() {
                     </div>
                     <div className="sv-contract-sub">
                       {c.dich_vu} · {formatDate(c.ngay_bat_dau)} → {c.ngay_ket_thuc ? formatDate(c.ngay_ket_thuc) : "—"}
+                      {c.gia_tri ? ` · ${fmt(c.gia_tri)}` : ""}
                     </div>
                   </div>
                   <div className="sv-contract-meta">
                     {isExpanded && cvs.length > 0 && (
-                      <span style={{ fontSize: 12, color: "var(--primary-700)" }}>
-                        {completedCount}/{cvs.length} lần xong
-                      </span>
+                      <>
+                        <span style={{ fontSize: 12, color: "var(--primary-700)" }}>{completedCount}/{cvs.length} xong</span>
+                        {totalPaid > 0 && <span style={{ fontSize: 12, color: "var(--primary-700)" }}>TT: {fmt(totalPaid)}</span>}
+                      </>
                     )}
-                    <span className={`admin-badge ${c.loai_hd === "Định kỳ" ? "blue" : "gray"}`}>
-                      {c.loai_hd || "Một lần"}
-                    </span>
+                    <span className={`admin-badge ${c.loai_hd === "Định kỳ" ? "blue" : "gray"}`}>{c.loai_hd || "Một lần"}</span>
                     {canEdit && (
-                      <button
-                        className="btn-action danger"
-                        title="Xóa hợp đồng"
-                        onClick={(e) => { e.stopPropagation(); setDeletingContract(c); setDeleteContractOpen(true); }}
-                      >
+                      <button className="btn-action danger" title="Xóa HĐ" onClick={(e) => { e.stopPropagation(); setDeletingContract(c); setDeleteContractOpen(true); }}>
                         <Trash2 size={15} />
                       </button>
                     )}
@@ -372,13 +351,15 @@ export default function LichSuDichVuPage() {
                         <Plus size={14} /> Thêm lần dịch vụ
                       </button>
                     )}
-
                     {cvs.length === 0 ? (
                       <p style={{ fontSize: 13, color: "var(--neutral-500)", padding: 12 }}>Chưa có lần dịch vụ nào</p>
                     ) : (
                       <div className="sv-visits-list">
                         {cvs.map((v) => {
                           const ktvNames = (v.ktv_ids || []).map((id) => technicians.find((t) => t.id === id)?.ho_ten).filter(Boolean);
+                          const vHcCost = (v.hoa_chat || []).reduce((s, h) => s + (h.don_gia || 0) * h.so_luong * (1 + (h.vat_pct || 0) / 100), 0);
+                          const vVtCost = (v.vat_tu || []).reduce((s, vt) => s + (vt.don_gia || 0) * vt.so_luong * (1 + (vt.vat_pct || 0) / 100), 0);
+                          const vTotal = (v.tien_cong || 0) + vHcCost + vVtCost;
                           return (
                             <div key={v.id} className={`sv-visit-card ${v.trang_thai === "Hoàn thành" ? "done" : v.trang_thai === "Hủy" ? "cancelled" : ""}`}>
                               <div className="sv-visit-header">
@@ -391,32 +372,19 @@ export default function LichSuDichVuPage() {
                                   {v.gio_ket_thuc && `–${v.gio_ket_thuc.slice(0, 5)}`}
                                 </div>
                               </div>
-
-                              {ktvNames.length > 0 && (
-                                <div className="sv-visit-ktv">KTV: {ktvNames.join(", ")}</div>
-                              )}
-
+                              {ktvNames.length > 0 && <div className="sv-visit-ktv">KTV: {ktvNames.join(", ")}</div>}
                               {(v.hoa_chat || []).length > 0 && (
-                                <div className="sv-visit-materials">
-                                  HC: {(v.hoa_chat || []).map((h) => `${h.ten} (${h.so_luong} ${h.don_vi || ""})`).join(", ")}
-                                </div>
+                                <div className="sv-visit-materials">HC: {(v.hoa_chat || []).map((h) => `${h.ten} ×${h.so_luong}`).join(", ")}</div>
                               )}
-
                               {(v.vat_tu || []).length > 0 && (
-                                <div className="sv-visit-materials">
-                                  VT: {(v.vat_tu || []).map((vt) => `${vt.ten} (${vt.so_luong} ${vt.don_vi || ""})`).join(", ")}
-                                </div>
+                                <div className="sv-visit-materials">VT: {(v.vat_tu || []).map((vt) => `${vt.ten} ×${vt.so_luong}`).join(", ")}</div>
                               )}
-
-                              {(v.da_thanh_toan || 0) > 0 && (
-                                <div className="sv-visit-note" style={{ color: "var(--primary-700)", fontWeight: 600 }}>
-                                  Đã TT: {(v.da_thanh_toan || 0).toLocaleString("vi-VN")}đ
-                                </div>
-                              )}
-
+                              <div style={{ display: "flex", gap: 12, fontSize: 12, marginTop: 4, flexWrap: "wrap" }}>
+                                {vTotal > 0 && <span>Chi phí: <strong>{fmt(Math.round(vTotal))}</strong></span>}
+                                {(v.da_thanh_toan || 0) > 0 && <span style={{ color: "var(--primary-700)", fontWeight: 600 }}>Đã TT: {fmt(v.da_thanh_toan || 0)}</span>}
+                              </div>
                               {v.ghi_chu_truoc && <div className="sv-visit-note">Trước: {v.ghi_chu_truoc}</div>}
                               {v.ghi_chu_sau && <div className="sv-visit-note">Sau: {v.ghi_chu_sau}</div>}
-
                               {canEdit && (
                                 <div className="sv-visit-actions">
                                   {v.trang_thai === "Đã lên lịch" && (
@@ -424,9 +392,7 @@ export default function LichSuDichVuPage() {
                                       <CheckCircle size={12} /> Hoàn thành
                                     </button>
                                   )}
-                                  <button className="p-btn p-btn-ghost" style={{ fontSize: 11 }} onClick={() => openEdit(v, c)}>
-                                    Sửa
-                                  </button>
+                                  <button className="p-btn p-btn-ghost" style={{ fontSize: 11 }} onClick={() => openEdit(v, c)}>Sửa</button>
                                   <button className="p-btn p-btn-ghost" style={{ fontSize: 11, color: "var(--danger-500)" }}
                                     onClick={() => { setDeletingVisit(v); setDeleteDialogOpen(true); }}>
                                     <Trash2 size={12} />
@@ -447,7 +413,7 @@ export default function LichSuDichVuPage() {
         </div>
       )}
 
-      {/* Create/Edit Dialog */}
+      {/* === Form Dialog === */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -457,13 +423,24 @@ export default function LichSuDichVuPage() {
             </DialogTitle>
           </DialogHeader>
 
+          {/* Contract info bar */}
+          {selectedContract && (
+            <div style={{ background: "var(--neutral-50)", borderRadius: 8, padding: "8px 14px", fontSize: 13, display: "flex", gap: 16, flexWrap: "wrap" }}>
+              <span><strong>{selectedContract.customers?.ten_kh}</strong></span>
+              <span>{selectedContract.dich_vu}</span>
+              {contractValue > 0 && <span>Giá trị HĐ: <strong style={{ color: "var(--primary-700)" }}>{fmt(contractValue)}</strong></span>}
+              <span>{selectedContract.loai_hd || "Một lần"}</span>
+            </div>
+          )}
+
           <div className="form-grid">
+            {/* === Section 1: Ngày giờ địa điểm === */}
             <div className="form-field">
               <Label>Ngày dự kiến *</Label>
               <input type="date" className="p-input" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
             </div>
             <div className="form-field">
-              <Label>Giờ</Label>
+              <Label>Giờ thực hiện</Label>
               <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                 <input type="time" className="p-input" value={formStart} onChange={(e) => setFormStart(e.target.value)} />
                 <span>—</span>
@@ -471,7 +448,7 @@ export default function LichSuDichVuPage() {
               </div>
             </div>
 
-            {/* KTV multi-select dropdown */}
+            {/* === Section 2: KTV === */}
             <div className="form-field full-width">
               <Label>Kỹ thuật viên</Label>
               <select className="p-select" value="" onChange={(e) => {
@@ -490,9 +467,7 @@ export default function LichSuDichVuPage() {
                       <div key={id} className="multi-select-tag">
                         <span className="multi-select-tag-avatar">{t.ho_ten.charAt(0)}</span>
                         <span>{t.ho_ten}</span>
-                        <button type="button" className="multi-select-tag-remove" onClick={() => setFormKtv((p) => p.filter((x) => x !== id))}>
-                          <X size={12} />
-                        </button>
+                        <button type="button" className="multi-select-tag-remove" onClick={() => setFormKtv((p) => p.filter((x) => x !== id))}><X size={12} /></button>
                       </div>
                     ) : null;
                   })}
@@ -500,128 +475,65 @@ export default function LichSuDichVuPage() {
               )}
             </div>
 
-            {/* Hóa chất */}
+            {/* === Section 3: Hóa chất & Vật tư === */}
             <div className="form-field full-width">
               <Label>Hóa chất sử dụng</Label>
-              {hoaChatRows.map((row, i) => {
-                const rowCost = (row.don_gia || 0) * row.so_luong * (1 + (row.vat_pct || 0) / 100);
-                return (
-                  <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center", flexWrap: "wrap" }}>
-                    <div style={{ flex: 2, minWidth: 150 }}>
-                      <SearchSelect
-                        placeholder="Tìm hóa chất..."
-                        value={row.id}
-                        onChange={(v) => {
-                          const chem = chemicals.find((c) => c.id === v);
-                          const updated = [...hoaChatRows];
-                          updated[i] = { id: v, ten: chem?.ten_thuong_mai ?? "", so_luong: row.so_luong, don_vi: chem?.don_vi_tinh ?? "", don_gia: chem?.don_gia ?? 0, vat_pct: chem?.vat_pct ?? 0 };
-                          setHoaChatRows(updated);
-                        }}
-                        options={chemicals.map((c) => ({ value: c.id, label: `${c.ten_thuong_mai} (Tồn: ${c.so_luong_ton ?? 0})` }))}
-                      />
-                    </div>
-                    <input className="p-input" style={{ width: 60 }} type="number" min={0} placeholder="SL"
-                      value={row.so_luong} onChange={(e) => { const u = [...hoaChatRows]; u[i] = { ...row, so_luong: Number(e.target.value) }; setHoaChatRows(u); }} />
-                    <span style={{ fontSize: 11, color: "var(--neutral-500)", minWidth: 25 }}>{row.don_vi}</span>
-                    {rowCost > 0 && <span style={{ fontSize: 11, color: "var(--primary-700)", fontWeight: 600 }}>{rowCost.toLocaleString("vi-VN")}đ</span>}
-                    <button type="button" className="p-btn p-btn-ghost" style={{ padding: 4 }} onClick={() => setHoaChatRows(hoaChatRows.filter((_, j) => j !== i))}>
-                      <X size={14} />
-                    </button>
-                  </div>
-                );
-              })}
-              <button type="button" className="p-btn p-btn-ghost" style={{ fontSize: 12 }} onClick={() => setHoaChatRows([...hoaChatRows, { id: "", ten: "", so_luong: 0, don_vi: "", don_gia: 0, vat_pct: 0 }])}>
-                <Plus size={14} /> Thêm hóa chất
-              </button>
+              {renderMatRow(hoaChatRows, setHoaChatRows, "hc")}
             </div>
-
-            {/* Vật tư */}
             <div className="form-field full-width">
               <Label>Vật tư sử dụng</Label>
-              {vatTuRows.map((row, i) => {
-                const rowCost = (row.don_gia || 0) * row.so_luong * (1 + (row.vat_pct || 0) / 100);
-                return (
-                  <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center", flexWrap: "wrap" }}>
-                    <div style={{ flex: 2, minWidth: 150 }}>
-                      <SearchSelect
-                        placeholder="Tìm vật tư..."
-                        value={row.id}
-                        onChange={(v) => {
-                          const sup = supplies.find((s) => s.id === v);
-                          const u = [...vatTuRows];
-                          u[i] = { id: v, ten: sup?.ten_vat_tu ?? "", so_luong: row.so_luong, don_vi: sup?.don_vi_tinh ?? "", don_gia: sup?.don_gia ?? 0, vat_pct: sup?.vat_pct ?? 0 };
-                          setVatTuRows(u);
-                        }}
-                        options={supplies.map((s) => ({ value: s.id, label: `${s.ten_vat_tu} (Tồn: ${s.so_luong_ton ?? 0})` }))}
-                      />
-                    </div>
-                    <input className="p-input" style={{ width: 60 }} type="number" min={0} placeholder="SL"
-                      value={row.so_luong} onChange={(e) => { const u = [...vatTuRows]; u[i] = { ...row, so_luong: Number(e.target.value) }; setVatTuRows(u); }} />
-                    <span style={{ fontSize: 11, color: "var(--neutral-500)", minWidth: 25 }}>{row.don_vi}</span>
-                    {rowCost > 0 && <span style={{ fontSize: 11, color: "var(--primary-700)", fontWeight: 600 }}>{rowCost.toLocaleString("vi-VN")}đ</span>}
-                    <button type="button" className="p-btn p-btn-ghost" style={{ padding: 4 }} onClick={() => setVatTuRows(vatTuRows.filter((_, j) => j !== i))}>
-                      <X size={14} />
-                    </button>
-                  </div>
-                );
-              })}
-              <button type="button" className="p-btn p-btn-ghost" style={{ fontSize: 12 }} onClick={() => setVatTuRows([...vatTuRows, { id: "", ten: "", so_luong: 0, don_vi: "", don_gia: 0, vat_pct: 0 }])}>
-                <Plus size={14} /> Thêm vật tư
-              </button>
+              {renderMatRow(vatTuRows, setVatTuRows, "vt")}
             </div>
 
-            {/* Chi phí */}
+            {/* === Section 4: Chi phí === */}
             <div className="form-field">
               <Label>Tiền công (VNĐ)</Label>
               <Input type="number" min={0} placeholder="0" value={formLaborCost || ""} onChange={(e) => setFormLaborCost(Number(e.target.value) || 0)} />
             </div>
-
-            {/* Cost summary */}
-            {(() => {
-              const hcCost = hoaChatRows.reduce((s, r) => s + (r.don_gia || 0) * r.so_luong * (1 + (r.vat_pct || 0) / 100), 0);
-              const vtCost = vatTuRows.reduce((s, r) => s + (r.don_gia || 0) * r.so_luong * (1 + (r.vat_pct || 0) / 100), 0);
-              const total = (formLaborCost || 0) + hcCost + vtCost;
-              return total > 0 ? (
-                <div className="form-field full-width" style={{ background: "var(--neutral-50)", borderRadius: 8, padding: "10px 14px", fontSize: 13 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Tiền công:</span><span>{(formLaborCost || 0).toLocaleString("vi-VN")}đ</span>
-                  </div>
-                  {hcCost > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Hóa chất (có VAT):</span><span>{Math.round(hcCost).toLocaleString("vi-VN")}đ</span>
-                  </div>}
-                  {vtCost > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Vật tư (có VAT):</span><span>{Math.round(vtCost).toLocaleString("vi-VN")}đ</span>
-                  </div>}
-                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, borderTop: "1px solid var(--neutral-200)", paddingTop: 6, marginTop: 6, color: "var(--primary-700)" }}>
-                    <span>Tổng chi phí:</span><span>{Math.round(total).toLocaleString("vi-VN")}đ</span>
-                  </div>
-                </div>
-              ) : null;
-            })()}
-
             <div className="form-field">
               <Label>Đã thanh toán (VNĐ)</Label>
               <Input type="number" min={0} placeholder="0" value={formPaid || ""} onChange={(e) => setFormPaid(Number(e.target.value) || 0)} />
             </div>
 
+            {/* Cost summary */}
+            <div className="form-field full-width" style={{ background: "var(--neutral-50)", borderRadius: 8, padding: "10px 14px", fontSize: 13 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Tiền công:</span><span>{fmt(formLaborCost || 0)}</span>
+              </div>
+              {hcCost > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Hóa chất (có VAT):</span><span>{fmt(Math.round(hcCost))}</span>
+              </div>}
+              {vtCost > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Vật tư (có VAT):</span><span>{fmt(Math.round(vtCost))}</span>
+              </div>}
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, borderTop: "1px solid var(--neutral-200)", paddingTop: 6, marginTop: 6 }}>
+                <span>Tổng chi phí:</span><span style={{ color: "var(--primary-700)" }}>{fmt(Math.round(totalCost))}</span>
+              </div>
+              {contractValue > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 12, color: "var(--neutral-500)" }}>
+                  <span>Giá trị HĐ:</span><span>{fmt(contractValue)}</span>
+                </div>
+              )}
+              {formPaid > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2, fontWeight: 600, color: formPaid >= totalCost ? "var(--primary-700)" : "var(--danger-500)" }}>
+                  <span>Đã thanh toán:</span><span>{fmt(formPaid)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* === Section 5: Trạng thái & Ghi chú === */}
             {editing && (
               <div className="form-field">
                 <Label>Trạng thái</Label>
                 <select className="p-select" value={formResult} onChange={(e) => setFormResult(e.target.value)}>
-                  <option>Đã lên lịch</option>
-                  <option>Đang làm</option>
-                  <option>Hoàn thành</option>
-                  <option>Hủy</option>
-                  <option>Hoãn</option>
+                  <option>Đã lên lịch</option><option>Đang làm</option><option>Hoàn thành</option><option>Hủy</option><option>Hoãn</option>
                 </select>
               </div>
             )}
-
             <div className="form-field">
               <Label>Ghi chú trước DV</Label>
               <Textarea rows={2} value={formNoteBefore} onChange={(e) => setFormNoteBefore(e.target.value)} placeholder="Tình trạng trước khi thực hiện..." />
             </div>
-
             {editing && (
               <div className="form-field">
                 <Label>Ghi chú sau DV</Label>
@@ -644,35 +556,30 @@ export default function LichSuDichVuPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Visit Confirmation */}
+      {/* Delete Visit */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="dialog-bordered">
           <DialogHeader>
             <DialogTitle>Xóa lần dịch vụ</DialogTitle>
-            <DialogDescription>
-              Xóa lần dịch vụ <strong>{deletingVisit?.lan_thu}</strong>? Không thể hoàn tác.
-            </DialogDescription>
+            <DialogDescription>Xóa lần dịch vụ <strong>{deletingVisit?.lan_thu}</strong>? Không thể hoàn tác.</DialogDescription>
           </DialogHeader>
           <div className="form-actions">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
-            <Button variant="destructive" onClick={handleDelete}>Xóa lần DV</Button>
+            <Button variant="destructive" onClick={handleDelete}>Xóa</Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Contract Confirmation */}
+      {/* Delete Contract */}
       <Dialog open={deleteContractOpen} onOpenChange={setDeleteContractOpen}>
         <DialogContent className="dialog-bordered">
           <DialogHeader>
             <DialogTitle>Xóa hợp đồng</DialogTitle>
-            <DialogDescription>
-              Xóa hợp đồng <strong>{deletingContract?.ma_hd}</strong> ({deletingContract?.customers?.ten_kh})?
-              Tất cả lần dịch vụ liên quan cũng sẽ bị xóa. Không thể hoàn tác.
-            </DialogDescription>
+            <DialogDescription>Xóa hợp đồng <strong>{deletingContract?.ma_hd}</strong>? Tất cả lần DV sẽ bị xóa.</DialogDescription>
           </DialogHeader>
           <div className="form-actions">
             <Button variant="outline" onClick={() => setDeleteContractOpen(false)}>Hủy</Button>
-            <Button variant="destructive" onClick={handleDeleteContract}>Xóa hợp đồng</Button>
+            <Button variant="destructive" onClick={handleDeleteContract}>Xóa</Button>
           </div>
         </DialogContent>
       </Dialog>
