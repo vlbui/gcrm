@@ -233,7 +233,7 @@ export default function DashboardPage() {
       );
       setActivities(logsRes);
     } catch (err) {
-      console.error("Dashboard error:", err);
+      // silently ignore dashboard load errors
     } finally {
       setLoading(false);
     }

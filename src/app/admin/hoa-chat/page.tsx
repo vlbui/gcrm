@@ -182,9 +182,8 @@ export default function HoaChatPage() {
       }
       setDialogOpen(false);
       loadData();
-    } catch (err) {
-      console.error("Lỗi lưu hóa chất:", err);
-      toast.error(`Lỗi: ${err instanceof Error ? err.message : "Vui lòng thử lại"}`);
+    } catch {
+      toast.error("Có lỗi xảy ra, vui lòng thử lại");
     }
   };
 

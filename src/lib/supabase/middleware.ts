@@ -101,8 +101,8 @@ export async function updateSession(request: NextRequest) {
     if (pathname === "/login" && user) {
       return redirectWithCookies("/admin");
     }
-  } catch (error) {
-    console.error("Middleware auth error:", error);
+  } catch {
+    // auth error — continue without redirect
   }
 
   return supabaseResponse;
