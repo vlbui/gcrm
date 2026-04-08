@@ -440,17 +440,6 @@ export default function HopDongPage() {
                 )}
               </div>
               <div className="form-field">
-                <Label>Trạng thái</Label>
-                <select className="native-select" value={watch("trang_thai")} onChange={(e) => setValue("trang_thai", e.target.value)}>
-                  <option value="Mới">Mới</option>
-                  <option value="Đang phục vụ">Đang phục vụ</option>
-                  <option value="Đang thực hiện">Đang thực hiện</option>
-                  <option value="Kết thúc">Kết thúc</option>
-                  <option value="Hoàn thành">Hoàn thành</option>
-                  <option value="Hủy">Hủy</option>
-                </select>
-              </div>
-              <div className="form-field">
                 <Label>Loại hợp đồng</Label>
                 <select className="native-select" value={watch("loai_hd")} onChange={(e) => setValue("loai_hd", e.target.value)}>
                   <option value="Một lần">Một lần</option>
@@ -489,6 +478,17 @@ export default function HopDongPage() {
               <div className="form-field full-width">
                 <Label>Ghi chú</Label>
                 <Textarea placeholder="Thêm ghi chú nếu cần..." {...register("ghi_chu")} />
+              </div>
+              <div className="form-field">
+                <Label>Trạng thái</Label>
+                <select className="native-select" value={watch("trang_thai")} onChange={(e) => setValue("trang_thai", e.target.value)}>
+                  <option value="Mới">Mới</option>
+                  <option value="Đang phục vụ">Đang phục vụ</option>
+                  <option value="Đang thực hiện">Đang thực hiện</option>
+                  <option value="Kết thúc">Kết thúc</option>
+                  <option value="Hoàn thành">Hoàn thành</option>
+                  <option value="Hủy">Hủy</option>
+                </select>
               </div>
             </div>
             <div className="form-actions">
