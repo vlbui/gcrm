@@ -87,6 +87,7 @@ export default function DashboardPage() {
   const [expiringContracts, setExpiringContracts] = useState<{ id: string; ma_hd: string; ten_kh: string; ngay_ket_thuc: string }[]>([]);
   const [topServices, setTopServices] = useState<{ name: string; count: number }[]>([]);
   const [visitStats, setVisitStats] = useState<{ name: string; value: number }[]>([]);
+  const [weeklyVisits, setWeeklyVisits] = useState<{ date: string; dayLabel: string; visits: { id: string; contract_ma_hd: string; ten_kh: string; trang_thai: string; lan_thu: number }[] }[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -98,6 +99,7 @@ export default function DashboardPage() {
     const prev = getPrevRange(range);
     const now = new Date();
     const today = now.toISOString().split("T")[0];
+    const in7 = new Date(now.getTime() + 7 * 86400000).toISOString().split("T")[0];
     const in30 = new Date(now.getTime() + 30 * 86400000).toISOString().split("T")[0];
 
     try {
@@ -115,6 +117,7 @@ export default function DashboardPage() {
         newReqRes,
         expiringRes,
         visitsRes,
+        weeklyRes,
         logsRes,
       ] = await Promise.all([
         // KPI: Customers
@@ -139,6 +142,8 @@ export default function DashboardPage() {
         supabase.from("contracts").select("id, ma_hd, ngay_ket_thuc, customer_id, customers(ten_kh)").gte("ngay_ket_thuc", today).lte("ngay_ket_thuc", in30).order("ngay_ket_thuc").limit(5),
         // Service visits stats
         supabase.from("service_visits").select("trang_thai").gte("created_at", from).lte("created_at", to),
+        // Weekly schedule - visits in next 7 days
+        supabase.from("service_visits").select("id, lan_thu, ngay_du_kien, trang_thai, contract_id, contracts(ma_hd, customers(ten_kh))").gte("ngay_du_kien", today).lte("ngay_du_kien", in7).order("ngay_du_kien"),
         // Activity logs
         fetchActivityLogs(10),
       ]);
@@ -190,6 +195,30 @@ export default function DashboardPage() {
       const visitCounts = new Map<string, number>();
       for (const v of visitsRes.data ?? []) visitCounts.set(v.trang_thai, (visitCounts.get(v.trang_thai) || 0) + 1);
       setVisitStats(Array.from(visitCounts.entries()).map(([name, value]) => ({ name, value })));
+
+      // Weekly schedule
+      const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+      const weekMap = new Map<string, { date: string; dayLabel: string; visits: { id: string; contract_ma_hd: string; ten_kh: string; trang_thai: string; lan_thu: number }[] }>();
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(now.getTime() + i * 86400000);
+        const key = d.toISOString().split("T")[0];
+        const dayLabel = i === 0 ? "Hôm nay" : i === 1 ? "Ngày mai" : dayNames[d.getDay()];
+        weekMap.set(key, { date: key, dayLabel: `${dayLabel} (${d.getDate()}/${d.getMonth() + 1})`, visits: [] });
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const v of (weeklyRes.data ?? []) as any[]) {
+        const day = weekMap.get(v.ngay_du_kien);
+        if (day) {
+          day.visits.push({
+            id: v.id,
+            contract_ma_hd: v.contracts?.ma_hd ?? "—",
+            ten_kh: v.contracts?.customers?.ten_kh ?? "—",
+            trang_thai: v.trang_thai,
+            lan_thu: v.lan_thu,
+          });
+        }
+      }
+      setWeeklyVisits(Array.from(weekMap.values()));
 
       // Quick lists
       setNewRequests((newReqRes.data ?? []) as typeof newRequests);
@@ -281,6 +310,40 @@ export default function DashboardPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Weekly Schedule */}
+      <div className="dash-week-schedule">
+        <div className="dash-list-header" style={{ marginBottom: 0, paddingBottom: 12 }}>
+          <Calendar size={16} style={{ color: "#2E7D32" }} />
+          <span>Lịch dịch vụ 7 ngày tới</span>
+          <Link href="/admin/lich-su-dich-vu" className="dash-list-link">Xem tất cả <ArrowRight size={12} /></Link>
+        </div>
+        {!loading && (
+          <div className="dash-week-grid">
+            {weeklyVisits.map((day) => (
+              <div key={day.date} className={`dash-week-day${day.visits.length === 0 ? " empty" : ""}`}>
+                <div className="dash-week-day-label">{day.dayLabel}</div>
+                {day.visits.length === 0 ? (
+                  <div className="dash-week-empty">Trống</div>
+                ) : (
+                  <div className="dash-week-visits">
+                    {day.visits.map((v) => {
+                      const color = v.trang_thai === "Hoàn thành" ? "#16A34A" : v.trang_thai === "Đang làm" ? "#2563EB" : v.trang_thai === "Hủy" || v.trang_thai === "Hoãn" ? "#DC2626" : "#F59E0B";
+                      return (
+                        <div key={v.id} className="dash-week-visit" style={{ borderLeftColor: color }}>
+                          <div style={{ fontWeight: 600, fontSize: 12 }}>{v.ten_kh}</div>
+                          <div style={{ fontSize: 11, color: "var(--neutral-500)" }}>{v.contract_ma_hd} · Lần {v.lan_thu}</div>
+                          <span className="dash-week-status" style={{ color }}>{v.trang_thai}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Charts Row */}
