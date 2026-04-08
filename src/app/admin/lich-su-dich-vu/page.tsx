@@ -307,10 +307,10 @@ export default function LichSuDichVuPage() {
         </div>
       </div>
 
-      <div className="admin-toolbar">
-        <div className="admin-search">
+      <div className="data-table-toolbar">
+        <div className="data-table-search">
           <Search size={16} />
-          <input placeholder="Tìm mã HĐ, tên KH, dịch vụ..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Tìm mã HĐ, tên KH, dịch vụ..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <select className="native-select" value={filterTrangThai} onChange={(e) => setFilterTrangThai(e.target.value)}>
           <option value="">Tất cả trạng thái</option>
