@@ -42,7 +42,7 @@ const mainLinks = [
   { href: "/admin/kho", icon: Warehouse, label: "Kho" },
   { href: "/admin/nha-cung-cap", icon: Truck, label: "Nhà cung cấp" },
   { href: "/admin/ky-thuat-vien", icon: Wrench, label: "Kỹ thuật viên" },
-  { href: "/admin/bao-gia", icon: Receipt, label: "Báo giá" },
+  // { href: "/admin/bao-gia", icon: Receipt, label: "Báo giá" },
 ];
 
 const cmsLinks = [

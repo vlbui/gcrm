@@ -36,10 +36,10 @@ import {
 
 const PIE_COLORS = ["#6B7280", "#3B82F6", "#F59E0B", "#10B981", "#2E7D32", "#059669", "#8B5CF6"];
 const RANGES = [
-  { key: "7d", label: "7 ngay" },
-  { key: "30d", label: "30 ngay" },
-  { key: "quarter", label: "Quy" },
-  { key: "year", label: "Nam" },
+  { key: "7d", label: "7 ngày" },
+  { key: "30d", label: "30 ngày" },
+  { key: "quarter", label: "Quý" },
+  { key: "year", label: "Năm" },
 ];
 
 function getDateRange(range: string): { from: string; to: string } {
@@ -274,7 +274,6 @@ export default function DashboardPage() {
     { label: "Khách hàng mới", value: stats.totalCustomers, prev: stats.prevCustomers, icon: Users, color: "#2E7D32" },
     { label: "Doanh thu", value: stats.revenue, prev: stats.prevRevenue, icon: DollarSign, color: "#1565C0", format: "money" },
     { label: "Hợp đồng", value: stats.totalContracts, prev: stats.prevContracts, icon: FileText, color: "#6A1B9A" },
-    { label: "Yêu cầu", value: stats.totalRequests, prev: stats.prevRequests, icon: ClipboardList, color: "#E65100" },
     { label: "Công nợ", value: totalDebt, prev: 0, icon: TrendingDown, color: "#B71C1C", format: "money", subtitle: `${debtCount} khách` },
   ];
 
@@ -323,6 +322,28 @@ export default function DashboardPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* New Requests — prominent position */}
+      <div className="dash-list-card" style={{ marginBottom: 16 }}>
+        <div className="dash-list-header">
+          <ClipboardList size={16} style={{ color: "#E65100" }} />
+          <span>Yêu cầu mới cần xử lý</span>
+          <Link href="/admin/yeu-cau" className="dash-list-link">Xem tất cả <ArrowRight size={12} /></Link>
+        </div>
+        {newRequests.length === 0 ? <p className="dash-empty">Không có yêu cầu mới</p> : (
+          <div className="dash-list-items">
+            {newRequests.map((r) => (
+              <div key={r.id} className="dash-list-item">
+                <div>
+                  <strong>{r.ten_kh}</strong>
+                  <span className="dash-list-sub">{r.ma_yc} · {r.sdt}</span>
+                </div>
+                <span className={statusBadgeClass[r.trang_thai] ?? "status-badge"} style={{ fontSize: 11 }}>{r.trang_thai}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Weekly Schedule */}
@@ -402,26 +423,6 @@ export default function DashboardPage() {
 
       {/* Quick lists */}
       <div className="dash-lists-row">
-        <div className="dash-list-card">
-          <div className="dash-list-header">
-            <ClipboardList size={16} style={{ color: "#E65100" }} />
-            <span>Yêu cầu mới</span>
-            <Link href="/admin/yeu-cau" className="dash-list-link">Xem tất cả <ArrowRight size={12} /></Link>
-          </div>
-          {newRequests.length === 0 ? <p className="dash-empty">Không có</p> : (
-            <div className="dash-list-items">
-              {newRequests.map((r) => (
-                <div key={r.id} className="dash-list-item">
-                  <div>
-                    <strong>{r.ten_kh}</strong>
-                    <span className="dash-list-sub">{r.ma_yc} · {r.sdt}</span>
-                  </div>
-                  <span className={statusBadgeClass[r.trang_thai] ?? "status-badge"} style={{ fontSize: 11 }}>{r.trang_thai}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
         <div className="dash-list-card">
           <div className="dash-list-header">
             <AlertTriangle size={16} style={{ color: "#F59E0B" }} />
