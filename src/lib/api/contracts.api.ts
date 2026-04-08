@@ -130,6 +130,10 @@ export async function deleteContract(id: string) {
     .eq("id", id)
     .single();
 
+  // Delete dependent records that have ON DELETE RESTRICT
+  await supabase.from("service_history").delete().eq("contract_id", id);
+  await supabase.from("payments").delete().eq("contract_id", id);
+
   const { error } = await supabase.from("contracts").delete().eq("id", id);
   if (error) throw error;
 
