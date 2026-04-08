@@ -505,7 +505,6 @@ export default function LichSuDichVuPage() {
               <select className="p-select" value={formHinhThuc} onChange={(e) => setFormHinhThuc(e.target.value)}>
                 <option>Tiền mặt</option>
                 <option>Chuyển khoản</option>
-                <option>Thẻ</option>
               </select>
             </div>
 
