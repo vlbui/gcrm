@@ -128,10 +128,12 @@ async function updateContractPaymentStatus(contractId: string) {
     trang_thai_thanh_toan = "Đã cọc";
   }
 
-  await supabase
+  const { error } = await supabase
     .from("contracts")
     .update({ so_tien_da_tra: totalPaid, trang_thai_thanh_toan })
     .eq("id", contractId);
+
+  if (error) throw new Error(`Cập nhật trạng thái HĐ thất bại: ${error.message}`);
 }
 
 export interface DebtRecord {

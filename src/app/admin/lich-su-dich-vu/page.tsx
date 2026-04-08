@@ -175,17 +175,22 @@ export default function LichSuDichVuPage() {
 
       // Create payment if amount increased
       if (paidDiff > 0) {
-        await createPayment({
-          contract_id: selectedContract.id,
-          so_tien: paidDiff,
-          ngay_tt: new Date().toISOString().split("T")[0],
-          hinh_thuc: "Chuyển khoản",
-          ghi_chu: `Thanh toán lần DV ${editing?.lan_thu || "mới"}`,
-        });
-        const loai = selectedContract.loai_hd;
-        const trang_thai = (loai === "Một lần" || !loai) ? "Hoàn thành" : "Đang thực hiện";
-        await updateContract(selectedContract.id, { trang_thai });
-        toast.success(editing ? "Đã cập nhật + ghi nhận thanh toán" : "Đã tạo lần DV + ghi nhận thanh toán");
+        try {
+          await createPayment({
+            contract_id: selectedContract.id,
+            so_tien: paidDiff,
+            ngay_tt: new Date().toISOString().split("T")[0],
+            hinh_thuc: "Chuyển khoản",
+            ghi_chu: `Thanh toán lần DV ${editing?.lan_thu ?? "mới"}`,
+          });
+          const loai = selectedContract.loai_hd;
+          const trang_thai = (loai === "Một lần" || !loai) ? "Hoàn thành" : "Đang thực hiện";
+          await updateContract(selectedContract.id, { trang_thai });
+          toast.success(editing ? "Đã cập nhật + ghi nhận thanh toán" : "Đã tạo lần DV + ghi nhận thanh toán");
+        } catch (payErr) {
+          const msg = payErr instanceof Error ? payErr.message : String(payErr);
+          toast.error(`Lưu lần DV OK nhưng ghi nhận thanh toán lỗi: ${msg}`);
+        }
       } else {
         toast.success(editing ? "Đã cập nhật" : "Đã tạo lần DV mới");
       }
