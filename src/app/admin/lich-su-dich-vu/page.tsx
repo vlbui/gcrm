@@ -39,6 +39,8 @@ export default function LichSuDichVuPage() {
   const [supplies, setSupplies] = useState<Supply[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterTrangThai, setFilterTrangThai] = useState("");
+  const [filterLoai, setFilterLoai] = useState("");
 
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -96,9 +98,14 @@ export default function LichSuDichVuPage() {
   };
 
   const filteredContracts = contracts.filter((c) => {
-    if (!search) return true;
     const q = search.toLowerCase();
-    return c.ma_hd.toLowerCase().includes(q) || (c.customers?.ten_kh ?? "").toLowerCase().includes(q) || c.dich_vu.toLowerCase().includes(q);
+    const matchSearch = !search ||
+      c.ma_hd.toLowerCase().includes(q) ||
+      (c.customers?.ten_kh ?? "").toLowerCase().includes(q) ||
+      c.dich_vu.toLowerCase().includes(q);
+    const matchTrangThai = !filterTrangThai || c.trang_thai === filterTrangThai;
+    const matchLoai = !filterLoai || (c.loai_hd || "Một lần") === filterLoai;
+    return matchSearch && matchTrangThai && matchLoai;
   });
 
   const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Nhân viên";
@@ -305,6 +312,20 @@ export default function LichSuDichVuPage() {
           <Search size={16} />
           <input placeholder="Tìm mã HĐ, tên KH, dịch vụ..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
+        <select className="native-select" value={filterTrangThai} onChange={(e) => setFilterTrangThai(e.target.value)}>
+          <option value="">Tất cả trạng thái</option>
+          <option value="Mới">Mới</option>
+          <option value="Đang phục vụ">Đang phục vụ</option>
+          <option value="Đang thực hiện">Đang thực hiện</option>
+          <option value="Kết thúc">Kết thúc</option>
+          <option value="Hoàn thành">Hoàn thành</option>
+          <option value="Hủy">Hủy</option>
+        </select>
+        <select className="native-select" value={filterLoai} onChange={(e) => setFilterLoai(e.target.value)}>
+          <option value="">Tất cả loại</option>
+          <option value="Một lần">Một lần</option>
+          <option value="Định kỳ">Định kỳ</option>
+        </select>
       </div>
 
       {loading ? <div className="empty-state"><p>Đang tải...</p></div> : (

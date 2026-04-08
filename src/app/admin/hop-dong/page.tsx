@@ -83,6 +83,8 @@ export default function HopDongPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Contract | null>(null);
   const [search, setSearch] = useState("");
+  const [filterTrangThai, setFilterTrangThai] = useState("");
+  const [filterLoai, setFilterLoai] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -158,11 +160,13 @@ export default function HopDongPage() {
 
   const filtered = data.filter((item) => {
     const q = search.toLowerCase();
-    return (
+    const matchSearch =
       item.ma_hd.toLowerCase().includes(q) ||
       item.dich_vu.toLowerCase().includes(q) ||
-      (item.customers?.ten_kh.toLowerCase().includes(q) ?? false)
-    );
+      (item.customers?.ten_kh.toLowerCase().includes(q) ?? false);
+    const matchTrangThai = !filterTrangThai || item.trang_thai === filterTrangThai;
+    const matchLoai = !filterLoai || (item.loai_hd || "Một lần") === filterLoai;
+    return matchSearch && matchTrangThai && matchLoai;
   });
 
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -289,18 +293,13 @@ export default function HopDongPage() {
 
   const statusClass = (status: string) => {
     switch (status) {
-      case "Mới":
-        return "moi";
-      case "Đang thực hiện":
-      case "Đang phục vụ":
-        return "active";
-      case "Hoàn thành":
-      case "Kết thúc":
-        return "hoan-thanh";
-      case "Hủy":
-        return "huy";
-      default:
-        return "";
+      case "Mới": return "moi";
+      case "Đang phục vụ": return "dang-phu-vu";
+      case "Đang thực hiện": return "dang-xu-ly";
+      case "Kết thúc": return "ket-thuc";
+      case "Hoàn thành": return "hoan-thanh";
+      case "Hủy": return "huy";
+      default: return "";
     }
   };
 
@@ -323,6 +322,20 @@ export default function HopDongPage() {
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
+          <select className="native-select" value={filterTrangThai} onChange={(e) => { setFilterTrangThai(e.target.value); setPage(1); }}>
+            <option value="">Tất cả trạng thái</option>
+            <option value="Mới">Mới</option>
+            <option value="Đang phục vụ">Đang phục vụ</option>
+            <option value="Đang thực hiện">Đang thực hiện</option>
+            <option value="Kết thúc">Kết thúc</option>
+            <option value="Hoàn thành">Hoàn thành</option>
+            <option value="Hủy">Hủy</option>
+          </select>
+          <select className="native-select" value={filterLoai} onChange={(e) => { setFilterLoai(e.target.value); setPage(1); }}>
+            <option value="">Tất cả loại</option>
+            <option value="Một lần">Một lần</option>
+            <option value="Định kỳ">Định kỳ</option>
+          </select>
           <div className="data-table-actions">
             {user?.vai_tro !== "Xem" && (
               <Button className="btn-add" onClick={openAdd}>
