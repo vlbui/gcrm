@@ -475,10 +475,6 @@ export default function HopDongPage() {
                 <Label>Ngày kết thúc</Label>
                 <DateInput value={watch("ngay_ket_thuc") ?? ""} onChange={(v) => setValue("ngay_ket_thuc", v || null, { shouldValidate: true })} />
               </div>
-              <div className="form-field full-width">
-                <Label>Ghi chú</Label>
-                <Textarea placeholder="Thêm ghi chú nếu cần..." {...register("ghi_chu")} />
-              </div>
               <div className="form-field">
                 <Label>Trạng thái</Label>
                 <select className="native-select" value={watch("trang_thai")} onChange={(e) => setValue("trang_thai", e.target.value)}>
@@ -489,6 +485,10 @@ export default function HopDongPage() {
                   <option value="Hoàn thành">Hoàn thành</option>
                   <option value="Hủy">Hủy</option>
                 </select>
+              </div>
+              <div className="form-field full-width">
+                <Label>Ghi chú</Label>
+                <Textarea placeholder="Thêm ghi chú nếu cần..." {...register("ghi_chu")} />
               </div>
             </div>
             <div className="form-actions">
