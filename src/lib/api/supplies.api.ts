@@ -10,6 +10,7 @@ export interface Supply {
   nha_cung_cap: string | null;
   supplier_id?: string | null;
   don_gia?: number;
+  vat_pct?: number;
   so_luong_ton?: number;
   nguong_canh_bao?: number;
   ghi_chu: string | null;

@@ -19,6 +19,7 @@ import {
   type CreateReminderInput,
 } from "@/lib/api/reminders.api";
 import { fetchUsers, type User } from "@/lib/api/users.api";
+import { fetchActiveTechnicians, type Technician } from "@/lib/api/technicians.api";
 import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
 import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ export default function SchedulePage() {
   const [visits, setVisits] = useState<ServiceVisit[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,16 +89,17 @@ export default function SchedulePage() {
       const from = new Date(year, month - 1, 1).toISOString().split("T")[0];
       const to = new Date(year, month + 2, 0).toISOString().split("T")[0];
 
-      const [s, v, r, u, c, cust] = await Promise.all([
+      const [s, v, r, u, t, c, cust] = await Promise.all([
         fetchSchedules({ from, to, ktv_id: filterKtv || undefined }),
         fetchAllVisits({ from, to }),
         fetchReminders({ from, to }),
         fetchUsers(),
+        fetchActiveTechnicians(),
         fetchContracts(),
         fetchCustomers(),
       ]);
       setSchedules(s); setVisits(v); setReminders(r);
-      setUsers(u); setContracts(c); setCustomers(cust);
+      setUsers(u); setTechnicians(t); setContracts(c); setCustomers(cust);
     } catch { toast.error("Lỗi tải dữ liệu"); }
     finally { setLoading(false); }
   }, [currentDate, filterKtv]);
@@ -246,7 +249,7 @@ export default function SchedulePage() {
   // KTV colors
   const ktvColors = ["#2E7D32", "#1565C0", "#6A1B9A", "#E65100", "#C62828", "#00838F", "#4E342E", "#AD1457"];
   const ktvColorMap = new Map<string, string>();
-  users.forEach((u, i) => ktvColorMap.set(u.id, ktvColors[i % ktvColors.length]));
+  technicians.forEach((t, i) => ktvColorMap.set(t.id, ktvColors[i % ktvColors.length]));
 
   const monthName = currentDate.toLocaleDateString("vi-VN", { month: "long", year: "numeric" });
   const scheduleCount = calendarEvents.filter((e) => e.type === "schedule").length;
@@ -295,7 +298,7 @@ export default function SchedulePage() {
           <select className="admin-input" style={{ width: 180 }} value={filterKtv}
             onChange={(e) => setFilterKtv(e.target.value)}>
             <option value="">Tất cả KTV</option>
-            {users.map((u) => <option key={u.id} value={u.id}>{u.ho_ten}</option>)}
+            {technicians.map((t) => <option key={t.id} value={t.id}>{t.ho_ten}</option>)}
           </select>
         </div>
       </div>
@@ -372,10 +375,10 @@ export default function SchedulePage() {
           Nhắc nhở
         </div>
         <span style={{ width: 1, height: 16, background: "var(--neutral-200)" }} />
-        {users.map((u) => (
-          <div key={u.id} className="calendar-legend-item">
-            <span className="calendar-legend-dot" style={{ background: ktvColorMap.get(u.id) }} />
-            {u.ho_ten}
+        {technicians.map((t) => (
+          <div key={t.id} className="calendar-legend-item">
+            <span className="calendar-legend-dot" style={{ background: ktvColorMap.get(t.id) }} />
+            {t.ho_ten}
           </div>
         ))}
       </div>
@@ -422,7 +425,7 @@ export default function SchedulePage() {
                       <select className="admin-input" value={scheduleForm.ktv_id || ""}
                         onChange={(e) => setScheduleForm({ ...scheduleForm, ktv_id: e.target.value || null })}>
                         <option value="">— Chọn KTV —</option>
-                        {users.map((u) => <option key={u.id} value={u.id}>{u.ho_ten}</option>)}
+                        {technicians.map((t) => <option key={t.id} value={t.id}>{t.ho_ten} — {t.sdt}</option>)}
                       </select>
                     </div>
                   </div>

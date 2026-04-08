@@ -61,8 +61,9 @@ export default function LichSuDichVuPage() {
   const [formNoteBefore, setFormNoteBefore] = useState("");
   const [formNoteAfter, setFormNoteAfter] = useState("");
   const [formResult, setFormResult] = useState("Đã lên lịch");
-  const [hoaChatRows, setHoaChatRows] = useState<{ id: string; ten: string; so_luong: number; don_vi: string }[]>([]);
-  const [vatTuRows, setVatTuRows] = useState<{ id: string; ten: string; so_luong: number; don_vi: string }[]>([]);
+  const [hoaChatRows, setHoaChatRows] = useState<{ id: string; ten: string; so_luong: number; don_vi: string; don_gia: number; vat_pct: number }[]>([]);
+  const [vatTuRows, setVatTuRows] = useState<{ id: string; ten: string; so_luong: number; don_vi: string; don_gia: number; vat_pct: number }[]>([]);
+  const [formLaborCost, setFormLaborCost] = useState(0);
   const [formPaid, setFormPaid] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
@@ -135,6 +136,7 @@ export default function LichSuDichVuPage() {
     setFormNoteBefore("");
     setFormNoteAfter("");
     setFormResult("Đã lên lịch");
+    setFormLaborCost(0);
     setFormPaid(0);
     setHoaChatRows([]);
     setVatTuRows([]);
@@ -151,12 +153,13 @@ export default function LichSuDichVuPage() {
     setFormNoteBefore(visit.ghi_chu_truoc || "");
     setFormNoteAfter(visit.ghi_chu_sau || "");
     setFormResult(visit.trang_thai);
+    setFormLaborCost(visit.tien_cong || 0);
     setFormPaid(visit.da_thanh_toan || 0);
     setHoaChatRows((visit.hoa_chat || []).map((h) => ({
-      id: h.id, ten: h.ten, so_luong: h.so_luong, don_vi: h.don_vi || "",
+      id: h.id, ten: h.ten, so_luong: h.so_luong, don_vi: h.don_vi || "", don_gia: h.don_gia || 0, vat_pct: h.vat_pct || 0,
     })));
     setVatTuRows((visit.vat_tu || []).map((v) => ({
-      id: v.id, ten: v.ten, so_luong: v.so_luong, don_vi: v.don_vi || "",
+      id: v.id, ten: v.ten, so_luong: v.so_luong, don_vi: v.don_vi || "", don_gia: v.don_gia || 0, vat_pct: v.vat_pct || 0,
     })));
     setDialogOpen(true);
   };
@@ -167,11 +170,11 @@ export default function LichSuDichVuPage() {
     try {
       const hcParsed = hoaChatRows.filter((r) => r.id).map((r) => {
         const chem = chemicals.find((c) => c.id === r.id);
-        return { id: r.id, ten: r.ten, ma: chem?.ma_hc ?? "", so_luong: r.so_luong, don_vi: r.don_vi };
+        return { id: r.id, ten: r.ten, ma: chem?.ma_hc ?? "", so_luong: r.so_luong, don_vi: r.don_vi, don_gia: r.don_gia || chem?.don_gia || 0, vat_pct: r.vat_pct || chem?.vat_pct || 0 };
       });
       const vtParsed = vatTuRows.filter((r) => r.id).map((r) => {
         const sup = supplies.find((s) => s.id === r.id);
-        return { id: r.id, ten: r.ten, ma: sup?.ma_vt ?? "", so_luong: r.so_luong, don_vi: r.don_vi };
+        return { id: r.id, ten: r.ten, ma: sup?.ma_vt ?? "", so_luong: r.so_luong, don_vi: r.don_vi, don_gia: r.don_gia || sup?.don_gia || 0, vat_pct: r.vat_pct || sup?.vat_pct || 0 };
       });
 
       if (editing) {
@@ -187,6 +190,7 @@ export default function LichSuDichVuPage() {
           hoa_chat: hcParsed,
           vat_tu: vtParsed,
           trang_thai: formResult,
+          tien_cong: formLaborCost,
           da_thanh_toan: formPaid,
           ghi_chu_truoc: formNoteBefore || null,
           ghi_chu_sau: formNoteAfter || null,
@@ -494,30 +498,34 @@ export default function LichSuDichVuPage() {
             {/* Hóa chất */}
             <div className="form-field full-width">
               <Label>Hóa chất sử dụng</Label>
-              {hoaChatRows.map((row, i) => (
-                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
-                  <div style={{ flex: 2 }}>
-                    <SearchSelect
-                      placeholder="Tìm hóa chất..."
-                      value={row.id}
-                      onChange={(v) => {
-                        const chem = chemicals.find((c) => c.id === v);
-                        const updated = [...hoaChatRows];
-                        updated[i] = { id: v, ten: chem?.ten_thuong_mai ?? "", so_luong: row.so_luong, don_vi: chem?.don_vi_tinh ?? "" };
-                        setHoaChatRows(updated);
-                      }}
-                      options={chemicals.map((c) => ({ value: c.id, label: `${c.ten_thuong_mai} (Tồn: ${c.so_luong_ton ?? 0})` }))}
-                    />
+              {hoaChatRows.map((row, i) => {
+                const rowCost = (row.don_gia || 0) * row.so_luong * (1 + (row.vat_pct || 0) / 100);
+                return (
+                  <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center", flexWrap: "wrap" }}>
+                    <div style={{ flex: 2, minWidth: 150 }}>
+                      <SearchSelect
+                        placeholder="Tìm hóa chất..."
+                        value={row.id}
+                        onChange={(v) => {
+                          const chem = chemicals.find((c) => c.id === v);
+                          const updated = [...hoaChatRows];
+                          updated[i] = { id: v, ten: chem?.ten_thuong_mai ?? "", so_luong: row.so_luong, don_vi: chem?.don_vi_tinh ?? "", don_gia: chem?.don_gia ?? 0, vat_pct: chem?.vat_pct ?? 0 };
+                          setHoaChatRows(updated);
+                        }}
+                        options={chemicals.map((c) => ({ value: c.id, label: `${c.ten_thuong_mai} (Tồn: ${c.so_luong_ton ?? 0})` }))}
+                      />
+                    </div>
+                    <input className="p-input" style={{ width: 60 }} type="number" min={0} placeholder="SL"
+                      value={row.so_luong} onChange={(e) => { const u = [...hoaChatRows]; u[i] = { ...row, so_luong: Number(e.target.value) }; setHoaChatRows(u); }} />
+                    <span style={{ fontSize: 11, color: "var(--neutral-500)", minWidth: 25 }}>{row.don_vi}</span>
+                    {rowCost > 0 && <span style={{ fontSize: 11, color: "var(--primary-700)", fontWeight: 600 }}>{rowCost.toLocaleString("vi-VN")}đ</span>}
+                    <button type="button" className="p-btn p-btn-ghost" style={{ padding: 4 }} onClick={() => setHoaChatRows(hoaChatRows.filter((_, j) => j !== i))}>
+                      <X size={14} />
+                    </button>
                   </div>
-                  <input className="p-input" style={{ width: 80 }} type="number" min={0} placeholder="SL"
-                    value={row.so_luong} onChange={(e) => { const u = [...hoaChatRows]; u[i] = { ...row, so_luong: Number(e.target.value) }; setHoaChatRows(u); }} />
-                  <span style={{ fontSize: 12, color: "var(--neutral-500)", minWidth: 30 }}>{row.don_vi}</span>
-                  <button type="button" className="p-btn p-btn-ghost" style={{ padding: 4 }} onClick={() => setHoaChatRows(hoaChatRows.filter((_, j) => j !== i))}>
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-              <button type="button" className="p-btn p-btn-ghost" style={{ fontSize: 12 }} onClick={() => setHoaChatRows([...hoaChatRows, { id: "", ten: "", so_luong: 0, don_vi: "" }])}>
+                );
+              })}
+              <button type="button" className="p-btn p-btn-ghost" style={{ fontSize: 12 }} onClick={() => setHoaChatRows([...hoaChatRows, { id: "", ten: "", so_luong: 0, don_vi: "", don_gia: 0, vat_pct: 0 }])}>
                 <Plus size={14} /> Thêm hóa chất
               </button>
             </div>
@@ -525,33 +533,66 @@ export default function LichSuDichVuPage() {
             {/* Vật tư */}
             <div className="form-field full-width">
               <Label>Vật tư sử dụng</Label>
-              {vatTuRows.map((row, i) => (
-                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
-                  <div style={{ flex: 2 }}>
-                    <SearchSelect
-                      placeholder="Tìm vật tư..."
-                      value={row.id}
-                      onChange={(v) => {
-                        const sup = supplies.find((s) => s.id === v);
-                        const u = [...vatTuRows];
-                        u[i] = { id: v, ten: sup?.ten_vat_tu ?? "", so_luong: row.so_luong, don_vi: sup?.don_vi_tinh ?? "" };
-                        setVatTuRows(u);
-                      }}
-                      options={supplies.map((s) => ({ value: s.id, label: `${s.ten_vat_tu} (Tồn: ${s.so_luong_ton ?? 0})` }))}
-                    />
+              {vatTuRows.map((row, i) => {
+                const rowCost = (row.don_gia || 0) * row.so_luong * (1 + (row.vat_pct || 0) / 100);
+                return (
+                  <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center", flexWrap: "wrap" }}>
+                    <div style={{ flex: 2, minWidth: 150 }}>
+                      <SearchSelect
+                        placeholder="Tìm vật tư..."
+                        value={row.id}
+                        onChange={(v) => {
+                          const sup = supplies.find((s) => s.id === v);
+                          const u = [...vatTuRows];
+                          u[i] = { id: v, ten: sup?.ten_vat_tu ?? "", so_luong: row.so_luong, don_vi: sup?.don_vi_tinh ?? "", don_gia: sup?.don_gia ?? 0, vat_pct: sup?.vat_pct ?? 0 };
+                          setVatTuRows(u);
+                        }}
+                        options={supplies.map((s) => ({ value: s.id, label: `${s.ten_vat_tu} (Tồn: ${s.so_luong_ton ?? 0})` }))}
+                      />
+                    </div>
+                    <input className="p-input" style={{ width: 60 }} type="number" min={0} placeholder="SL"
+                      value={row.so_luong} onChange={(e) => { const u = [...vatTuRows]; u[i] = { ...row, so_luong: Number(e.target.value) }; setVatTuRows(u); }} />
+                    <span style={{ fontSize: 11, color: "var(--neutral-500)", minWidth: 25 }}>{row.don_vi}</span>
+                    {rowCost > 0 && <span style={{ fontSize: 11, color: "var(--primary-700)", fontWeight: 600 }}>{rowCost.toLocaleString("vi-VN")}đ</span>}
+                    <button type="button" className="p-btn p-btn-ghost" style={{ padding: 4 }} onClick={() => setVatTuRows(vatTuRows.filter((_, j) => j !== i))}>
+                      <X size={14} />
+                    </button>
                   </div>
-                  <input className="p-input" style={{ width: 80 }} type="number" min={0} placeholder="SL"
-                    value={row.so_luong} onChange={(e) => { const u = [...vatTuRows]; u[i] = { ...row, so_luong: Number(e.target.value) }; setVatTuRows(u); }} />
-                  <span style={{ fontSize: 12, color: "var(--neutral-500)", minWidth: 30 }}>{row.don_vi}</span>
-                  <button type="button" className="p-btn p-btn-ghost" style={{ padding: 4 }} onClick={() => setVatTuRows(vatTuRows.filter((_, j) => j !== i))}>
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-              <button type="button" className="p-btn p-btn-ghost" style={{ fontSize: 12 }} onClick={() => setVatTuRows([...vatTuRows, { id: "", ten: "", so_luong: 0, don_vi: "" }])}>
+                );
+              })}
+              <button type="button" className="p-btn p-btn-ghost" style={{ fontSize: 12 }} onClick={() => setVatTuRows([...vatTuRows, { id: "", ten: "", so_luong: 0, don_vi: "", don_gia: 0, vat_pct: 0 }])}>
                 <Plus size={14} /> Thêm vật tư
               </button>
             </div>
+
+            {/* Chi phí */}
+            <div className="form-field">
+              <Label>Tiền công (VNĐ)</Label>
+              <Input type="number" min={0} placeholder="0" value={formLaborCost || ""} onChange={(e) => setFormLaborCost(Number(e.target.value) || 0)} />
+            </div>
+
+            {/* Cost summary */}
+            {(() => {
+              const hcCost = hoaChatRows.reduce((s, r) => s + (r.don_gia || 0) * r.so_luong * (1 + (r.vat_pct || 0) / 100), 0);
+              const vtCost = vatTuRows.reduce((s, r) => s + (r.don_gia || 0) * r.so_luong * (1 + (r.vat_pct || 0) / 100), 0);
+              const total = (formLaborCost || 0) + hcCost + vtCost;
+              return total > 0 ? (
+                <div className="form-field full-width" style={{ background: "var(--neutral-50)", borderRadius: 8, padding: "10px 14px", fontSize: 13 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>Tiền công:</span><span>{(formLaborCost || 0).toLocaleString("vi-VN")}đ</span>
+                  </div>
+                  {hcCost > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>Hóa chất (có VAT):</span><span>{Math.round(hcCost).toLocaleString("vi-VN")}đ</span>
+                  </div>}
+                  {vtCost > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>Vật tư (có VAT):</span><span>{Math.round(vtCost).toLocaleString("vi-VN")}đ</span>
+                  </div>}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, borderTop: "1px solid var(--neutral-200)", paddingTop: 6, marginTop: 6, color: "var(--primary-700)" }}>
+                    <span>Tổng chi phí:</span><span>{Math.round(total).toLocaleString("vi-VN")}đ</span>
+                  </div>
+                </div>
+              ) : null;
+            })()}
 
             <div className="form-field">
               <Label>Đã thanh toán (VNĐ)</Label>

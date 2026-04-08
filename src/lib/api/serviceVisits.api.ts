@@ -7,6 +7,8 @@ export interface MaterialUsage {
   ma: string;
   so_luong: number;
   don_vi: string;
+  don_gia?: number;
+  vat_pct?: number;
 }
 
 export interface ServiceVisit {
@@ -23,6 +25,7 @@ export interface ServiceVisit {
   anh_truoc: string[];
   anh_sau: string[];
   trang_thai: string;
+  tien_cong: number;
   da_thanh_toan: number;
   ghi_chu_truoc: string | null;
   ghi_chu_sau: string | null;

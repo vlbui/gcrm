@@ -214,7 +214,7 @@ export default function HopDongPage() {
         gia_tri: formData.gia_tri ?? null,
         trang_thai: formData.trang_thai,
         ngay_bat_dau: formData.ngay_bat_dau || null,
-        ngay_ket_thuc: formData.ngay_ket_thuc || null,
+        ngay_ket_thuc: formData.ngay_ket_thuc,
         ghi_chu: formData.ghi_chu || null,
       };
       if (editing) {
@@ -346,6 +346,7 @@ export default function HopDongPage() {
                 <TableHead>Giá trị</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Ngày bắt đầu</TableHead>
+                <TableHead>Ngày kết thúc</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -371,6 +372,9 @@ export default function HopDongPage() {
                   </TableCell>
                   <TableCell>
                     {formatDate(item.ngay_bat_dau)}
+                  </TableCell>
+                  <TableCell>
+                    {formatDate(item.ngay_ket_thuc)}
                   </TableCell>
                 </TableRow>
               ))}
