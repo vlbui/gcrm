@@ -9,18 +9,20 @@ import {
   type Schedule,
   type CreateScheduleInput,
 } from "@/lib/api/schedules.api";
+import { fetchAllVisits, type ServiceVisit } from "@/lib/api/serviceVisits.api";
 import { fetchUsers, type User } from "@/lib/api/users.api";
 import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/utils/date";
 import {
   ChevronLeft,
   ChevronRight,
   Plus,
   X,
-  MapPin,
-  Clock,
   Trash2,
   Filter,
+  ClipboardList,
+  CalendarDays,
 } from "lucide-react";
 
 const DAYS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -31,14 +33,27 @@ const STATUS_COLORS: Record<string, string> = {
   "Hủy": "#EF4444",
 };
 
+type CalendarEvent = {
+  id: string;
+  type: "schedule" | "visit";
+  date: string;
+  time?: string;
+  title: string;
+  subTitle?: string;
+  status: string;
+  ktvId?: string | null;
+  raw: Schedule | ServiceVisit;
+};
+
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [visits, setVisits] = useState<ServiceVisit[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<"month" | "week">("month");
   const [filterKtv, setFilterKtv] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "schedule" | "visit">("all");
   const [showForm, setShowForm] = useState(false);
   const [editSchedule, setEditSchedule] = useState<Schedule | null>(null);
 
@@ -60,12 +75,14 @@ export default function SchedulePage() {
       const from = new Date(year, month - 1, 1).toISOString().split("T")[0];
       const to = new Date(year, month + 2, 0).toISOString().split("T")[0];
 
-      const [s, u, c] = await Promise.all([
+      const [s, v, u, c] = await Promise.all([
         fetchSchedules({ from, to, ktv_id: filterKtv || undefined }),
+        fetchAllVisits({ from, to }),
         fetchUsers(),
         fetchContracts(),
       ]);
       setSchedules(s);
+      setVisits(v);
       setUsers(u);
       setContracts(c);
     } catch {
@@ -79,6 +96,45 @@ export default function SchedulePage() {
     loadData();
   }, [loadData]);
 
+  // Build calendar events
+  const calendarEvents: CalendarEvent[] = [];
+
+  if (filterType !== "visit") {
+    for (const s of schedules) {
+      calendarEvents.push({
+        id: s.id,
+        type: "schedule",
+        date: s.ngay_thuc_hien,
+        time: s.gio_bat_dau?.slice(0, 5),
+        title: s.contracts?.customers?.ten_kh || s.dia_diem || "Lịch công việc",
+        subTitle: s.contracts?.ma_hd || undefined,
+        status: s.trang_thai,
+        ktvId: s.ktv_id,
+        raw: s,
+      });
+    }
+  }
+
+  if (filterType !== "schedule") {
+    for (const v of visits) {
+      // Filter by KTV if set
+      if (filterKtv && !(v.ktv_ids || []).includes(filterKtv)) continue;
+
+      const contract = contracts.find((c) => c.id === v.contract_id);
+      calendarEvents.push({
+        id: v.id,
+        type: "visit",
+        date: v.ngay_du_kien || "",
+        time: v.gio_bat_dau?.slice(0, 5),
+        title: contract?.customers?.ten_kh || "Lần DV",
+        subTitle: contract ? `${contract.ma_hd} · Lần ${v.lan_thu}` : `Lần ${v.lan_thu}`,
+        status: v.trang_thai,
+        ktvId: (v.ktv_ids || [])[0] || null,
+        raw: v,
+      });
+    }
+  }
+
   // Calendar helpers
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -90,13 +146,12 @@ export default function SchedulePage() {
   for (let i = 0; i < firstDay; i++) calendarDays.push(null);
   for (let i = 1; i <= daysInMonth; i++) calendarDays.push(i);
 
-  const getDateStr = (day: number) => {
-    return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-  };
+  const getDateStr = (day: number) =>
+    `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-  const getDaySchedules = (day: number) => {
+  const getDayEvents = (day: number) => {
     const dateStr = getDateStr(day);
-    return schedules.filter((s) => s.ngay_thuc_hien === dateStr);
+    return calendarEvents.filter((e) => e.date === dateStr);
   };
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
@@ -132,6 +187,13 @@ export default function SchedulePage() {
     setShowForm(true);
   };
 
+  const handleEventClick = (event: CalendarEvent) => {
+    if (event.type === "schedule") {
+      openEditForm(event.raw as Schedule);
+    }
+    // Visit events are read-only on calendar — click goes to lich-su-dich-vu
+  };
+
   const handleSubmit = async () => {
     if (!formData.ngay_thuc_hien) {
       toast.error("Vui lòng chọn ngày");
@@ -163,19 +225,25 @@ export default function SchedulePage() {
     }
   };
 
-  // Get KTV color
+  // KTV colors
   const ktvColors = ["#2E7D32", "#1565C0", "#6A1B9A", "#E65100", "#C62828", "#00838F", "#4E342E", "#AD1457"];
   const ktvColorMap = new Map<string, string>();
   users.forEach((u, i) => ktvColorMap.set(u.id, ktvColors[i % ktvColors.length]));
 
   const monthName = currentDate.toLocaleDateString("vi-VN", { month: "long", year: "numeric" });
 
+  // Stats
+  const scheduleCount = calendarEvents.filter((e) => e.type === "schedule").length;
+  const visitCount = calendarEvents.filter((e) => e.type === "visit").length;
+
   return (
     <div>
       <div className="admin-page-header">
         <div>
           <h1 className="admin-page-title">Lịch công việc</h1>
-          <p className="admin-page-subtitle">Quản lý lịch và phân công KTV</p>
+          <p className="admin-page-subtitle">
+            {scheduleCount} lịch · {visitCount} lần DV trong tháng
+          </p>
         </div>
         <button className="admin-btn admin-btn-primary" onClick={() => openNewForm()}>
           <Plus size={16} /> Thêm lịch
@@ -197,6 +265,19 @@ export default function SchedulePage() {
           </button>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {/* Type filter */}
+          <div style={{ display: "flex", gap: 0 }}>
+            {([["all", "Tất cả"], ["schedule", "Lịch"], ["visit", "Lần DV"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                className={`dash-range-btn ${filterType === key ? "active" : ""}`}
+                onClick={() => setFilterType(key)}
+                style={{ fontSize: 12, padding: "4px 10px" }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <Filter size={16} style={{ color: "var(--neutral-400)" }} />
           <select
             className="admin-input"
@@ -223,7 +304,7 @@ export default function SchedulePage() {
           {calendarDays.map((day, idx) => {
             if (day === null) return <div key={`e-${idx}`} className="calendar-cell empty" />;
             const dateStr = getDateStr(day);
-            const daySchedules = getDaySchedules(day);
+            const dayEvents = getDayEvents(day);
             const isToday = dateStr === today;
 
             return (
@@ -236,25 +317,34 @@ export default function SchedulePage() {
                   {day}
                 </div>
                 <div className="calendar-cell-events">
-                  {daySchedules.slice(0, 3).map((s) => (
-                    <div
-                      key={s.id}
-                      className="calendar-event"
-                      style={{
-                        borderLeftColor: s.ktv_id ? ktvColorMap.get(s.ktv_id) || "#6B7280" : "#6B7280",
-                        background: s.trang_thai === "Hoàn thành" ? "#F0FDF4" : s.trang_thai === "Hủy" ? "#FEF2F2" : "#F9FAFB",
-                      }}
-                      onClick={(e) => { e.stopPropagation(); openEditForm(s); }}
-                      title={`${s.gio_bat_dau || ""} ${s.contracts?.customers?.ten_kh || s.dia_diem || ""}`}
-                    >
-                      <span className="calendar-event-time">{s.gio_bat_dau?.slice(0, 5)}</span>
-                      <span className="calendar-event-name">
-                        {s.contracts?.customers?.ten_kh || s.dia_diem || "—"}
-                      </span>
-                    </div>
-                  ))}
-                  {daySchedules.length > 3 && (
-                    <div className="calendar-event-more">+{daySchedules.length - 3} thêm</div>
+                  {dayEvents.slice(0, 3).map((ev) => {
+                    const isVisit = ev.type === "visit";
+                    const borderColor = ev.ktvId ? ktvColorMap.get(ev.ktvId) || "#6B7280" : "#6B7280";
+                    const bgColor = ev.status === "Hoàn thành" ? "#F0FDF4"
+                      : ev.status === "Hủy" || ev.status === "Hoãn" ? "#FEF2F2"
+                      : isVisit ? "#EFF6FF" : "#F9FAFB";
+
+                    return (
+                      <div
+                        key={ev.id}
+                        className="calendar-event"
+                        style={{ borderLeftColor: borderColor, background: bgColor }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEventClick(ev);
+                        }}
+                        title={`${isVisit ? "[DV] " : ""}${ev.time || ""} ${ev.title} ${ev.subTitle || ""}`}
+                      >
+                        {isVisit && (
+                          <ClipboardList size={10} style={{ color: "#3B82F6", flexShrink: 0 }} />
+                        )}
+                        <span className="calendar-event-time">{ev.time}</span>
+                        <span className="calendar-event-name">{ev.title}</span>
+                      </div>
+                    );
+                  })}
+                  {dayEvents.length > 3 && (
+                    <div className="calendar-event-more">+{dayEvents.length - 3} thêm</div>
                   )}
                 </div>
               </div>
@@ -263,17 +353,24 @@ export default function SchedulePage() {
         </div>
       )}
 
-      {/* KTV Legend */}
-      {users.length > 0 && (
-        <div className="calendar-legend">
-          {users.map((u) => (
-            <div key={u.id} className="calendar-legend-item">
-              <span className="calendar-legend-dot" style={{ background: ktvColorMap.get(u.id) }} />
-              {u.ho_ten}
-            </div>
-          ))}
+      {/* Legend */}
+      <div className="calendar-legend">
+        <div className="calendar-legend-item">
+          <span className="calendar-legend-dot" style={{ background: "#F9FAFB", border: "2px solid #6B7280" }} />
+          Lịch công việc
         </div>
-      )}
+        <div className="calendar-legend-item">
+          <ClipboardList size={12} style={{ color: "#3B82F6" }} />
+          Lần dịch vụ
+        </div>
+        <span style={{ width: 1, height: 16, background: "var(--neutral-200)" }} />
+        {users.map((u) => (
+          <div key={u.id} className="calendar-legend-item">
+            <span className="calendar-legend-dot" style={{ background: ktvColorMap.get(u.id) }} />
+            {u.ho_ten}
+          </div>
+        ))}
+      </div>
 
       {/* Form Dialog */}
       {showForm && (

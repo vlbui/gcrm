@@ -37,7 +37,7 @@ const mainLinks = [
   { href: "/admin/khach-hang", icon: Users, label: "Khách hàng" },
   { href: "/admin/hop-dong", icon: FileText, label: "Hợp đồng" },
   { href: "/admin/lich-su-dich-vu", icon: ClipboardList, label: "Lịch sử DV" },
-  { href: "/admin/lich-cong-viec", icon: CalendarDays, label: "Lịch" },
+  { href: "/admin/lich-cong-viec", icon: CalendarDays, label: "Lịch công tác" },
   { href: "/admin/thanh-toan", icon: CreditCard, label: "Thanh toán" },
   { href: "/admin/cong-no", icon: Wallet, label: "Công nợ" },
   { href: "/admin/lich-nhac", icon: Bell, label: "Lịch nhắc" },
