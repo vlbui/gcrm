@@ -50,6 +50,7 @@ const supplySchema = z.object({
   loai_vt: z.string().min(1, "Loại vật tư là bắt buộc"),
   don_vi_tinh: z.string().min(1, "Đơn vị tính là bắt buộc"),
   nha_cung_cap: z.string().nullable(),
+  supplier_id: z.string().nullable(),
   so_luong_ton: z.coerce.number().min(0).default(0),
   nguong_canh_bao: z.coerce.number().min(0).default(5),
   ghi_chu: z.string().nullable(),
@@ -84,6 +85,7 @@ export default function VatTuPage() {
       loai_vt: "",
       don_vi_tinh: "",
       nha_cung_cap: "",
+      supplier_id: "",
       ghi_chu: "",
     },
   });
@@ -126,6 +128,7 @@ export default function VatTuPage() {
       loai_vt: "",
       don_vi_tinh: "",
       nha_cung_cap: "",
+      supplier_id: "",
       so_luong_ton: 0,
       nguong_canh_bao: 5,
       ghi_chu: "",
@@ -140,6 +143,7 @@ export default function VatTuPage() {
       loai_vt: item.loai_vt ?? "",
       don_vi_tinh: item.don_vi_tinh ?? "",
       nha_cung_cap: item.nha_cung_cap ?? "",
+      supplier_id: item.supplier_id ?? "",
       so_luong_ton: item.so_luong_ton ?? 0,
       nguong_canh_bao: item.nguong_canh_bao ?? 5,
       ghi_chu: item.ghi_chu ?? "",
@@ -153,7 +157,8 @@ export default function VatTuPage() {
         ten_vat_tu: formData.ten_vat_tu,
         loai_vt: formData.loai_vt || null,
         don_vi_tinh: formData.don_vi_tinh || null,
-        nha_cung_cap: formData.nha_cung_cap || null,
+        supplier_id: formData.supplier_id || null,
+        nha_cung_cap: suppliers.find((s) => s.id === formData.supplier_id)?.ten_ncc || formData.nha_cung_cap || null,
         so_luong_ton: formData.so_luong_ton ?? 0,
         nguong_canh_bao: formData.nguong_canh_bao ?? 5,
         ghi_chu: formData.ghi_chu || null,
@@ -255,7 +260,7 @@ export default function VatTuPage() {
                     </span>
                     {" "}{item.don_vi_tinh ?? ""}
                   </TableCell>
-                  <TableCell>{item.nha_cung_cap ?? "—"}</TableCell>
+                  <TableCell>{(item.suppliers as { ten_ncc: string } | null)?.ten_ncc ?? item.nha_cung_cap ?? "—"}</TableCell>
                   {canEdit(item) && (
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <button
@@ -310,9 +315,9 @@ export default function VatTuPage() {
                 <Label>Nhà cung cấp</Label>
                 <SearchSelect
                   placeholder="Tìm nhà cung cấp..."
-                  value={watch("nha_cung_cap") ?? ""}
-                  onChange={(v) => setValue("nha_cung_cap", v || null)}
-                  options={suppliers.map((s) => ({ value: s.ten_ncc, label: s.ten_ncc }))}
+                  value={watch("supplier_id") ?? ""}
+                  onChange={(v) => setValue("supplier_id", v || null)}
+                  options={suppliers.map((s) => ({ value: s.id, label: s.ten_ncc }))}
                 />
               </div>
               <div className="form-field">

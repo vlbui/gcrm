@@ -38,7 +38,7 @@ export async function fetchChemicals(): Promise<Chemical[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("chemicals")
-    .select("*")
+    .select("*, suppliers(ten_ncc)")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data ?? [];

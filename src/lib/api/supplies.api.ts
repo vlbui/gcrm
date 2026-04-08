@@ -34,7 +34,7 @@ export async function fetchSupplies(): Promise<Supply[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("supplies")
-    .select("*")
+    .select("*, suppliers(ten_ncc)")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data ?? [];
