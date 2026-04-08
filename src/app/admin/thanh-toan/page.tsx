@@ -10,12 +10,13 @@ import {
   type DebtRecord,
 } from "@/lib/api/payments.api";
 import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
+import { fetchAllVisits, type ServiceVisit } from "@/lib/api/serviceVisits.api";
 import { formatDate } from "@/lib/utils/date";
 import { toast } from "sonner";
 import {
   Plus, Search, Trash2, CreditCard, Banknote, Building2,
   DollarSign, TrendingUp, AlertTriangle, CheckCircle2,
-  ChevronDown, ChevronRight,
+  ChevronDown, ChevronRight, TrendingDown, Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +37,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
 import Pagination from "@/components/admin/Pagination";
@@ -67,6 +68,7 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [debts, setDebts] = useState<DebtRecord[]>([]);
+  const [visits, setVisits] = useState<ServiceVisit[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("payments");
   const [search, setSearch] = useState("");
@@ -89,12 +91,20 @@ export default function PaymentsPage() {
 
   async function loadData() {
     try {
-      const [p, c, d] = await Promise.all([fetchPayments(), fetchContracts(), fetchDebts()]);
+      const [p, c, d, v] = await Promise.all([fetchPayments(), fetchContracts(), fetchDebts(), fetchAllVisits()]);
       setPayments(p);
       setContracts(c);
       setDebts(d);
+      setVisits(v);
     } catch { toast.error("Lỗi tải dữ liệu"); }
     finally { setLoading(false); }
+  }
+
+  // === Expense calculations from service visits ===
+  function calcVisitCost(v: ServiceVisit): number {
+    const hc = (v.hoa_chat || []).reduce((s, h) => s + (h.don_gia || 0) * h.so_luong * (1 + (h.vat_pct || 0) / 100), 0);
+    const vt = (v.vat_tu || []).reduce((s, t) => s + (t.don_gia || 0) * t.so_luong * (1 + (t.vat_pct || 0) / 100), 0);
+    return (v.tien_cong || 0) + hc + vt;
   }
 
   // === Dashboard stats ===
@@ -110,16 +120,19 @@ export default function PaymentsPage() {
   const lastMonthRevenue = payments.filter((p) => p.ngay_tt?.startsWith(lastMonth)).reduce((s, p) => s + (p.so_tien || 0), 0);
   const totalDebt = debts.reduce((s, d) => s + d.tong_con_no, 0);
   const debtCustomers = debts.filter((d) => d.tong_con_no > 0).length;
+  const totalExpenses = visits.reduce((s, v) => s + calcVisitCost(v), 0);
+  const estimatedProfit = totalRevenue - totalExpenses;
 
-  // Monthly chart (last 6 months)
+  // Monthly chart (last 6 months) — revenue + expenses
   const monthlyData = (() => {
-    const months: { month: string; revenue: number }[] = [];
+    const months: { month: string; revenue: number; expenses: number; profit: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const label = `T${d.getMonth() + 1}`;
       const revenue = payments.filter((p) => p.ngay_tt?.startsWith(key)).reduce((s, p) => s + (p.so_tien || 0), 0);
-      months.push({ month: label, revenue });
+      const expenses = visits.filter((v) => (v.ngay_thuc_te || v.ngay_du_kien || "").startsWith(key)).reduce((s, v) => s + calcVisitCost(v), 0);
+      months.push({ month: label, revenue, expenses, profit: revenue - expenses });
     }
     return months;
   })();
@@ -241,25 +254,42 @@ export default function PaymentsPage() {
           <div className="dash-kpi-label">Tổng doanh thu</div>
         </div>
         <div className="dash-kpi-card">
-          <div className="dash-kpi-icon" style={{ background: "#1565C015", color: "#1565C0" }}>
-            <TrendingUp size={20} />
+          <div className="dash-kpi-icon" style={{ background: "#EF444415", color: "#EF4444" }}>
+            <TrendingDown size={20} />
           </div>
-          <div className="dash-kpi-value">{loading ? "—" : formatShort(thisMonthRevenue)}</div>
-          <div className="dash-kpi-label">Tháng này</div>
-          {monthPctChange !== 0 && (
-            <div className={`dash-kpi-change ${monthPctChange > 0 ? "up" : "down"}`}>
-              {monthPctChange > 0 ? "+" : ""}{monthPctChange}% vs tháng trước
-            </div>
-          )}
+          <div className="dash-kpi-value">{loading ? "—" : formatShort(totalExpenses)}</div>
+          <div className="dash-kpi-label">Chi phí DV (HC + VT + Công)</div>
         </div>
         <div className="dash-kpi-card">
-          <div className="dash-kpi-icon" style={{ background: "#EF444415", color: "#EF4444" }}>
+          <div className="dash-kpi-icon" style={{ background: estimatedProfit >= 0 ? "#1565C015" : "#EF444415", color: estimatedProfit >= 0 ? "#1565C0" : "#EF4444" }}>
+            <Activity size={20} />
+          </div>
+          <div className="dash-kpi-value" style={{ color: estimatedProfit >= 0 ? "var(--primary-700)" : "var(--danger-500)" }}>
+            {loading ? "—" : (estimatedProfit >= 0 ? "+" : "") + formatShort(estimatedProfit)}
+          </div>
+          <div className="dash-kpi-label">Lợi nhuận tạm tính</div>
+          <div className="dash-kpi-change" style={{ color: "var(--neutral-400)", fontSize: 11 }}>Doanh thu − Chi phí DV</div>
+        </div>
+        <div className="dash-kpi-card">
+          <div className="dash-kpi-icon" style={{ background: "#F59E0B15", color: "#F59E0B" }}>
             <AlertTriangle size={20} />
           </div>
           <div className="dash-kpi-value">{loading ? "—" : formatShort(totalDebt)}</div>
           <div className="dash-kpi-label">Tổng công nợ</div>
           {debtCustomers > 0 && (
             <div className="dash-kpi-change down">{debtCustomers} khách hàng</div>
+          )}
+        </div>
+        <div className="dash-kpi-card">
+          <div className="dash-kpi-icon" style={{ background: "#1565C015", color: "#1565C0" }}>
+            <TrendingUp size={20} />
+          </div>
+          <div className="dash-kpi-value">{loading ? "—" : formatShort(thisMonthRevenue)}</div>
+          <div className="dash-kpi-label">Doanh thu tháng này</div>
+          {monthPctChange !== 0 && (
+            <div className={`dash-kpi-change ${monthPctChange > 0 ? "up" : "down"}`}>
+              {monthPctChange > 0 ? "+" : ""}{monthPctChange}% vs tháng trước
+            </div>
           )}
         </div>
         <div className="dash-kpi-card">
@@ -275,14 +305,19 @@ export default function PaymentsPage() {
       {!loading && payments.length > 0 && (
         <div className="dash-charts-row" style={{ marginBottom: 20 }}>
           <div className="dash-chart-card">
-            <h3 className="dash-card-title">Doanh thu 6 tháng</h3>
+            <h3 className="dash-card-title">Doanh thu & Chi phí 6 tháng</h3>
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={monthlyData}>
+              <BarChart data={monthlyData} barGap={2}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis dataKey="month" fontSize={12} />
                 <YAxis fontSize={12} tickFormatter={(v) => formatShort(v)} />
-                <Tooltip formatter={(value) => [formatCurrency(Number(value)), "Doanh thu"]} />
-                <Bar dataKey="revenue" fill="#2E7D32" radius={[4, 4, 0, 0]} />
+                <Tooltip formatter={(value, name) => [
+                  formatCurrency(Number(value)),
+                  name === "revenue" ? "Doanh thu" : name === "expenses" ? "Chi phí DV" : "Lợi nhuận"
+                ]} />
+                <Legend formatter={(v) => v === "revenue" ? "Doanh thu" : v === "expenses" ? "Chi phí DV" : "Lợi nhuận"} />
+                <Bar dataKey="revenue" fill="#2E7D32" radius={[4, 4, 0, 0]} name="revenue" />
+                <Bar dataKey="expenses" fill="#EF4444" radius={[4, 4, 0, 0]} name="expenses" />
               </BarChart>
             </ResponsiveContainer>
           </div>
