@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createTransaction, fetchStock, type StockItem } from "@/lib/api/inventory.api";
+import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
+import { fetchVisitsByContract, type ServiceVisit } from "@/lib/api/serviceVisits.api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -11,6 +13,8 @@ import SearchSelect from "@/components/admin/SearchSelect";
 export default function ExportInventoryPage() {
   const router = useRouter();
   const [items, setItems] = useState<StockItem[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [visits, setVisits] = useState<ServiceVisit[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -18,14 +22,27 @@ export default function ExportInventoryPage() {
   const [itemId, setItemId] = useState("");
   const [soLuong, setSoLuong] = useState("");
   const [donVi, setDonVi] = useState("");
+  const [mucDich, setMucDich] = useState("Phục vụ DV");
+  const [contractId, setContractId] = useState("");
+  const [visitId, setVisitId] = useState("");
   const [ghiChu, setGhiChu] = useState("");
 
   useEffect(() => {
-    fetchStock()
-      .then(setItems)
+    Promise.all([fetchStock(), fetchContracts()])
+      .then(([s, c]) => { setItems(s); setContracts(c); })
       .catch(() => toast.error("Lỗi tải"))
       .finally(() => setLoading(false));
   }, []);
+
+  // Load visits when contract changes
+  useEffect(() => {
+    if (contractId) {
+      fetchVisitsByContract(contractId).then(setVisits).catch(() => setVisits([]));
+    } else {
+      setVisits([]);
+    }
+    setVisitId("");
+  }, [contractId]);
 
   const filteredItems = items.filter((i) => i.type === itemType);
   const selectedItem = items.find((i) => i.id === itemId);
@@ -45,28 +62,39 @@ export default function ExportInventoryPage() {
     }
     setSaving(true);
     try {
+      // Build note with purpose and service visit reference
+      const parts: string[] = [];
+      parts.push(`Mục đích: ${mucDich}`);
+      if (contractId) {
+        const c = contracts.find((x) => x.id === contractId);
+        if (c) parts.push(`HĐ: ${c.ma_hd}`);
+      }
+      if (visitId) {
+        const v = visits.find((x) => x.id === visitId);
+        if (v) parts.push(`Lần DV ${v.lan_thu}`);
+      }
+      if (ghiChu) parts.push(ghiChu);
+
       await createTransaction({
         loai: itemType,
         item_id: itemId,
         loai_giao_dich: "Xuất",
         so_luong: Number(soLuong),
         don_vi: donVi || undefined,
-        ghi_chu: ghiChu || undefined,
+        service_history_id: visitId || null,
+        ghi_chu: parts.join(" · "),
       });
       toast.success("Xuất kho thành công");
       router.push("/admin/kho/ton");
-    } catch {
-      toast.error("Lỗi xuất kho");
-    } finally {
-      setSaving(false);
-    }
+    } catch { toast.error("Lỗi xuất kho"); }
+    finally { setSaving(false); }
   };
 
   return (
     <div>
       <div className="admin-page-header">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href="/admin/kho/ton" className="admin-btn admin-btn-ghost">
+          <Link href="/admin/kho" className="admin-btn admin-btn-ghost">
             <ArrowLeft size={16} />
           </Link>
           <div>
@@ -113,12 +141,53 @@ export default function ExportInventoryPage() {
             <input className="admin-input" value={donVi} onChange={(e) => setDonVi(e.target.value)} />
           </div>
         </div>
+
         <div className="admin-form-group">
-          <label className="admin-label">Ghi chú / Lý do xuất</label>
-          <textarea className="admin-input" rows={2} value={ghiChu} onChange={(e) => setGhiChu(e.target.value)} placeholder="VD: Xuất cho HĐ GS-2026-001..." />
+          <label className="admin-label">Mục đích xuất *</label>
+          <select className="admin-input" value={mucDich} onChange={(e) => setMucDich(e.target.value)}>
+            <option value="Phục vụ DV">Phục vụ lần dịch vụ</option>
+            <option value="Bán lẻ">Bán lẻ</option>
+            <option value="Hao hụt">Hao hụt / Hết hạn</option>
+            <option value="Khác">Khác</option>
+          </select>
+        </div>
+
+        {mucDich === "Phục vụ DV" && (
+          <>
+            <div className="admin-form-group">
+              <label className="admin-label">Hợp đồng</label>
+              <SearchSelect
+                placeholder="Tìm mã HĐ, tên KH..."
+                value={contractId}
+                onChange={(v) => setContractId(v)}
+                options={contracts.map((c) => ({
+                  value: c.id,
+                  label: `${c.ma_hd} — ${c.customers?.ten_kh ?? ""}`,
+                }))}
+              />
+            </div>
+            {contractId && visits.length > 0 && (
+              <div className="admin-form-group">
+                <label className="admin-label">Lần dịch vụ</label>
+                <select className="admin-input" value={visitId} onChange={(e) => setVisitId(e.target.value)}>
+                  <option value="">— Chọn lần DV —</option>
+                  {visits.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      Lần {v.lan_thu} — {v.ngay_du_kien || "Chưa xếp"} ({v.trang_thai})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="admin-form-group">
+          <label className="admin-label">Ghi chú thêm</label>
+          <textarea className="admin-input" rows={2} value={ghiChu} onChange={(e) => setGhiChu(e.target.value)} placeholder="Ghi chú bổ sung..." />
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-          <Link href="/admin/kho/ton" className="admin-btn admin-btn-outline">Hủy</Link>
+          <Link href="/admin/kho" className="admin-btn admin-btn-outline">Hủy</Link>
           <button className="admin-btn admin-btn-primary" onClick={handleSubmit} disabled={saving}>
             <Save size={14} /> {saving ? "Đang lưu..." : "Xuất kho"}
           </button>
