@@ -25,7 +25,7 @@ export default function SearchSelect({ options, value, onChange, placeholder = "
 
   const filtered = query
     ? options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
-    : [];
+    : options;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -62,7 +62,7 @@ export default function SearchSelect({ options, value, onChange, placeholder = "
           className={selected && !open ? "has-value" : ""}
         />
       </div>
-      {open && query && (
+      {open && (
         <div className="search-select-dropdown">
           {filtered.length === 0 ? (
             <div className="search-select-empty">Không tìm thấy</div>
