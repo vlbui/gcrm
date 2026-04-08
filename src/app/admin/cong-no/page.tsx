@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchDebts, type DebtRecord } from "@/lib/api/payments.api";
+import { fetchDebts, deletePayment, fetchPaymentsByContract, type DebtRecord, type Payment } from "@/lib/api/payments.api";
+import { deleteContract } from "@/lib/api/contracts.api";
 import { formatDate } from "@/lib/utils/date";
 import { toast } from "sonner";
 import {
@@ -10,7 +11,23 @@ import {
   ChevronDown,
   ChevronRight,
   Wallet,
+  Trash2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
 
 export default function DebtPage() {
   const [debts, setDebts] = useState<DebtRecord[]>([]);
@@ -18,12 +35,19 @@ export default function DebtPage() {
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchDebts()
-      .then(setDebts)
-      .catch(() => toast.error("Lỗi tải công nợ"))
-      .finally(() => setLoading(false));
-  }, []);
+  // Delete contract state
+  const [deleteContractOpen, setDeleteContractOpen] = useState(false);
+  const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
+  const [deletingContractMaHd, setDeletingContractMaHd] = useState("");
+
+  useEffect(() => { loadData(); }, []);
+
+  async function loadData() {
+    try {
+      setDebts(await fetchDebts());
+    } catch { toast.error("Lỗi tải công nợ"); }
+    finally { setLoading(false); }
+  }
 
   const filtered = debts.filter(
     (d) =>
@@ -40,6 +64,22 @@ export default function DebtPage() {
       return next;
     });
   };
+
+  async function handleDeleteContract() {
+    if (!deletingContractId) return;
+    try {
+      // Delete all payments for this contract first
+      const payments = await fetchPaymentsByContract(deletingContractId);
+      for (const p of payments) {
+        await deletePayment(p.id);
+      }
+      await deleteContract(deletingContractId);
+      toast.success("Đã xóa hợp đồng và công nợ liên quan");
+      setDeleteContractOpen(false);
+      setDeletingContractId(null);
+      await loadData();
+    } catch { toast.error("Lỗi xóa"); }
+  }
 
   const totalDebt = filtered.reduce((sum, d) => sum + d.tong_con_no, 0);
 
@@ -117,28 +157,29 @@ export default function DebtPage() {
 
               {expanded.has(debt.customer_id) && (
                 <div className="debt-card-details">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>Mã HĐ</th>
-                        <th>Giá trị</th>
-                        <th>Đã trả</th>
-                        <th>Còn nợ</th>
-                        <th>Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Mã HĐ</TableHead>
+                        <TableHead>Giá trị</TableHead>
+                        <TableHead>Đã trả</TableHead>
+                        <TableHead>Còn nợ</TableHead>
+                        <TableHead>Trạng thái</TableHead>
+                        <TableHead style={{ width: 50 }}></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {debt.contracts.map((c) => (
-                        <tr key={c.id}>
-                          <td className="font-medium">{c.ma_hd}</td>
-                          <td>{c.gia_tri.toLocaleString("vi-VN")}đ</td>
-                          <td style={{ color: "var(--primary-700)" }}>
+                        <TableRow key={c.id}>
+                          <TableCell className="font-medium">{c.ma_hd}</TableCell>
+                          <TableCell>{c.gia_tri.toLocaleString("vi-VN")}đ</TableCell>
+                          <TableCell style={{ color: "var(--primary-700)" }}>
                             {c.so_tien_da_tra.toLocaleString("vi-VN")}đ
-                          </td>
-                          <td style={{ color: "var(--danger-500)", fontWeight: 600 }}>
+                          </TableCell>
+                          <TableCell style={{ color: "var(--danger-500)", fontWeight: 600 }}>
                             {c.con_no.toLocaleString("vi-VN")}đ
-                          </td>
-                          <td>
+                          </TableCell>
+                          <TableCell>
                             <span
                               className={`admin-badge ${
                                 c.trang_thai_thanh_toan === "Quá hạn"
@@ -150,17 +191,40 @@ export default function DebtPage() {
                             >
                               {c.trang_thai_thanh_toan}
                             </span>
-                          </td>
-                        </tr>
+                          </TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className="btn-action danger"
+                              title="Xóa hợp đồng"
+                              onClick={() => { setDeletingContractId(c.id); setDeletingContractMaHd(c.ma_hd); setDeleteContractOpen(true); }}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </div>
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <Dialog open={deleteContractOpen} onOpenChange={setDeleteContractOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xóa hợp đồng</DialogTitle>
+          </DialogHeader>
+          <p>Xóa hợp đồng <strong>{deletingContractMaHd}</strong> và tất cả thanh toán liên quan?</p>
+          <div className="form-actions">
+            <Button variant="outline" onClick={() => setDeleteContractOpen(false)}>Hủy</Button>
+            <Button variant="destructive" onClick={handleDeleteContract}>Xóa</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

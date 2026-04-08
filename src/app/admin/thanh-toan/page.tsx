@@ -177,6 +177,7 @@ export default function PaymentsPage() {
                   <TableHead>Hình thức</TableHead>
                   <TableHead>Ngày TT</TableHead>
                   <TableHead>Ghi chú</TableHead>
+                  <TableHead style={{ width: 50 }}></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -196,6 +197,15 @@ export default function PaymentsPage() {
                     <TableCell>{formatDate(p.ngay_tt)}</TableCell>
                     <TableCell style={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {p.ghi_chu || "—"}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="btn-action danger"
+                        title="Xóa"
+                        onClick={() => { setDeletingItem(p); setDeleteDialogOpen(true); }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </TableCell>
                   </TableRow>
                 ))}
