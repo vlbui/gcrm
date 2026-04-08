@@ -17,7 +17,7 @@ import {
   fetchVisitsByContract, createVisit, updateVisit, completeVisit, deleteVisit,
   type ServiceVisit,
 } from "@/lib/api/serviceVisits.api";
-import { fetchContracts, deleteContract, updateContract, type Contract } from "@/lib/api/contracts.api";
+import { fetchContracts, deleteContract, updateContract, syncContractStatus, type Contract } from "@/lib/api/contracts.api";
 import { createPayment } from "@/lib/api/payments.api";
 import { fetchActiveTechnicians, type Technician } from "@/lib/api/technicians.api";
 import { fetchChemicals, type Chemical } from "@/lib/api/chemicals.api";
@@ -184,9 +184,7 @@ export default function LichSuDichVuPage() {
             hinh_thuc: formHinhThuc,
             ghi_chu: `Thanh toán lần DV ${editing?.lan_thu ?? "mới"}`,
           });
-          const loai = selectedContract.loai_hd;
-          const trang_thai = (loai === "Một lần" || !loai) ? "Hoàn thành" : "Đang thực hiện";
-          await updateContract(selectedContract.id, { trang_thai });
+          await syncContractStatus(selectedContract.id);
           toast.success(editing ? "Đã cập nhật + ghi nhận thanh toán" : "Đã tạo lần DV + ghi nhận thanh toán");
         } catch (payErr) {
           const msg = payErr instanceof Error ? payErr.message : String(payErr);
@@ -223,10 +221,7 @@ export default function LichSuDichVuPage() {
           ngay_tt: new Date().toISOString().split("T")[0], hinh_thuc: "Chuyển khoản",
           ghi_chu: `Thanh toán lần DV ${visit.lan_thu}`,
         });
-        if (contract) {
-          const loai = contract.loai_hd;
-          await updateContract(contract.id, { trang_thai: (loai === "Một lần" || !loai) ? "Hoàn thành" : "Đang thực hiện" });
-        }
+        await syncContractStatus(visit.contract_id);
       }
       await completeVisit(visit.id);
       toast.success(`Đã hoàn thành + xuất kho${extraPaid > 0 ? " + TT" : ""}`);

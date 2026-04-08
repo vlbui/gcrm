@@ -288,8 +288,10 @@ export default function HopDongPage() {
       case "Mới":
         return "moi";
       case "Đang thực hiện":
+      case "Đang phục vụ":
         return "active";
       case "Hoàn thành":
+      case "Kết thúc":
         return "hoan-thanh";
       case "Hủy":
         return "huy";
@@ -437,7 +439,9 @@ export default function HopDongPage() {
                 <Label>Trạng thái</Label>
                 <select className="native-select" value={watch("trang_thai")} onChange={(e) => setValue("trang_thai", e.target.value)}>
                   <option value="Mới">Mới</option>
+                  <option value="Đang phục vụ">Đang phục vụ</option>
                   <option value="Đang thực hiện">Đang thực hiện</option>
+                  <option value="Kết thúc">Kết thúc</option>
                   <option value="Hoàn thành">Hoàn thành</option>
                   <option value="Hủy">Hủy</option>
                 </select>

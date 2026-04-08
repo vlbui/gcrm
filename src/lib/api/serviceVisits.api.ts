@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { logActivity } from "./activityLog.api";
+import { syncContractStatus } from "./contracts.api";
 
 export interface MaterialUsage {
   id: string;
@@ -80,6 +81,7 @@ export async function createVisit(input: CreateVisitInput): Promise<ServiceVisit
   if (error) throw error;
 
   await logActivity({ hanh_dong: "Tạo lần DV", module: "service_visits", chi_tiet: `Lần ${data.lan_thu}` });
+  await syncContractStatus(input.contract_id);
   return data as ServiceVisit;
 }
 
@@ -140,14 +142,8 @@ export async function completeVisit(id: string): Promise<void> {
     ngay_thuc_te: new Date().toISOString().split("T")[0],
   }).eq("id", id);
 
-  // Update contract status based on type
-  const { data: contract } = await supabase.from("contracts").select("loai_hd").eq("id", visit.contract_id).single();
-  if (contract) {
-    const trang_thai = (contract.loai_hd === "Một lần" || !contract.loai_hd)
-      ? "Hoàn thành"
-      : "Đang thực hiện";
-    await supabase.from("contracts").update({ trang_thai }).eq("id", visit.contract_id);
-  }
+  // Sync contract status based on all visits + end date
+  await syncContractStatus(visit.contract_id);
 
   await logActivity({ hanh_dong: "Hoàn thành DV", module: "service_visits", chi_tiet: `Lần ${visit.lan_thu}` });
 }
@@ -188,4 +184,5 @@ export async function autoGenerateVisits(contractId: string, soLan: number, ngay
   if (error) throw error;
 
   await logActivity({ hanh_dong: "Auto tạo lịch DV", module: "service_visits", chi_tiet: `${soLan} lần` });
+  await syncContractStatus(contractId);
 }

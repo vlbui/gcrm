@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { fetchActivityLogs, type ActivityLog } from "@/lib/api/activityLog.api";
+import { fetchDebts, type DebtRecord } from "@/lib/api/payments.api";
 import { formatDate } from "@/lib/utils/date";
 import Link from "next/link";
 import {
@@ -16,6 +17,7 @@ import {
   AlertTriangle,
   Calendar,
   CheckCircle2,
+  TrendingDown,
 } from "lucide-react";
 import {
   LineChart,
@@ -89,6 +91,7 @@ export default function DashboardPage() {
   const [visitStats, setVisitStats] = useState<{ name: string; value: number }[]>([]);
   const [weeklyVisits, setWeeklyVisits] = useState<{ date: string; dayLabel: string; visits: { id: string; contract_ma_hd: string; ten_kh: string; trang_thai: string; lan_thu: number }[] }[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [debts, setDebts] = useState<DebtRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadDashboard(); }, [range]);
@@ -119,6 +122,7 @@ export default function DashboardPage() {
         visitsRes,
         weeklyRes,
         logsRes,
+        debtsRes,
       ] = await Promise.all([
         // KPI: Customers
         supabase.from("customers").select("*", { count: "exact", head: true }).gte("created_at", from).lte("created_at", to),
@@ -146,6 +150,8 @@ export default function DashboardPage() {
         supabase.from("service_visits").select("id, lan_thu, ngay_du_kien, trang_thai, contract_id, contracts(ma_hd, customers(ten_kh))").gte("ngay_du_kien", today).lte("ngay_du_kien", in7).order("ngay_du_kien"),
         // Activity logs
         fetchActivityLogs(10),
+        // Debts
+        fetchDebts(),
       ]);
 
       // Revenue
@@ -232,6 +238,7 @@ export default function DashboardPage() {
         }))
       );
       setActivities(logsRes);
+      setDebts(debtsRes);
     } catch (err) {
       // silently ignore dashboard load errors
     } finally {
@@ -260,11 +267,15 @@ export default function DashboardPage() {
     "Chốt đơn": "admin-badge green",
   };
 
+  const totalDebt = debts.reduce((s, d) => s + d.tong_con_no, 0);
+  const debtCount = debts.filter((d) => d.tong_con_no > 0).length;
+
   const kpiCards = [
     { label: "Khách hàng mới", value: stats.totalCustomers, prev: stats.prevCustomers, icon: Users, color: "#2E7D32" },
     { label: "Doanh thu", value: stats.revenue, prev: stats.prevRevenue, icon: DollarSign, color: "#1565C0", format: "money" },
     { label: "Hợp đồng", value: stats.totalContracts, prev: stats.prevContracts, icon: FileText, color: "#6A1B9A" },
     { label: "Yêu cầu", value: stats.totalRequests, prev: stats.prevRequests, icon: ClipboardList, color: "#E65100" },
+    { label: "Công nợ", value: totalDebt, prev: 0, icon: TrendingDown, color: "#B71C1C", format: "money", subtitle: `${debtCount} khách` },
   ];
 
   return (
@@ -287,7 +298,7 @@ export default function DashboardPage() {
       {/* KPI Cards */}
       <div className="dash-kpi-grid">
         {kpiCards.map((kpi) => {
-          const pct = pctChange(kpi.value, kpi.prev);
+          const pct = kpi.prev === 0 ? 0 : pctChange(kpi.value, kpi.prev);
           const isUp = pct > 0;
           return (
             <div key={kpi.label} className="dash-kpi-card">
@@ -301,12 +312,14 @@ export default function DashboardPage() {
                 }
               </div>
               <div className="dash-kpi-label">{kpi.label}</div>
-              {pct !== 0 && (
+              {"subtitle" in kpi && kpi.subtitle ? (
+                <div style={{ fontSize: 11, color: kpi.color, marginTop: 2 }}>{kpi.subtitle}</div>
+              ) : pct !== 0 ? (
                 <div className={`dash-kpi-change ${isUp ? "up" : "down"}`}>
                   {isUp ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
                   {Math.abs(pct)}%
                 </div>
-              )}
+              ) : null}
             </div>
           );
         })}
@@ -424,6 +437,28 @@ export default function DashboardPage() {
                     <span className="dash-list-sub">{c.ma_hd}</span>
                   </div>
                   <span className="dash-list-date">{formatDate(c.ngay_ket_thuc)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="dash-list-card">
+          <div className="dash-list-header">
+            <TrendingDown size={16} style={{ color: "#B71C1C" }} />
+            <span>Công nợ</span>
+            <Link href="/admin/thanh-toan" className="dash-list-link">Xem tất cả <ArrowRight size={12} /></Link>
+          </div>
+          {debts.length === 0 ? <p className="dash-empty">Không có công nợ</p> : (
+            <div className="dash-list-items">
+              {debts.slice(0, 5).map((d) => (
+                <div key={d.customer_id} className="dash-list-item">
+                  <div>
+                    <strong>{d.ten_kh}</strong>
+                    <span className="dash-list-sub">{d.ma_kh} · {d.contracts.length} HĐ</span>
+                  </div>
+                  <span style={{ fontWeight: 600, color: "#B71C1C", fontSize: 13 }}>
+                    {d.tong_con_no.toLocaleString("vi-VN")}đ
+                  </span>
                 </div>
               ))}
             </div>

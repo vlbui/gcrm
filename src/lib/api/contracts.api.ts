@@ -122,6 +122,53 @@ export async function updateContract(
   return data;
 }
 
+/**
+ * Tự động tính và cập nhật trạng thái hợp đồng dựa trên:
+ * - Trạng thái các lần dịch vụ (service_visits)
+ * - Ngày kết thúc hợp đồng (ngay_ket_thuc)
+ *
+ * Logic:
+ *  - Có visit "Đang làm" hoặc "Đã lên lịch" → "Đang phục vụ"
+ *  - ngay_ket_thuc đã qua → "Kết thúc"
+ *  - Tất cả visits ở trạng thái cuối (Hoàn thành/Hủy/Hoãn) → "Kết thúc"
+ *  - Không có visit → giữ nguyên
+ *  - Hợp đồng đã "Hủy" → không thay đổi
+ */
+export async function syncContractStatus(contractId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { data: contract } = await supabase
+    .from("contracts")
+    .select("trang_thai, ngay_ket_thuc")
+    .eq("id", contractId)
+    .single();
+  if (!contract || contract.trang_thai === "Hủy") return;
+
+  const { data: visits } = await supabase
+    .from("service_visits")
+    .select("trang_thai")
+    .eq("contract_id", contractId);
+
+  const allVisits = visits ?? [];
+  const today = new Date().toISOString().split("T")[0];
+
+  let newStatus: string | null = null;
+
+  const TERMINAL = ["Hoàn thành", "Hủy", "Hoãn"];
+  const hasActive = allVisits.some((v) => v.trang_thai === "Đang làm" || v.trang_thai === "Đã lên lịch");
+  const allDone = allVisits.length > 0 && allVisits.every((v) => TERMINAL.includes(v.trang_thai));
+
+  if (hasActive) {
+    newStatus = "Đang phục vụ";
+  } else if (allDone || (contract.ngay_ket_thuc && contract.ngay_ket_thuc < today)) {
+    newStatus = "Kết thúc";
+  }
+
+  if (newStatus && newStatus !== contract.trang_thai) {
+    await supabase.from("contracts").update({ trang_thai: newStatus }).eq("id", contractId);
+  }
+}
+
 export async function deleteContract(id: string) {
   const supabase = createClient();
   const { data: contract } = await supabase

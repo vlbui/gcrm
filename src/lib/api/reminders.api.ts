@@ -105,7 +105,7 @@ export async function createExpiryReminders(): Promise<number> {
     .select("id, customer_id, ma_hd, ngay_ket_thuc")
     .gte("ngay_ket_thuc", today)
     .lte("ngay_ket_thuc", in30Str)
-    .eq("trang_thai", "Đang thực hiện");
+    .in("trang_thai", ["Đang thực hiện", "Đang phục vụ"]);
 
   let created = 0;
   for (const c of expiring ?? []) {
