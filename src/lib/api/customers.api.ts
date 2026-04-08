@@ -124,6 +124,15 @@ export async function deleteCustomer(id: string) {
     .eq("id", id)
     .single();
 
+  // Delete dependent records that have ON DELETE RESTRICT
+  const { data: contracts } = await supabase.from("contracts").select("id").eq("customer_id", id);
+  for (const c of contracts ?? []) {
+    await supabase.from("service_history").delete().eq("contract_id", c.id);
+    await supabase.from("payments").delete().eq("contract_id", c.id);
+  }
+  await supabase.from("contracts").delete().eq("customer_id", id);
+  await supabase.from("customer_care").delete().eq("customer_id", id);
+
   const { error } = await supabase.from("customers").delete().eq("id", id);
   if (error) throw error;
 

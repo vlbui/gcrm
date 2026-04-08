@@ -279,6 +279,7 @@ export default function KhachHangPage() {
                 <TableHead>Email</TableHead>
                 <TableHead>Loại hình</TableHead>
                 <TableHead>Trạng thái</TableHead>
+                {user?.vai_tro !== "Xem" && <TableHead style={{ width: 50 }}></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -307,6 +308,17 @@ export default function KhachHangPage() {
                       {item.trang_thai}
                     </span>
                   </TableCell>
+                  {canEdit(item) && (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="btn-action danger"
+                        title="Xóa"
+                        onClick={() => { setDeletingItem(item); setDeleteDialogOpen(true); }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
