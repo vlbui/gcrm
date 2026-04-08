@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, ArrowUpCircle } from "lucide-react";
+import SearchSelect from "@/components/admin/SearchSelect";
 
 export default function ExportInventoryPage() {
   const router = useRouter();
@@ -87,12 +88,15 @@ export default function ExportInventoryPage() {
         </div>
         <div className="admin-form-group">
           <label className="admin-label">{itemType === "chemicals" ? "Tên hóa chất" : "Tên vật tư"} *</label>
-          <select className="admin-input" value={itemId} onChange={(e) => setItemId(e.target.value)}>
-            <option value="">— Chọn —</option>
-            {filteredItems.map((i) => (
-              <option key={i.id} value={i.id}>{i.code} — {i.name} (Tồn: {i.so_luong_ton})</option>
-            ))}
-          </select>
+          <SearchSelect
+            placeholder="Tìm theo tên, mã..."
+            value={itemId}
+            onChange={(v) => setItemId(v)}
+            options={filteredItems.map((i) => ({
+              value: i.id,
+              label: `${i.code} — ${i.name} (Tồn: ${i.so_luong_ton})`,
+            }))}
+          />
         </div>
         {selectedItem && (
           <div style={{ padding: "8px 12px", background: "var(--neutral-50)", borderRadius: "var(--radius-sm)", fontSize: 13, marginBottom: 12 }}>

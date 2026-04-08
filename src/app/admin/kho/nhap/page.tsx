@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, ArrowDownCircle } from "lucide-react";
+import SearchSelect from "@/components/admin/SearchSelect";
 
 export default function ImportInventoryPage() {
   const router = useRouter();
@@ -92,12 +93,15 @@ export default function ImportInventoryPage() {
         </div>
         <div className="admin-form-group">
           <label className="admin-label">{itemType === "chemicals" ? "Tên hóa chất" : "Tên vật tư"} *</label>
-          <select className="admin-input" value={itemId} onChange={(e) => setItemId(e.target.value)}>
-            <option value="">— Chọn —</option>
-            {filteredItems.map((i) => (
-              <option key={i.id} value={i.id}>{i.code} — {i.name} (Tồn: {i.so_luong_ton})</option>
-            ))}
-          </select>
+          <SearchSelect
+            placeholder="Tìm theo tên, mã..."
+            value={itemId}
+            onChange={(v) => setItemId(v)}
+            options={filteredItems.map((i) => ({
+              value: i.id,
+              label: `${i.code} — ${i.name} (Tồn: ${i.so_luong_ton})`,
+            }))}
+          />
         </div>
         <div className="admin-form-row">
           <div className="admin-form-group">
@@ -112,12 +116,15 @@ export default function ImportInventoryPage() {
         <div className="admin-form-row">
           <div className="admin-form-group">
             <label className="admin-label">Nhà cung cấp</label>
-            <select className="admin-input" value={nhaCungCap} onChange={(e) => setNhaCungCap(e.target.value)}>
-              <option value="">— Chọn —</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.ten_ncc}>{s.ten_ncc}</option>
-              ))}
-            </select>
+            <SearchSelect
+              placeholder="Tìm nhà cung cấp..."
+              value={nhaCungCap}
+              onChange={(v) => setNhaCungCap(v)}
+              options={suppliers.map((s) => ({
+                value: s.ten_ncc,
+                label: s.ten_ncc,
+              }))}
+            />
           </div>
           <div className="admin-form-group">
             <label className="admin-label">Giá nhập (VNĐ)</label>

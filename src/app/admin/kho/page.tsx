@@ -22,6 +22,7 @@ import {
   X,
   History,
 } from "lucide-react";
+import SearchSelect from "@/components/admin/SearchSelect";
 
 type TransactionType = "Nhập" | "Xuất" | "Kiểm kê";
 
@@ -242,12 +243,15 @@ export default function KhoPage() {
               </div>
               <div className="admin-form-group">
                 <label className="admin-label">{txItemType === "chemicals" ? "Tên hóa chất" : "Tên vật tư"} *</label>
-                <select className="p-select" value={txItemId} onChange={(e) => setTxItemId(e.target.value)}>
-                  <option value="">— Chọn —</option>
-                  {filteredForSelect.map((i) => (
-                    <option key={i.id} value={i.id}>{i.name} ({i.code}) — Tồn: {i.so_luong_ton} {i.don_vi || ""}</option>
-                  ))}
-                </select>
+                <SearchSelect
+                  placeholder="Tìm theo tên, mã..."
+                  value={txItemId}
+                  onChange={(v) => setTxItemId(v)}
+                  options={filteredForSelect.map((i) => ({
+                    value: i.id,
+                    label: `${i.name} (${i.code}) — Tồn: ${i.so_luong_ton} ${i.don_vi || ""}`,
+                  }))}
+                />
               </div>
               <div className="admin-form-row">
                 <div className="admin-form-group">
