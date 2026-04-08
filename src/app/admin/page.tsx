@@ -8,13 +8,14 @@ import Link from "next/link";
 import {
   Users,
   DollarSign,
-  MessageSquare,
-  TrendingUp,
+  FileText,
+  ClipboardList,
   ArrowUp,
   ArrowDown,
   ArrowRight,
   AlertTriangle,
   Calendar,
+  CheckCircle2,
 } from "lucide-react";
 import {
   LineChart,
@@ -33,16 +34,16 @@ import {
 
 const PIE_COLORS = ["#6B7280", "#3B82F6", "#F59E0B", "#10B981", "#2E7D32", "#059669", "#8B5CF6"];
 const RANGES = [
-  { key: "7d", label: "7 ngày" },
-  { key: "30d", label: "30 ngày" },
-  { key: "quarter", label: "Quý" },
-  { key: "year", label: "Năm" },
+  { key: "7d", label: "7 ngay" },
+  { key: "30d", label: "30 ngay" },
+  { key: "quarter", label: "Quy" },
+  { key: "year", label: "Nam" },
 ];
 
 function getDateRange(range: string): { from: string; to: string } {
   const now = new Date();
   const to = now.toISOString();
-  let from = new Date();
+  const from = new Date();
   if (range === "7d") from.setDate(from.getDate() - 7);
   else if (range === "30d") from.setDate(from.getDate() - 30);
   else if (range === "quarter") from.setMonth(from.getMonth() - 3);
@@ -66,9 +67,10 @@ interface Stats {
   prevCustomers: number;
   revenue: number;
   prevRevenue: number;
-  newDeals: number;
-  prevNewDeals: number;
-  conversionRate: number;
+  totalContracts: number;
+  prevContracts: number;
+  totalRequests: number;
+  prevRequests: number;
 }
 
 export default function DashboardPage() {
@@ -76,15 +78,15 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats>({
     totalCustomers: 0, prevCustomers: 0,
     revenue: 0, prevRevenue: 0,
-    newDeals: 0, prevNewDeals: 0,
-    conversionRate: 0,
+    totalContracts: 0, prevContracts: 0,
+    totalRequests: 0, prevRequests: 0,
   });
-  const [pipelineData, setPipelineData] = useState<{ name: string; value: number }[]>([]);
+  const [contractStatusData, setContractStatusData] = useState<{ name: string; value: number }[]>([]);
   const [revenueChart, setRevenueChart] = useState<{ month: string; revenue: number }[]>([]);
-  const [newRequests, setNewRequests] = useState<{ id: string; ma_deal: string; ten_kh: string; sdt: string; created_at: string }[]>([]);
-  const [expiringDeals, setExpiringDeals] = useState<{ id: string; ma_deal: string; ten_kh: string; ngay_hen: string }[]>([]);
-  const [topKTV, setTopKTV] = useState<{ name: string; count: number }[]>([]);
+  const [newRequests, setNewRequests] = useState<{ id: string; ma_yc: string; ten_kh: string; sdt: string; trang_thai: string; created_at: string }[]>([]);
+  const [expiringContracts, setExpiringContracts] = useState<{ id: string; ma_hd: string; ten_kh: string; ngay_ket_thuc: string }[]>([]);
   const [topServices, setTopServices] = useState<{ name: string; count: number }[]>([]);
+  const [visitStats, setVisitStats] = useState<{ name: string; value: number }[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -100,61 +102,66 @@ export default function DashboardPage() {
 
     try {
       const [
-        dealsRes,
-        prevDealsRes,
         customersRes,
         prevCustomersRes,
-        allDealsRes,
+        contractsRes,
+        prevContractsRes,
+        paymentsRes,
+        prevPaymentsRes,
+        requestsRes,
+        prevRequestsRes,
+        allPaymentsRes,
+        allContractsRes,
         newReqRes,
         expiringRes,
+        visitsRes,
         logsRes,
-        ktvRes,
       ] = await Promise.all([
-        supabase.from("deals").select("giai_doan, gia_tri, thanh_toan, loai_con_trung, created_at").gte("created_at", from).lte("created_at", to),
-        supabase.from("deals").select("giai_doan, gia_tri, thanh_toan, created_at").gte("created_at", prev.from).lte("created_at", prev.to),
-        supabase.from("deals").select("*", { count: "exact", head: true }).gte("created_at", from),
-        supabase.from("deals").select("*", { count: "exact", head: true }).gte("created_at", prev.from).lte("created_at", prev.to),
-        supabase.from("deals").select("giai_doan, gia_tri, thanh_toan, created_at").order("created_at"),
-        supabase.from("deals").select("id, ma_deal, ten_kh, sdt, created_at").in("giai_doan", ["Khách hỏi", "Tư vấn"]).order("created_at", { ascending: false }).limit(5),
-        supabase.from("deals").select("id, ma_deal, ten_kh, ngay_hen").gte("ngay_hen", today).lte("ngay_hen", in30).order("ngay_hen").limit(5),
+        // KPI: Customers
+        supabase.from("customers").select("*", { count: "exact", head: true }).gte("created_at", from).lte("created_at", to),
+        supabase.from("customers").select("*", { count: "exact", head: true }).gte("created_at", prev.from).lte("created_at", prev.to),
+        // KPI: Contracts
+        supabase.from("contracts").select("*", { count: "exact", head: true }).gte("created_at", from).lte("created_at", to),
+        supabase.from("contracts").select("*", { count: "exact", head: true }).gte("created_at", prev.from).lte("created_at", prev.to),
+        // KPI: Revenue (payments)
+        supabase.from("payments").select("so_tien").gte("ngay_tt", from.split("T")[0]).lte("ngay_tt", to.split("T")[0]),
+        supabase.from("payments").select("so_tien").gte("ngay_tt", prev.from.split("T")[0]).lte("ngay_tt", prev.to.split("T")[0]),
+        // KPI: Service requests
+        supabase.from("service_requests").select("*", { count: "exact", head: true }).gte("created_at", from).lte("created_at", to),
+        supabase.from("service_requests").select("*", { count: "exact", head: true }).gte("created_at", prev.from).lte("created_at", prev.to),
+        // Revenue chart - all payments
+        supabase.from("payments").select("so_tien, ngay_tt").order("ngay_tt"),
+        // Contract status distribution
+        supabase.from("contracts").select("trang_thai, dich_vu").gte("created_at", from).lte("created_at", to),
+        // New service requests
+        supabase.from("service_requests").select("id, ma_yc, ten_kh, sdt, trang_thai, created_at").in("trang_thai", ["Mới", "Đã liên hệ", "Đang tư vấn"]).order("created_at", { ascending: false }).limit(5),
+        // Expiring contracts
+        supabase.from("contracts").select("id, ma_hd, ngay_ket_thuc, customer_id, customers(ten_kh)").gte("ngay_ket_thuc", today).lte("ngay_ket_thuc", in30).order("ngay_ket_thuc").limit(5),
+        // Service visits stats
+        supabase.from("service_visits").select("trang_thai").gte("created_at", from).lte("created_at", to),
+        // Activity logs
         fetchActivityLogs(10),
-        supabase.from("deals").select("ktv_phu_trach").gte("created_at", from),
       ]);
 
-      const deals = dealsRes.data ?? [];
-      const prevDeals = prevDealsRes.data ?? [];
-
       // Revenue
-      const calcRevenue = (items: { thanh_toan: PaymentLike[] }[]) =>
-        items.reduce((s, d) => s + ((d.thanh_toan || []) as { so_tien: number }[]).reduce((ss, p) => ss + (p.so_tien || 0), 0), 0);
-
-      type PaymentLike = { so_tien: number };
-      const revenue = calcRevenue(deals as { thanh_toan: PaymentLike[] }[]);
-      const prevRevenue = calcRevenue(prevDeals as { thanh_toan: PaymentLike[] }[]);
-
-      // New deals
-      const newDeals = deals.filter((d) => ["Khách hỏi", "Tư vấn"].includes(d.giai_doan)).length;
-      const prevNewDeals = prevDeals.filter((d) => ["Khách hỏi", "Tư vấn"].includes(d.giai_doan)).length;
-
-      // Conversion rate
-      const total = deals.length;
-      const converted = deals.filter((d) => ["Chốt", "Triển khai", "Hoàn thành"].includes(d.giai_doan)).length;
-      const conversionRate = total > 0 ? Math.round((converted / total) * 100) : 0;
+      const revenue = (paymentsRes.data ?? []).reduce((s, p) => s + (p.so_tien || 0), 0);
+      const prevRevenue = (prevPaymentsRes.data ?? []).reduce((s, p) => s + (p.so_tien || 0), 0);
 
       setStats({
         totalCustomers: customersRes.count ?? 0,
         prevCustomers: prevCustomersRes.count ?? 0,
         revenue,
         prevRevenue,
-        newDeals,
-        prevNewDeals,
-        conversionRate,
+        totalContracts: contractsRes.count ?? 0,
+        prevContracts: prevContractsRes.count ?? 0,
+        totalRequests: requestsRes.count ?? 0,
+        prevRequests: prevRequestsRes.count ?? 0,
       });
 
-      // Pipeline pie
-      const stageCounts = new Map<string, number>();
-      for (const d of deals) stageCounts.set(d.giai_doan, (stageCounts.get(d.giai_doan) || 0) + 1);
-      setPipelineData(Array.from(stageCounts.entries()).map(([name, value]) => ({ name, value })));
+      // Contract status pie
+      const statusCounts = new Map<string, number>();
+      for (const c of allContractsRes.data ?? []) statusCounts.set(c.trang_thai, (statusCounts.get(c.trang_thai) || 0) + 1);
+      setContractStatusData(Array.from(statusCounts.entries()).map(([name, value]) => ({ name, value })));
 
       // Revenue chart - 6 months
       const monthly = new Map<string, number>();
@@ -162,50 +169,39 @@ export default function DashboardPage() {
         const dt = new Date(now.getFullYear(), now.getMonth() - i, 1);
         monthly.set(`T${dt.getMonth() + 1}`, 0);
       }
-      for (const d of allDealsRes.data ?? []) {
-        const payments = (d.thanh_toan || []) as { so_tien: number; ngay_tt: string }[];
-        for (const p of payments) {
-          if (!p.ngay_tt) continue;
-          const dt = new Date(p.ngay_tt);
-          const key = `T${dt.getMonth() + 1}`;
-          if (monthly.has(key)) monthly.set(key, (monthly.get(key) || 0) + (p.so_tien || 0));
-        }
+      for (const p of allPaymentsRes.data ?? []) {
+        if (!p.ngay_tt) continue;
+        const dt = new Date(p.ngay_tt);
+        const key = `T${dt.getMonth() + 1}`;
+        if (monthly.has(key)) monthly.set(key, (monthly.get(key) || 0) + (p.so_tien || 0));
       }
       setRevenueChart(Array.from(monthly.entries()).map(([month, rev]) => ({ month, revenue: rev })));
 
-      // Top services
+      // Top services from contracts
       const svcCounts = new Map<string, number>();
-      for (const d of deals) {
-        for (const t of (d.loai_con_trung || [])) {
-          svcCounts.set(t, (svcCounts.get(t) || 0) + 1);
-        }
+      for (const c of allContractsRes.data ?? []) {
+        if (c.dich_vu) svcCounts.set(c.dich_vu, (svcCounts.get(c.dich_vu) || 0) + 1);
       }
       setTopServices(
         Array.from(svcCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }))
       );
 
-      // Top KTV
-      const ktvCounts = new Map<string, number>();
-      for (const d of ktvRes.data ?? []) {
-        for (const kid of (d.ktv_phu_trach || [])) {
-          ktvCounts.set(kid, (ktvCounts.get(kid) || 0) + 1);
-        }
-      }
-      // Resolve names
-      const ktvIds = Array.from(ktvCounts.keys());
-      if (ktvIds.length > 0) {
-        const { data: ktvNames } = await supabase.from("technicians").select("id, ho_ten").in("id", ktvIds);
-        const nameMap = new Map((ktvNames ?? []).map((k) => [k.id, k.ho_ten]));
-        setTopKTV(
-          Array.from(ktvCounts.entries())
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5)
-            .map(([id, count]) => ({ name: nameMap.get(id) || "—", count }))
-        );
-      }
+      // Service visits stats
+      const visitCounts = new Map<string, number>();
+      for (const v of visitsRes.data ?? []) visitCounts.set(v.trang_thai, (visitCounts.get(v.trang_thai) || 0) + 1);
+      setVisitStats(Array.from(visitCounts.entries()).map(([name, value]) => ({ name, value })));
 
+      // Quick lists
       setNewRequests((newReqRes.data ?? []) as typeof newRequests);
-      setExpiringDeals((expiringRes.data ?? []) as typeof expiringDeals);
+      setExpiringContracts(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ((expiringRes.data ?? []) as any[]).map((c) => ({
+          id: c.id,
+          ma_hd: c.ma_hd,
+          ten_kh: c.customers?.ten_kh ?? "—",
+          ngay_ket_thuc: c.ngay_ket_thuc,
+        }))
+      );
       setActivities(logsRes);
     } catch (err) {
       console.error("Dashboard error:", err);
@@ -227,11 +223,19 @@ export default function DashboardPage() {
     return Math.round(((curr - prev) / prev) * 100);
   };
 
+  const statusBadgeClass: Record<string, string> = {
+    "Mới": "status-badge moi",
+    "Đã liên hệ": "status-badge moi",
+    "Đang tư vấn": "admin-badge amber",
+    "Đã báo giá": "admin-badge blue",
+    "Chốt đơn": "admin-badge green",
+  };
+
   const kpiCards = [
-    { label: "Deal mới", value: stats.totalCustomers, prev: stats.prevCustomers, icon: Users, color: "#2E7D32" },
+    { label: "Khách hàng mới", value: stats.totalCustomers, prev: stats.prevCustomers, icon: Users, color: "#2E7D32" },
     { label: "Doanh thu", value: stats.revenue, prev: stats.prevRevenue, icon: DollarSign, color: "#1565C0", format: "money" },
-    { label: "Yêu cầu", value: stats.newDeals, prev: stats.prevNewDeals, icon: MessageSquare, color: "#E65100" },
-    { label: "Chuyển đổi", value: stats.conversionRate, prev: 0, icon: TrendingUp, color: "#6A1B9A", suffix: "%" },
+    { label: "Hợp đồng", value: stats.totalContracts, prev: stats.prevContracts, icon: FileText, color: "#6A1B9A" },
+    { label: "Yêu cầu", value: stats.totalRequests, prev: stats.prevRequests, icon: ClipboardList, color: "#E65100" },
   ];
 
   return (
@@ -254,7 +258,7 @@ export default function DashboardPage() {
       {/* KPI Cards */}
       <div className="dash-kpi-grid">
         {kpiCards.map((kpi) => {
-          const pct = kpi.suffix ? 0 : pctChange(kpi.value, kpi.prev);
+          const pct = pctChange(kpi.value, kpi.prev);
           const isUp = pct > 0;
           return (
             <div key={kpi.label} className="dash-kpi-card">
@@ -264,11 +268,11 @@ export default function DashboardPage() {
               <div className="dash-kpi-value">
                 {loading ? "—" : kpi.format === "money"
                   ? `${(kpi.value / 1000000).toFixed(1)}tr`
-                  : `${kpi.value}${kpi.suffix || ""}`
+                  : kpi.value
                 }
               </div>
               <div className="dash-kpi-label">{kpi.label}</div>
-              {!kpi.suffix && pct !== 0 && (
+              {pct !== 0 && (
                 <div className={`dash-kpi-change ${isUp ? "up" : "down"}`}>
                   {isUp ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
                   {Math.abs(pct)}%
@@ -296,12 +300,12 @@ export default function DashboardPage() {
           )}
         </div>
         <div className="dash-chart-card">
-          <h3 className="dash-card-title">Phân bổ pipeline</h3>
-          {!loading && pipelineData.length > 0 && (
+          <h3 className="dash-card-title">Trạng thái hợp đồng</h3>
+          {!loading && contractStatusData.length > 0 && (
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
                 <Pie
-                  data={pipelineData}
+                  data={contractStatusData}
                   cx="50%"
                   cy="50%"
                   innerRadius={50}
@@ -311,7 +315,7 @@ export default function DashboardPage() {
                   labelLine={false}
                   fontSize={11}
                 >
-                  {pipelineData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                  {contractStatusData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
@@ -324,9 +328,9 @@ export default function DashboardPage() {
       <div className="dash-lists-row">
         <div className="dash-list-card">
           <div className="dash-list-header">
-            <MessageSquare size={16} style={{ color: "#E65100" }} />
+            <ClipboardList size={16} style={{ color: "#E65100" }} />
             <span>Yêu cầu mới</span>
-            <Link href="/admin/pipeline" className="dash-list-link">Xem tất cả <ArrowRight size={12} /></Link>
+            <Link href="/admin/yeu-cau" className="dash-list-link">Xem tất cả <ArrowRight size={12} /></Link>
           </div>
           {newRequests.length === 0 ? <p className="dash-empty">Không có</p> : (
             <div className="dash-list-items">
@@ -334,9 +338,9 @@ export default function DashboardPage() {
                 <div key={r.id} className="dash-list-item">
                   <div>
                     <strong>{r.ten_kh}</strong>
-                    <span className="dash-list-sub">{r.ma_deal} · {r.sdt}</span>
+                    <span className="dash-list-sub">{r.ma_yc} · {r.sdt}</span>
                   </div>
-                  <span className="dash-list-time">{formatTime(r.created_at)}</span>
+                  <span className={statusBadgeClass[r.trang_thai] ?? "status-badge"} style={{ fontSize: 11 }}>{r.trang_thai}</span>
                 </div>
               ))}
             </div>
@@ -345,17 +349,18 @@ export default function DashboardPage() {
         <div className="dash-list-card">
           <div className="dash-list-header">
             <AlertTriangle size={16} style={{ color: "#F59E0B" }} />
-            <span>Deal sắp đến hạn</span>
+            <span>Hợp đồng sắp hết hạn</span>
+            <Link href="/admin/hop-dong" className="dash-list-link">Xem tất cả <ArrowRight size={12} /></Link>
           </div>
-          {expiringDeals.length === 0 ? <p className="dash-empty">Không có</p> : (
+          {expiringContracts.length === 0 ? <p className="dash-empty">Không có</p> : (
             <div className="dash-list-items">
-              {expiringDeals.map((d) => (
-                <div key={d.id} className="dash-list-item">
+              {expiringContracts.map((c) => (
+                <div key={c.id} className="dash-list-item">
                   <div>
-                    <strong>{d.ten_kh}</strong>
-                    <span className="dash-list-sub">{d.ma_deal}</span>
+                    <strong>{c.ten_kh}</strong>
+                    <span className="dash-list-sub">{c.ma_hd}</span>
                   </div>
-                  <span className="dash-list-date">{formatDate(d.ngay_hen)}</span>
+                  <span className="dash-list-date">{formatDate(c.ngay_ket_thuc)}</span>
                 </div>
               ))}
             </div>
@@ -363,21 +368,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Bottom: Top KTV + Top Services + Activity */}
+      {/* Bottom: Top Services + Visit Stats + Activity */}
       <div className="dash-bottom-row">
-        {topKTV.length > 0 && (
-          <div className="dash-chart-card">
-            <h3 className="dash-card-title">Top KTV</h3>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={topKTV} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis type="number" fontSize={12} />
-                <YAxis type="category" dataKey="name" fontSize={12} width={90} />
-                <Bar dataKey="count" fill="#2E7D32" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
         {topServices.length > 0 && (
           <div className="dash-chart-card">
             <h3 className="dash-card-title">Top dịch vụ</h3>
@@ -385,10 +377,36 @@ export default function DashboardPage() {
               <BarChart data={topServices} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis type="number" fontSize={12} />
-                <YAxis type="category" dataKey="name" fontSize={12} width={80} />
-                <Bar dataKey="count" fill="#1565C0" radius={[0, 4, 4, 0]} />
+                <YAxis type="category" dataKey="name" fontSize={12} width={100} />
+                <Bar dataKey="count" fill="#2E7D32" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        )}
+        {visitStats.length > 0 && (
+          <div className="dash-chart-card">
+            <h3 className="dash-card-title">Lần dịch vụ</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 0" }}>
+              {visitStats.map((v) => {
+                const total = visitStats.reduce((s, x) => s + x.value, 0);
+                const pct = total > 0 ? Math.round((v.value / total) * 100) : 0;
+                const color = v.name === "Hoàn thành" ? "#16A34A" : v.name === "Đang làm" ? "#2563EB" : v.name === "Đã lên lịch" ? "#F59E0B" : "#6B7280";
+                return (
+                  <div key={v.name}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 3 }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <CheckCircle2 size={12} style={{ color }} />
+                        {v.name}
+                      </span>
+                      <span style={{ fontWeight: 600 }}>{v.value} ({pct}%)</span>
+                    </div>
+                    <div style={{ height: 6, background: "#F3F4F6", borderRadius: 3 }}>
+                      <div style={{ height: 6, width: `${pct}%`, background: color, borderRadius: 3 }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
         <div className="dash-list-card">
