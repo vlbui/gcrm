@@ -116,7 +116,7 @@ export default function YeuCauPage() {
 
   const filtered = getTabData();
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
-  const canEdit = user?.vai_tro !== "Xem";
+  const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Manager";
 
   const tabCounts = {
     active: data.filter((r) => activeStatuses.includes(r.trang_thai)).length,

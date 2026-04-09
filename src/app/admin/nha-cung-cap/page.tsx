@@ -163,7 +163,6 @@ export default function NhaCungCapPage() {
 
   const canEdit = (item: Supplier) => {
     if (!user) return false;
-    if (user.vai_tro === "Xem") return false;
     if (user.vai_tro === "Admin") return true;
     return item.created_by === user.id;
   };
@@ -188,7 +187,7 @@ export default function NhaCungCapPage() {
             />
           </div>
           <div className="data-table-actions">
-            {user?.vai_tro !== "Xem" && (
+            {user?.vai_tro === "Admin" || user?.vai_tro === "Manager" && (
               <Button className="btn-add" onClick={openAdd}>
                 <Plus size={16} /> Thêm NCC
               </Button>

@@ -108,7 +108,7 @@ export default function LichSuDichVuPage() {
     return matchSearch && matchTrangThai && matchLoai;
   });
 
-  const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Nhân viên";
+  const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Manager";
 
   // === Form open ===
   const openCreate = (contract: Contract) => {

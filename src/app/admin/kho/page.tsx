@@ -98,7 +98,7 @@ export default function KhoPage() {
   const [txNote, setTxNote] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Nhân viên";
+  const canEdit = user?.vai_tro === "Admin" || user?.vai_tro === "Manager";
 
   useEffect(() => { loadAll(); }, []);
 

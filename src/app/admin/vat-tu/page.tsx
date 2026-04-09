@@ -192,7 +192,6 @@ export default function VatTuPage() {
 
   const canEdit = (item: Supply) => {
     if (!user) return false;
-    if (user.vai_tro === "Xem") return false;
     if (user.vai_tro === "Admin") return true;
     return item.created_by === user.id;
   };
@@ -217,7 +216,7 @@ export default function VatTuPage() {
             />
           </div>
           <div className="data-table-actions">
-            {user?.vai_tro !== "Xem" && (
+            {user?.vai_tro === "Admin" || user?.vai_tro === "Manager" && (
               <Button className="btn-add" onClick={openAdd}>
                 <Plus size={16} /> Thêm vật tư
               </Button>
@@ -244,7 +243,7 @@ export default function VatTuPage() {
                 <TableHead>Đơn vị tính</TableHead>
                 <TableHead>Tồn kho</TableHead>
                 <TableHead>Nhà cung cấp</TableHead>
-                {user?.vai_tro !== "Xem" && <TableHead style={{ width: 50 }}></TableHead>}
+                {user?.vai_tro === "Admin" || user?.vai_tro === "Manager" && <TableHead style={{ width: 50 }}></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>

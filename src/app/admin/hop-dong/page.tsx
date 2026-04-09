@@ -280,7 +280,6 @@ export default function HopDongPage() {
 
   const canEdit = (item: Contract) => {
     if (!user) return false;
-    if (user.vai_tro === "Xem") return false;
     if (user.vai_tro === "Admin") return true;
     return item.created_by === user.id;
   };
@@ -327,7 +326,7 @@ export default function HopDongPage() {
             <option value="Định kỳ">Định kỳ</option>
           </select>
           <div className="data-table-actions">
-            {user?.vai_tro !== "Xem" && (
+            {user?.vai_tro === "Admin" || user?.vai_tro === "Manager" && (
               <Button className="btn-add" onClick={openAdd}>
                 <Plus size={16} /> Thêm hợp đồng
               </Button>

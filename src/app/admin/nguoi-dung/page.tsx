@@ -45,7 +45,7 @@ import { formatDate } from "@/lib/utils/date";
 const formSchema = z.object({
   email: z.string().min(1, "Vui lòng nhập email").email("Email không hợp lệ"),
   ho_ten: z.string().min(2, "Họ tên tối thiểu 2 ký tự"),
-  vai_tro: z.enum(["Admin", "Nhân viên", "Xem"]),
+  vai_tro: z.enum(["Admin", "Manager"]),
   trang_thai: z.enum(["Hoạt động", "Tạm khóa"]),
   avatar_url: z.string().nullable(),
 });
@@ -54,14 +54,12 @@ type FormValues = z.infer<typeof formSchema>;
 
 const roleLabelMap: Record<UserRole, string> = {
   "Admin": "Admin",
-  "Nhân viên": "Nhân viên",
-  "Xem": "Xem",
+  "Manager": "Manager",
 };
 
 const roleBadgeClass: Record<UserRole, string> = {
   "Admin": "status-badge active",
-  "Nhân viên": "status-badge pending",
-  "Xem": "status-badge inactive",
+  "Manager": "status-badge pending",
 };
 
 export default function NguoiDungPage() {
@@ -81,7 +79,7 @@ export default function NguoiDungPage() {
     defaultValues: {
       email: "",
       ho_ten: "",
-      vai_tro: "Xem",
+      vai_tro: "Manager",
       trang_thai: "Hoạt động",
       avatar_url: "",
     },
@@ -107,7 +105,7 @@ export default function NguoiDungPage() {
     form.reset({
       email: "",
       ho_ten: "",
-      vai_tro: "Xem",
+      vai_tro: "Manager",
       trang_thai: "Hoạt động",
       avatar_url: "",
     });
@@ -297,7 +295,7 @@ export default function NguoiDungPage() {
                 <Select
                   value={form.watch("vai_tro")}
                   onValueChange={(v) =>
-                    form.setValue("vai_tro", v as "Admin" | "Nhân viên" | "Xem")
+                    form.setValue("vai_tro", v as "Admin" | "Manager")
                   }
                 >
                   <SelectTrigger className="w-full">
@@ -305,8 +303,7 @@ export default function NguoiDungPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Nhân viên">Nhân viên</SelectItem>
-                    <SelectItem value="Xem">Xem</SelectItem>
+                    <SelectItem value="Manager">Manager</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

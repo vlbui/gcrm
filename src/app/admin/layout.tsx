@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Sidebar from "@/components/admin/Sidebar";
 import Topbar from "@/components/admin/Topbar";
+import MobileBottomNav from "@/components/admin/MobileBottomNav";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function AdminLayout({
@@ -33,6 +34,7 @@ export default function AdminLayout({
         />
         <main className="admin-content">{children}</main>
       </div>
+      <MobileBottomNav user={user} />
     </div>
   );
 }

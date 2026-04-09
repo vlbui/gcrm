@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LogOut, Menu, PanelLeftClose } from "lucide-react";
+import { LogOut, Menu, PanelLeftClose, Shield } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -36,13 +36,18 @@ export default function Topbar({ user, onToggleSidebar, collapsed }: TopbarProps
         .toUpperCase()
     : "?";
 
-  const roleLabel = user?.vai_tro ?? "Xem";
+  const roleLabel = user?.vai_tro ?? "Manager";
 
   return (
     <header className="admin-topbar">
       <button className="topbar-toggle" onClick={onToggleSidebar}>
         {collapsed ? <Menu size={20} /> : <PanelLeftClose size={20} />}
       </button>
+
+      <div className="topbar-mobile-brand">
+        <Shield size={20} />
+        Lá Chắn Xanh
+      </div>
 
       <div className="topbar-right">
         <DropdownMenu>

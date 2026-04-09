@@ -204,7 +204,6 @@ export default function KhachHangPage() {
 
   const canEdit = (item: Customer) => {
     if (!user) return false;
-    if (user.vai_tro === "Xem") return false;
     if (user.vai_tro === "Admin") return true;
     return item.created_by === user.id;
   };
@@ -252,7 +251,7 @@ export default function KhachHangPage() {
                 <SelectItem value="Ngưng">Ngưng</SelectItem>
               </SelectContent>
             </Select>
-            {user?.vai_tro !== "Xem" && (
+            {user?.vai_tro === "Admin" || user?.vai_tro === "Manager" && (
               <Button className="btn-add" onClick={openAdd}>
                 <Plus size={16} /> Thêm khách hàng
               </Button>
@@ -279,7 +278,7 @@ export default function KhachHangPage() {
                 <TableHead>Email</TableHead>
                 <TableHead>Loại hình</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                {user?.vai_tro !== "Xem" && <TableHead style={{ width: 50 }}></TableHead>}
+                {user?.vai_tro === "Admin" || user?.vai_tro === "Manager" && <TableHead style={{ width: 50 }}></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>

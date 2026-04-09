@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 
-export type UserRole = "Admin" | "Nhân viên" | "Xem";
+export type UserRole = "Admin" | "Manager";
 
 export interface AppUser {
   id: string;
