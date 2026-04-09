@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -52,7 +53,7 @@ export default function MobileMoreMenu({ user, onClose }: Props) {
     router.push("/login");
   };
 
-  return (
+  const content = (
     <div className="mobile-more-overlay" onClick={onClose}>
       <div
         className="mobile-more-sheet"
@@ -116,4 +117,6 @@ export default function MobileMoreMenu({ user, onClose }: Props) {
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }
