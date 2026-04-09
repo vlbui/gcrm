@@ -253,9 +253,10 @@ export default function SchedulePage() {
   technicians.forEach((t, i) => ktvColorMap.set(t.id, ktvColors[i % ktvColors.length]));
 
   const monthName = currentDate.toLocaleDateString("vi-VN", { month: "long", year: "numeric" });
-  const scheduleCount = calendarEvents.filter((e) => e.type === "schedule").length;
-  const visitCount = calendarEvents.filter((e) => e.type === "visit").length;
-  const reminderCount = calendarEvents.filter((e) => e.type === "reminder").length;
+  const currentMonthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const scheduleCount = calendarEvents.filter((e) => e.type === "schedule" && e.date.startsWith(currentMonthStr)).length;
+  const visitCount = calendarEvents.filter((e) => e.type === "visit" && e.date.startsWith(currentMonthStr)).length;
+  const reminderCount = calendarEvents.filter((e) => e.type === "reminder" && e.date.startsWith(currentMonthStr)).length;
   const overdueReminders = reminders.filter((r) => r.trang_thai === "Chờ" && r.ngay_nhac < today).length;
 
   return (

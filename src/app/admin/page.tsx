@@ -272,8 +272,8 @@ export default function DashboardPage() {
 
   const kpiCards = [
     { label: "Khách hàng mới", value: stats.totalCustomers, prev: stats.prevCustomers, icon: Users, color: "#2E7D32" },
-    { label: "Doanh thu", value: stats.revenue, prev: stats.prevRevenue, icon: DollarSign, color: "#1565C0", format: "money" },
     { label: "Hợp đồng", value: stats.totalContracts, prev: stats.prevContracts, icon: FileText, color: "#6A1B9A" },
+    { label: "Doanh thu", value: stats.revenue, prev: stats.prevRevenue, icon: DollarSign, color: "#1565C0", format: "money" },
     { label: "Công nợ", value: totalDebt, prev: 0, icon: TrendingDown, color: "#B71C1C", format: "money", subtitle: `${debtCount} khách` },
   ];
 
