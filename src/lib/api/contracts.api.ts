@@ -33,12 +33,16 @@ export type CreateContractInput = Omit<Contract, "id" | "ma_hd" | "created_at" |
 
 async function generateMaHD(): Promise<string> {
   const year = new Date().getFullYear();
+  const prefix = `GS-${year}-`;
   const supabase = createClient();
+  // Scope the count to the current year's prefix so numbering restarts each year
+  // and doesn't keep climbing across years.
   const { count } = await supabase
     .from("contracts")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .ilike("ma_hd", `${prefix}%`);
   const nextNum = (count ?? 0) + 1;
-  return `GS-${year}-${String(nextNum).padStart(3, "0")}`;
+  return `${prefix}${String(nextNum).padStart(3, "0")}`;
 }
 
 export async function fetchContracts(): Promise<Contract[]> {
@@ -177,10 +181,8 @@ export async function deleteContract(id: string) {
     .eq("id", id)
     .single();
 
-  // Delete dependent records that have ON DELETE RESTRICT
-  await supabase.from("service_history").delete().eq("contract_id", id);
-  await supabase.from("payments").delete().eq("contract_id", id);
-
+  // service_history, payments, service_visits and reminders are removed
+  // automatically by ON DELETE CASCADE.
   const { error } = await supabase.from("contracts").delete().eq("id", id);
   if (error) throw error;
 

@@ -91,30 +91,31 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
     .insert({ ...input, created_by: user?.id ?? null });
   if (error) throw error;
 
-  // Update stock
-  const table = input.loai === "chemicals" ? "chemicals" : "supplies";
-  const { data: current } = await supabase
-    .from(table)
-    .select("so_luong_ton")
-    .eq("id", input.item_id)
-    .single();
-
-  const currentQty = current?.so_luong_ton ?? 0;
-  let newQty = currentQty;
-
+  // Atomic stock update via RPC — avoids the read-then-write race we
+  // used to have (two concurrent "Xuất" could double-spend).
   if (input.loai_giao_dich === "Nhập") {
-    newQty = currentQty + input.so_luong;
+    const { error: e } = await supabase.rpc("adjust_stock", {
+      p_loai: input.loai,
+      p_item_id: input.item_id,
+      p_delta: input.so_luong,
+    });
+    if (e) throw e;
   } else if (input.loai_giao_dich === "Xuất") {
-    newQty = Math.max(0, currentQty - input.so_luong);
+    const { error: e } = await supabase.rpc("adjust_stock", {
+      p_loai: input.loai,
+      p_item_id: input.item_id,
+      p_delta: -input.so_luong,
+    });
+    if (e) throw e;
   } else {
-    // Kiểm kê - set trực tiếp
-    newQty = input.so_luong;
+    // Kiểm kê — set tồn trực tiếp.
+    const { error: e } = await supabase.rpc("set_stock", {
+      p_loai: input.loai,
+      p_item_id: input.item_id,
+      p_value: input.so_luong,
+    });
+    if (e) throw e;
   }
-
-  await supabase
-    .from(table)
-    .update({ so_luong_ton: newQty })
-    .eq("id", input.item_id);
 
   await logActivity({
     hanh_dong: `${input.loai_giao_dich} kho`,

@@ -77,11 +77,12 @@ export async function updateSession(request: NextRequest) {
 
     // If authenticated, check if user exists in users table with active status
     if (pathname.startsWith("/admin") && user) {
+      // maybeSingle() so "no row" is a clean `null` instead of a PostgREST error.
       const { data: dbUser } = await supabase
         .from("users")
         .select("id, trang_thai, vai_tro")
         .eq("email", user.email)
-        .single();
+        .maybeSingle();
 
       // User not in users table or not active → pending approval
       if (!dbUser || dbUser.trang_thai !== "Hoạt động") {

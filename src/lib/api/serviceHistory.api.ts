@@ -34,11 +34,15 @@ export type CreateServiceHistoryInput = Omit<
 
 async function generateMaLSDV(): Promise<string> {
   const supabase = createClient();
+  const year = new Date().getFullYear();
+  const prefix = `GS-LS-${year}-`;
+  // Year-scoped so the sequence restarts each year.
   const { count } = await supabase
     .from("service_history")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .ilike("ma_lsdv", `${prefix}%`);
   const nextNum = (count ?? 0) + 1;
-  return `GS-LS${String(nextNum).padStart(3, "0")}`;
+  return `${prefix}${String(nextNum).padStart(4, "0")}`;
 }
 
 export async function fetchServiceHistories(): Promise<ServiceHistory[]> {

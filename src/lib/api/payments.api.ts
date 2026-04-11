@@ -29,11 +29,15 @@ export type CreatePaymentInput = {
 
 async function generateMaTT(): Promise<string> {
   const supabase = createClient();
+  const year = new Date().getFullYear();
+  const prefix = `GS-TT-${year}-`;
+  // Year-scoped so the sequence restarts each year and doesn't balloon.
   const { count } = await supabase
     .from("payments")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .ilike("ma_tt", `${prefix}%`);
   const nextNum = (count ?? 0) + 1;
-  return `GS-TT-${String(nextNum).padStart(3, "0")}`;
+  return `${prefix}${String(nextNum).padStart(4, "0")}`;
 }
 
 export async function fetchPayments(): Promise<Payment[]> {
@@ -62,15 +66,15 @@ export async function createPayment(input: CreatePaymentInput): Promise<Payment>
   const { data: { user } } = await supabase.auth.getUser();
   const ma_tt = await generateMaTT();
 
+  // The `trg_payments_sync_contract` trigger in the database recomputes
+  // contracts.so_tien_da_tra + trang_thai_thanh_toan atomically after
+  // the insert, so we no longer re-sum payments from the client.
   const { data, error } = await supabase
     .from("payments")
     .insert({ ma_tt, ...input, created_by: user?.id ?? null })
     .select("*, contracts(ma_hd, gia_tri, customers(ten_kh, ma_kh))")
     .single();
   if (error) throw error;
-
-  // Update contract payment status
-  await updateContractPaymentStatus(input.contract_id);
 
   await logActivity({
     hanh_dong: "Thêm thanh toán",
@@ -89,51 +93,17 @@ export async function deletePayment(id: string) {
     .eq("id", id)
     .single();
 
+  // Trigger on payments will refresh the contract's totals after delete.
   const { error } = await supabase.from("payments").delete().eq("id", id);
   if (error) throw error;
 
   if (payment) {
-    await updateContractPaymentStatus(payment.contract_id);
     await logActivity({
       hanh_dong: "Xóa thanh toán",
       module: "payments",
       chi_tiet: payment.ma_tt,
     });
   }
-}
-
-async function updateContractPaymentStatus(contractId: string) {
-  const supabase = createClient();
-
-  // Get contract value
-  const { data: contract } = await supabase
-    .from("contracts")
-    .select("gia_tri")
-    .eq("id", contractId)
-    .single();
-
-  // Sum all payments for this contract
-  const { data: payments } = await supabase
-    .from("payments")
-    .select("so_tien")
-    .eq("contract_id", contractId);
-
-  const totalPaid = (payments ?? []).reduce((sum, p) => sum + (p.so_tien || 0), 0);
-  const contractValue = contract?.gia_tri || 0;
-
-  let trang_thai_thanh_toan = "Chưa TT";
-  if (totalPaid >= contractValue && contractValue > 0) {
-    trang_thai_thanh_toan = "Đã TT";
-  } else if (totalPaid > 0) {
-    trang_thai_thanh_toan = "Đã cọc";
-  }
-
-  const { error } = await supabase
-    .from("contracts")
-    .update({ so_tien_da_tra: totalPaid, trang_thai_thanh_toan })
-    .eq("id", contractId);
-
-  if (error) throw new Error(`Cập nhật trạng thái HĐ thất bại: ${error.message}`);
 }
 
 export interface DebtRecord {

@@ -15,20 +15,29 @@ export async function logActivity(params: {
   module: string;
   chi_tiet?: string;
 }) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) return;
+    if (!user) return;
 
-  await supabase.from("activity_log").insert({
-    user_id: user.id,
-    email: user.email,
-    hanh_dong: params.hanh_dong,
-    module: params.module,
-    chi_tiet: params.chi_tiet ?? null,
-  });
+    const { error } = await supabase.from("activity_log").insert({
+      user_id: user.id,
+      email: user.email,
+      hanh_dong: params.hanh_dong,
+      module: params.module,
+      chi_tiet: params.chi_tiet ?? null,
+    });
+    // Audit logging must never break the caller's happy path,
+    // but we should surface failures in the console for ops.
+    if (error) {
+      console.warn("[logActivity] insert failed:", error.message);
+    }
+  } catch (err) {
+    console.warn("[logActivity] unexpected error:", err);
+  }
 }
 
 export async function fetchActivityLogs(limit = 50): Promise<ActivityLog[]> {

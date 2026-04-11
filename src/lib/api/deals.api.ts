@@ -78,10 +78,13 @@ export type CreateDealInput = {
 async function generateMaDeal(): Promise<string> {
   const supabase = createClient();
   const year = new Date().getFullYear();
+  const prefix = `D-${year}-`;
+  // Scope to this year so numbering restarts each year.
   const { count } = await supabase
     .from("deals")
-    .select("*", { count: "exact", head: true });
-  return `D-${year}-${String((count ?? 0) + 1).padStart(4, "0")}`;
+    .select("*", { count: "exact", head: true })
+    .ilike("ma_deal", `${prefix}%`);
+  return `${prefix}${String((count ?? 0) + 1).padStart(4, "0")}`;
 }
 
 const SELECT = "*, users:nguoi_phu_trach(ho_ten)";
@@ -161,7 +164,44 @@ export async function updateDeal(id: string, updates: Partial<Deal>): Promise<De
   } as Deal;
 }
 
-export async function updateDealField(id: string, field: string, value: unknown): Promise<void> {
+// Allowlist of fields that can be updated via updateDealField.
+// DO NOT add: id, ma_deal, created_at, updated_at, or any virtual join field.
+const UPDATABLE_DEAL_FIELDS = new Set<keyof Deal>([
+  "giai_doan",
+  "loai_kh",
+  "ten_kh",
+  "sdt",
+  "email",
+  "dia_chi",
+  "ten_cong_ty",
+  "nguoi_lien_he",
+  "loai_hinh",
+  "dich_vu",
+  "loai_con_trung",
+  "dien_tich",
+  "gia_tri",
+  "ngay_hen",
+  "ngay_thuc_hien",
+  "ngay_hoan_thanh",
+  "ktv_phu_trach",
+  "hoa_chat_su_dung",
+  "vat_tu_su_dung",
+  "anh_truoc",
+  "anh_sau",
+  "trang_thai_thanh_toan",
+  "ghi_chu",
+  "uu_tien",
+  "nguoi_phu_trach",
+]);
+
+export async function updateDealField(
+  id: string,
+  field: keyof Deal,
+  value: unknown
+): Promise<void> {
+  if (!UPDATABLE_DEAL_FIELDS.has(field)) {
+    throw new Error(`Field "${String(field)}" is not updatable`);
+  }
   const supabase = createClient();
   const { error } = await supabase
     .from("deals")
