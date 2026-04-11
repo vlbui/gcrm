@@ -68,14 +68,12 @@ export async function createVisit(input: CreateVisitInput): Promise<ServiceVisit
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { count } = await supabase
-    .from("service_visits")
-    .select("*", { count: "exact", head: true })
-    .eq("contract_id", input.contract_id);
-
+  // lan_thu is assigned by the BEFORE INSERT trigger in the database,
+  // which serializes per contract so two concurrent inserts can't land
+  // on the same number. We just pass 0 (the trigger treats 0/NULL as "auto").
   const { data, error } = await supabase
     .from("service_visits")
-    .insert({ ...input, lan_thu: (count ?? 0) + 1, created_by: user?.id ?? null })
+    .insert({ ...input, lan_thu: 0, created_by: user?.id ?? null })
     .select()
     .single();
   if (error) throw error;
@@ -101,40 +99,48 @@ export async function updateVisit(id: string, updates: Partial<ServiceVisit>): P
 export async function completeVisit(id: string): Promise<void> {
   const supabase = createClient();
 
-  // Get visit with materials + payment amount
-  const { data: visit } = await supabase.from("service_visits").select("contract_id, lan_thu, hoa_chat, vat_tu, da_thanh_toan").eq("id", id).single();
+  // Get visit with materials
+  const { data: visit } = await supabase
+    .from("service_visits")
+    .select("contract_id, lan_thu, hoa_chat, vat_tu, da_thanh_toan")
+    .eq("id", id)
+    .single();
   if (!visit) throw new Error("Visit not found");
 
-  // Auto xuất kho for chemicals
   const { data: { user } } = await supabase.auth.getUser();
-  for (const hc of (visit.hoa_chat || []) as MaterialUsage[]) {
-    if (hc.so_luong > 0) {
-      await supabase.from("inventory_transactions").insert({
-        loai: "chemicals", item_id: hc.id, loai_giao_dich: "Xuất",
-        so_luong: hc.so_luong, don_vi: hc.don_vi,
-        ghi_chu: `Auto xuất kho - Lần DV`, created_by: user?.id ?? null,
+
+  // Auto xuất kho — insert the transaction record and atomically decrement
+  // the stock via the adjust_stock RPC. Previously this was a read + write
+  // pair that could double-spend under concurrency.
+  const applyUsage = async (
+    loai: "chemicals" | "supplies",
+    items: MaterialUsage[]
+  ) => {
+    for (const item of items) {
+      if (!item.so_luong || item.so_luong <= 0) continue;
+
+      const { error: txErr } = await supabase.from("inventory_transactions").insert({
+        loai,
+        item_id: item.id,
+        loai_giao_dich: "Xuất",
+        so_luong: item.so_luong,
+        don_vi: item.don_vi,
+        ghi_chu: `Auto xuất kho - Lần DV`,
+        created_by: user?.id ?? null,
       });
-      // Update stock
-      const { data: chem } = await supabase.from("chemicals").select("so_luong_ton").eq("id", hc.id).single();
-      if (chem) {
-        await supabase.from("chemicals").update({ so_luong_ton: Math.max(0, (chem.so_luong_ton || 0) - hc.so_luong) }).eq("id", hc.id);
-      }
-    }
-  }
-  // Auto xuất kho for supplies
-  for (const vt of (visit.vat_tu || []) as MaterialUsage[]) {
-    if (vt.so_luong > 0) {
-      await supabase.from("inventory_transactions").insert({
-        loai: "supplies", item_id: vt.id, loai_giao_dich: "Xuất",
-        so_luong: vt.so_luong, don_vi: vt.don_vi,
-        ghi_chu: `Auto xuất kho - Lần DV`, created_by: user?.id ?? null,
+      if (txErr) throw txErr;
+
+      const { error: rpcErr } = await supabase.rpc("adjust_stock", {
+        p_loai: loai,
+        p_item_id: item.id,
+        p_delta: -item.so_luong,
       });
-      const { data: sup } = await supabase.from("supplies").select("so_luong_ton").eq("id", vt.id).single();
-      if (sup) {
-        await supabase.from("supplies").update({ so_luong_ton: Math.max(0, (sup.so_luong_ton || 0) - vt.so_luong) }).eq("id", vt.id);
-      }
+      if (rpcErr) throw rpcErr;
     }
-  }
+  };
+
+  await applyUsage("chemicals", (visit.hoa_chat || []) as MaterialUsage[]);
+  await applyUsage("supplies", (visit.vat_tu || []) as MaterialUsage[]);
 
   // Update visit status
   await supabase.from("service_visits").update({
