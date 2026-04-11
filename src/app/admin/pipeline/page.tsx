@@ -133,7 +133,7 @@ export default function PipelinePage() {
   };
 
   // Auto-save field
-  const handleFieldSave = async (dealId: string, field: string, value: unknown) => {
+  const handleFieldSave = async (dealId: string, field: keyof Deal, value: unknown) => {
     try {
       await updateDealField(dealId, field, value);
       setDeals((prev) => prev.map((d) => d.id === dealId ? { ...d, [field]: value } : d));
@@ -517,7 +517,7 @@ function SidePanel({
   users: User[];
   technicians: Technician[];
   onClose: () => void;
-  onFieldSave: (id: string, field: string, value: unknown) => void;
+  onFieldSave: (id: string, field: keyof Deal, value: unknown) => void;
   onDelete: (id: string) => void;
   onPayment: (dealId: string, payment: Omit<PaymentRecord, "id">) => void;
 }) {

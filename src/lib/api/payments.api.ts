@@ -29,11 +29,15 @@ export type CreatePaymentInput = {
 
 async function generateMaTT(): Promise<string> {
   const supabase = createClient();
+  const year = new Date().getFullYear();
+  const prefix = `GS-TT-${year}-`;
+  // Year-scoped so the sequence restarts each year and doesn't balloon.
   const { count } = await supabase
     .from("payments")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .ilike("ma_tt", `${prefix}%`);
   const nextNum = (count ?? 0) + 1;
-  return `GS-TT-${String(nextNum).padStart(3, "0")}`;
+  return `${prefix}${String(nextNum).padStart(4, "0")}`;
 }
 
 export async function fetchPayments(): Promise<Payment[]> {

@@ -37,12 +37,17 @@ export async function getCurrentUser(): Promise<AppUser | null> {
 
   if (!user?.email) return null;
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("users")
     .select("*")
     .eq("email", user.email)
-    .single();
+    .maybeSingle();
 
+  if (error) {
+    // Log to help diagnose RLS/permission misconfig; treat as "not found".
+    console.warn("[getCurrentUser] query failed:", error.message);
+    return null;
+  }
   return data;
 }
 

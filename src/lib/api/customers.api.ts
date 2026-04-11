@@ -18,25 +18,31 @@ export interface Customer {
 export type CreateCustomerInput = Omit<Customer, "id" | "ma_kh" | "created_at" | "created_by">;
 
 function getLoaiPrefix(loaiKh: string): string {
-  if (loaiKh.includes("Doanh nghiệp") || loaiKh.includes("Khu công nghiệp")) return "DN";
-  if (loaiKh.includes("chung cư") || loaiKh.includes("Văn phòng") || loaiKh.includes("Trường học")) return "VP";
-  if (loaiKh.includes("Trang trại")) return "TT";
+  const lower = loaiKh.toLowerCase();
+  if (lower.includes("doanh nghiệp") || lower.includes("khu công nghiệp")) return "DN";
+  if (lower.includes("chung cư") || lower.includes("văn phòng") || lower.includes("trường học")) return "VP";
+  if (lower.includes("trang trại")) return "TT";
   return "CN";
 }
 
 async function generateMaKH(loaiKh: string): Promise<string> {
   const prefix = `GS-${getLoaiPrefix(loaiKh)}`;
   const supabase = createClient();
+  // Use ilike so the count is case-insensitive; escape `%` and `_` if they ever appear.
   const { data } = await supabase
     .from("customers")
     .select("ma_kh")
-    .like("ma_kh", `${prefix}%`)
+    .ilike("ma_kh", `${prefix}%`)
     .order("ma_kh", { ascending: false })
     .limit(1);
 
   if (!data || data.length === 0) return `${prefix}001`;
 
-  const lastNum = parseInt(data[0].ma_kh.replace(prefix, "")) || 0;
+  // Parse the numeric suffix; if the prefix doesn't match, fall back to 0.
+  const suffix = data[0].ma_kh.startsWith(prefix)
+    ? data[0].ma_kh.slice(prefix.length)
+    : "";
+  const lastNum = parseInt(suffix, 10) || 0;
   return `${prefix}${String(lastNum + 1).padStart(3, "0")}`;
 }
 

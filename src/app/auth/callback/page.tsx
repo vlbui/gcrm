@@ -10,10 +10,21 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const supabase = createClient();
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const done = () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      if (unsubscribe) unsubscribe();
+    };
 
     // Implicit flow: Supabase auto-detects hash tokens
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
       if (session) {
+        done();
         router.push("/admin");
         return;
       }
@@ -21,20 +32,26 @@ export default function AuthCallback() {
       // Listen for auth state change
       const {
         data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (session) {
-          subscription.unsubscribe();
+      } = supabase.auth.onAuthStateChange((_event, newSession) => {
+        if (cancelled) return;
+        if (newSession) {
+          done();
           router.push("/admin");
         }
       });
+      unsubscribe = () => subscription.unsubscribe();
 
-      // Timeout fallback
-      setTimeout(() => {
+      // Timeout fallback — only fires if we haven't already resolved.
+      timeoutId = setTimeout(() => {
+        if (cancelled) return;
+        done();
         setStatus("Đăng nhập thất bại...");
         router.push("/login?error=timeout");
       }, 5000);
     });
-  }, []);
+
+    return done;
+  }, [router]);
 
   return (
     <div

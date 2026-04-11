@@ -2,21 +2,27 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { Shield } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  // Memoize so the client isn't re-created every render and useEffect
+  // can depend on it stably.
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
+    let cancelled = false;
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+      if (!cancelled && session) {
         router.push("/admin");
       }
     });
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [router, supabase]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
