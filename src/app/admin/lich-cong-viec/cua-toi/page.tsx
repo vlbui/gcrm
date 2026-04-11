@@ -5,11 +5,12 @@ import { fetchSchedules, updateSchedule, type Schedule } from "@/lib/api/schedul
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatDate } from "@/lib/utils/date";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Calendar,
   Clock,
   MapPin,
-  CheckCircle,
+  CheckCircle2,
   AlertCircle,
 } from "lucide-react";
 
@@ -68,18 +69,17 @@ export default function MySchedulePage() {
         </div>
       </div>
 
-      <div className="admin-toolbar">
-        <div style={{ display: "flex", gap: 8 }}>
-          {(["pending", "all", "done"] as const).map((f) => (
-            <button
-              key={f}
-              className={`admin-btn ${filter === f ? "admin-btn-primary" : "admin-btn-outline"}`}
-              onClick={() => setFilter(f)}
-            >
-              {f === "pending" ? "Chưa xong" : f === "done" ? "Đã xong" : "Tất cả"}
-            </button>
-          ))}
-        </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {(["pending", "all", "done"] as const).map((f) => (
+          <Button
+            key={f}
+            size="sm"
+            variant={filter === f ? "default" : "outline"}
+            onClick={() => setFilter(f)}
+          >
+            {f === "pending" ? "Chưa xong" : f === "done" ? "Đã xong" : "Tất cả"}
+          </Button>
+        ))}
       </div>
 
       {loading ? (
@@ -123,17 +123,32 @@ export default function MySchedulePage() {
               </div>
               <div className="my-schedule-actions">
                 {s.trang_thai === "Chưa làm" && (
-                  <button className="admin-btn admin-btn-outline" onClick={() => handleStart(s)}>
+                  <Button size="sm" variant="outline" onClick={() => handleStart(s)}>
                     <AlertCircle size={14} /> Bắt đầu
-                  </button>
+                  </Button>
                 )}
                 {s.trang_thai === "Đang làm" && (
-                  <button className="admin-btn admin-btn-primary" onClick={() => handleComplete(s)}>
-                    <CheckCircle size={14} /> Hoàn thành
-                  </button>
+                  <Button size="sm" onClick={() => handleComplete(s)}>
+                    <CheckCircle2 size={14} /> Hoàn thành
+                  </Button>
                 )}
                 {s.trang_thai === "Hoàn thành" && (
-                  <span className="admin-badge green">Đã xong</span>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "3px 10px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      borderRadius: 999,
+                      background: "#ECFDF5",
+                      color: "#047857",
+                      border: "1px solid #A7F3D0",
+                    }}
+                  >
+                    Đã xong
+                  </span>
                 )}
               </div>
             </div>
