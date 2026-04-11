@@ -23,18 +23,29 @@ import { fetchActiveTechnicians, type Technician } from "@/lib/api/technicians.a
 import { fetchContracts, type Contract } from "@/lib/api/contracts.api";
 import { fetchCustomers, type Customer } from "@/lib/api/customers.api";
 import { toast } from "sonner";
-import { formatDate } from "@/lib/utils/date";
 import DateInput from "@/components/admin/DateInput";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  X,
   Trash2,
   Filter,
   ClipboardList,
   Bell,
-  CheckCircle,
+  CheckCircle2,
+  AlertTriangle,
+  Calendar,
 } from "lucide-react";
 
 const DAYS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -72,16 +83,26 @@ export default function SchedulePage() {
   const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState<FormMode>("schedule");
   const [editSchedule, setEditSchedule] = useState<Schedule | null>(null);
+  const [editReminder, setEditReminder] = useState<Reminder | null>(null);
+  const [saving, setSaving] = useState(false);
   const [scheduleForm, setScheduleForm] = useState<CreateScheduleInput>({
     contract_id: null, ngay_thuc_hien: "", gio_bat_dau: "08:00",
     gio_ket_thuc: "10:00", ktv_id: null, dia_diem: "", ghi_chu: "",
   });
 
-  // Reminder form
-  const [reminderForm, setReminderForm] = useState<CreateReminderInput>({
+  // Reminder form — also holds trang_thai when editing
+  const [reminderForm, setReminderForm] = useState<CreateReminderInput & { trang_thai?: string }>({
     customer_id: "", contract_id: "", loai: "Hỏi thăm",
     ngay_nhac: "", noi_dung: "", nguoi_phu_trach: "",
   });
+
+  // Delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<
+    | { type: "schedule"; id: string; label: string }
+    | { type: "reminder"; id: string; label: string }
+    | null
+  >(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -173,6 +194,7 @@ export default function SchedulePage() {
   // Open forms
   const openNewSchedule = (date?: string) => {
     setEditSchedule(null);
+    setEditReminder(null);
     setFormMode("schedule");
     setScheduleForm({
       contract_id: null, ngay_thuc_hien: date || today,
@@ -183,6 +205,8 @@ export default function SchedulePage() {
   };
 
   const openNewReminder = (date?: string) => {
+    setEditSchedule(null);
+    setEditReminder(null);
     setFormMode("reminder");
     setReminderForm({
       customer_id: "", contract_id: "", loai: "Hỏi thăm",
@@ -192,6 +216,7 @@ export default function SchedulePage() {
   };
 
   const openEditSchedule = (s: Schedule) => {
+    setEditReminder(null);
     setEditSchedule(s);
     setFormMode("schedule");
     setScheduleForm({
@@ -203,48 +228,135 @@ export default function SchedulePage() {
     setShowForm(true);
   };
 
+  const openEditReminder = (r: Reminder) => {
+    setEditSchedule(null);
+    setEditReminder(r);
+    setFormMode("reminder");
+    setReminderForm({
+      customer_id: r.customer_id || "",
+      contract_id: r.contract_id || "",
+      loai: r.loai,
+      ngay_nhac: r.ngay_nhac,
+      noi_dung: r.noi_dung || "",
+      nguoi_phu_trach: r.nguoi_phu_trach || "",
+      trang_thai: r.trang_thai,
+    });
+    setShowForm(true);
+  };
+
   const handleEventClick = (ev: CalendarEvent) => {
     if (ev.type === "schedule") openEditSchedule(ev.raw as Schedule);
-    // reminders and visits: click handled inline
+    else if (ev.type === "reminder") openEditReminder(ev.raw as Reminder);
+    // visits: click is no-op — they're managed from contract detail page
   };
 
   // Submit handlers
   const handleScheduleSubmit = async () => {
     if (!scheduleForm.ngay_thuc_hien) { toast.error("Vui lòng chọn ngày"); return; }
+    setSaving(true);
     try {
-      if (editSchedule) { await updateSchedule(editSchedule.id, scheduleForm); toast.success("Đã cập nhật"); }
-      else { await createSchedule(scheduleForm); toast.success("Đã tạo lịch"); }
-      setShowForm(false); await loadData();
-    } catch { toast.error("Lỗi lưu lịch"); }
+      if (editSchedule) {
+        await updateSchedule(editSchedule.id, scheduleForm);
+        toast.success("Đã cập nhật lịch");
+      } else {
+        await createSchedule(scheduleForm);
+        toast.success("Đã tạo lịch");
+      }
+      setShowForm(false);
+      await loadData();
+    } catch {
+      toast.error("Lỗi lưu lịch");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReminderSubmit = async () => {
-    if (!reminderForm.ngay_nhac || !reminderForm.loai) { toast.error("Nhập loại và ngày nhắc"); return; }
+    if (!reminderForm.ngay_nhac || !reminderForm.loai) {
+      toast.error("Vui lòng nhập loại và ngày nhắc");
+      return;
+    }
+    setSaving(true);
     try {
-      await createReminder(reminderForm);
-      toast.success("Đã tạo nhắc nhở");
-      setShowForm(false); await loadData();
-    } catch { toast.error("Lỗi tạo nhắc nhở"); }
-  };
-
-  const handleDeleteSchedule = async (id: string) => {
-    if (!confirm("Xóa lịch này?")) return;
-    try { await deleteSchedule(id); toast.success("Đã xóa"); await loadData(); }
-    catch { toast.error("Lỗi xóa"); }
+      if (editReminder) {
+        await updateReminder(editReminder.id, {
+          customer_id: reminderForm.customer_id || null,
+          contract_id: reminderForm.contract_id || null,
+          loai: reminderForm.loai,
+          ngay_nhac: reminderForm.ngay_nhac,
+          noi_dung: reminderForm.noi_dung || null,
+          nguoi_phu_trach: reminderForm.nguoi_phu_trach || null,
+          trang_thai: reminderForm.trang_thai || "Chờ",
+        });
+        toast.success("Đã cập nhật nhắc nhở");
+      } else {
+        const payload: CreateReminderInput = {
+          loai: reminderForm.loai,
+          ngay_nhac: reminderForm.ngay_nhac,
+        };
+        if (reminderForm.customer_id) payload.customer_id = reminderForm.customer_id;
+        if (reminderForm.contract_id) payload.contract_id = reminderForm.contract_id;
+        if (reminderForm.noi_dung) payload.noi_dung = reminderForm.noi_dung;
+        if (reminderForm.nguoi_phu_trach) payload.nguoi_phu_trach = reminderForm.nguoi_phu_trach;
+        await createReminder(payload);
+        toast.success("Đã tạo nhắc nhở");
+      }
+      setShowForm(false);
+      await loadData();
+    } catch {
+      toast.error("Lỗi lưu nhắc nhở");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReminderDone = async (id: string) => {
     try {
       await updateReminder(id, { trang_thai: "Đã làm" });
-      setReminders((prev) => prev.map((r) => r.id === id ? { ...r, trang_thai: "Đã làm" } : r));
-      toast.success("Đã hoàn thành");
-    } catch { toast.error("Lỗi"); }
+      setReminders((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, trang_thai: "Đã làm" } : r))
+      );
+      toast.success("Đã đánh dấu hoàn thành");
+    } catch {
+      toast.error("Lỗi cập nhật");
+    }
   };
 
-  const handleDeleteReminder = async (id: string) => {
-    if (!confirm("Xóa nhắc nhở?")) return;
-    try { await deleteReminder(id); toast.success("Đã xóa"); await loadData(); }
-    catch { toast.error("Lỗi xóa"); }
+  const requestDelete = (target: NonNullable<typeof deleteTarget>) => {
+    setDeleteTarget(target);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteSchedule = () => {
+    if (!editSchedule) return;
+    const label = editSchedule.contracts?.customers?.ten_kh || editSchedule.dia_diem || "lịch công việc";
+    requestDelete({ type: "schedule", id: editSchedule.id, label });
+  };
+
+  const confirmDeleteReminder = () => {
+    if (!editReminder) return;
+    const label = `${editReminder.loai}${editReminder.customers?.ten_kh ? ` - ${editReminder.customers.ten_kh}` : ""}`;
+    requestDelete({ type: "reminder", id: editReminder.id, label });
+  };
+
+  const handleConfirmedDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      if (deleteTarget.type === "schedule") {
+        await deleteSchedule(deleteTarget.id);
+      } else {
+        await deleteReminder(deleteTarget.id);
+      }
+      toast.success("Đã xóa");
+      setDeleteDialogOpen(false);
+      setDeleteTarget(null);
+      setShowForm(false);
+      setEditSchedule(null);
+      setEditReminder(null);
+      await loadData();
+    } catch {
+      toast.error("Lỗi xóa");
+    }
   };
 
   // KTV colors
@@ -266,41 +378,70 @@ export default function SchedulePage() {
           <h1 className="admin-page-title">Lịch công tác</h1>
           <p className="admin-page-subtitle">
             {scheduleCount} lịch · {visitCount} lần DV · {reminderCount} nhắc nhở
-            {overdueReminders > 0 && <span style={{ color: "#DC2626", fontWeight: 600 }}> · {overdueReminders} quá hạn</span>}
+            {overdueReminders > 0 && (
+              <span style={{ color: "#DC2626", fontWeight: 600 }}>
+                {" "}· {overdueReminders} quá hạn
+              </span>
+            )}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button className="admin-btn admin-btn-outline" onClick={() => openNewReminder()}>
+          <Button variant="outline" onClick={() => openNewReminder()}>
             <Bell size={16} /> Nhắc nhở
-          </button>
-          <button className="admin-btn admin-btn-primary" onClick={() => openNewSchedule()}>
+          </Button>
+          <Button className="btn-add" onClick={() => openNewSchedule()}>
             <Plus size={16} /> Thêm lịch
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Calendar Controls */}
       <div className="calendar-controls">
         <div className="calendar-nav">
-          <button className="admin-btn admin-btn-ghost" onClick={prevMonth}><ChevronLeft size={18} /></button>
+          <Button variant="ghost" size="icon-sm" onClick={prevMonth}>
+            <ChevronLeft size={18} />
+          </Button>
           <h2 className="calendar-month-title">{monthName}</h2>
-          <button className="admin-btn admin-btn-ghost" onClick={nextMonth}><ChevronRight size={18} /></button>
-          <button className="admin-btn admin-btn-outline" onClick={goToday}>Hôm nay</button>
+          <Button variant="ghost" size="icon-sm" onClick={nextMonth}>
+            <ChevronRight size={18} />
+          </Button>
+          <Button variant="outline" size="sm" onClick={goToday}>
+            Hôm nay
+          </Button>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <div style={{ display: "flex", gap: 0 }}>
-            {([["all", "Tất cả"], ["schedule", "Lịch"], ["visit", "Lần DV"], ["reminder", "Nhắc"]] as const).map(([key, label]) => (
-              <button key={key} className={`dash-range-btn ${filterType === key ? "active" : ""}`}
-                onClick={() => setFilterType(key)} style={{ fontSize: 12, padding: "4px 10px" }}>
+          <div style={{ display: "flex", gap: 4 }}>
+            {(
+              [
+                ["all", "Tất cả"],
+                ["schedule", "Lịch"],
+                ["visit", "Lần DV"],
+                ["reminder", "Nhắc"],
+              ] as const
+            ).map(([key, label]) => (
+              <Button
+                key={key}
+                size="sm"
+                variant={filterType === key ? "default" : "outline"}
+                onClick={() => setFilterType(key)}
+              >
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
           <Filter size={16} style={{ color: "var(--neutral-400)" }} />
-          <select className="admin-input" style={{ width: 180 }} value={filterKtv}
-            onChange={(e) => setFilterKtv(e.target.value)}>
+          <select
+            className="native-select"
+            style={{ width: 180 }}
+            value={filterKtv}
+            onChange={(e) => setFilterKtv(e.target.value)}
+          >
             <option value="">Tất cả KTV</option>
-            {technicians.map((t) => <option key={t.id} value={t.id}>{t.ho_ten}</option>)}
+            {technicians.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.ho_ten}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -346,7 +487,7 @@ export default function SchedulePage() {
                           <button style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", padding: 0 }}
                             onClick={(e) => { e.stopPropagation(); handleReminderDone(ev.id); }}
                             title="Hoàn thành">
-                            <CheckCircle size={12} style={{ color: "#10B981" }} />
+                            <CheckCircle2 size={12} style={{ color: "#10B981" }} />
                           </button>
                         )}
                       </div>
@@ -386,165 +527,434 @@ export default function SchedulePage() {
       </div>
 
       {/* Form Dialog */}
-      {showForm && (
-        <div className="admin-dialog-overlay" onClick={() => setShowForm(false)}>
-          <div className="admin-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="admin-dialog-header">
-              <h2>{formMode === "schedule"
-                ? (editSchedule ? "Sửa lịch" : "Tạo lịch mới")
-                : "Tạo nhắc nhở"
-              }</h2>
-              <button className="admin-dialog-close" onClick={() => setShowForm(false)}>
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Mode toggle for new form */}
-            {!editSchedule && (
-              <div style={{ display: "flex", gap: 0, padding: "0 20px", marginBottom: 8 }}>
-                <button className={`dash-range-btn ${formMode === "schedule" ? "active" : ""}`}
-                  onClick={() => setFormMode("schedule")} style={{ fontSize: 13 }}>
-                  Lịch công việc
-                </button>
-                <button className={`dash-range-btn ${formMode === "reminder" ? "active" : ""}`}
-                  onClick={() => setFormMode("reminder")} style={{ fontSize: 13 }}>
-                  Nhắc nhở
-                </button>
-              </div>
-            )}
-
-            <div className="admin-dialog-body">
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="sm:max-w-[680px]">
+          <DialogHeader>
+            <DialogTitle
+              style={{ display: "flex", alignItems: "center", gap: 10 }}
+            >
               {formMode === "schedule" ? (
-                <>
-                  <div className="admin-form-row">
-                    <div className="admin-form-group">
-                      <label className="admin-label">Ngày thực hiện *</label>
-                      <DateInput value={scheduleForm.ngay_thuc_hien} onChange={(v) => setScheduleForm({ ...scheduleForm, ngay_thuc_hien: v })} />
-                    </div>
-                    <div className="admin-form-group">
-                      <label className="admin-label">KTV phụ trách</label>
-                      <select className="admin-input" value={scheduleForm.ktv_id || ""}
-                        onChange={(e) => setScheduleForm({ ...scheduleForm, ktv_id: e.target.value || null })}>
-                        <option value="">— Chọn KTV —</option>
-                        {technicians.map((t) => <option key={t.id} value={t.id}>{t.ho_ten} — {t.sdt}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="admin-form-row">
-                    <div className="admin-form-group">
-                      <label className="admin-label">Giờ bắt đầu</label>
-                      <input type="time" className="admin-input" value={scheduleForm.gio_bat_dau || ""}
-                        onChange={(e) => setScheduleForm({ ...scheduleForm, gio_bat_dau: e.target.value })} />
-                    </div>
-                    <div className="admin-form-group">
-                      <label className="admin-label">Giờ kết thúc</label>
-                      <input type="time" className="admin-input" value={scheduleForm.gio_ket_thuc || ""}
-                        onChange={(e) => setScheduleForm({ ...scheduleForm, gio_ket_thuc: e.target.value })} />
-                    </div>
-                  </div>
-                  <div className="admin-form-group">
-                    <label className="admin-label">Hợp đồng</label>
-                    <select className="admin-input" value={scheduleForm.contract_id || ""}
-                      onChange={(e) => setScheduleForm({ ...scheduleForm, contract_id: e.target.value || null })}>
-                      <option value="">— Không liên kết HĐ —</option>
-                      {contracts.map((c) => (
-                        <option key={c.id} value={c.id}>{c.ma_hd} — {c.customers?.ten_kh} ({c.dich_vu})</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="admin-form-group">
-                    <label className="admin-label">Địa điểm</label>
-                    <input className="admin-input" value={scheduleForm.dia_diem || ""} placeholder="Địa chỉ thực hiện"
-                      onChange={(e) => setScheduleForm({ ...scheduleForm, dia_diem: e.target.value })} />
-                  </div>
-                  {editSchedule && (
-                    <div className="admin-form-group">
-                      <label className="admin-label">Trạng thái</label>
-                      <select className="admin-input" value={scheduleForm.trang_thai || "Chưa làm"}
-                        onChange={(e) => setScheduleForm({ ...scheduleForm, trang_thai: e.target.value })}>
-                        <option>Chưa làm</option><option>Đang làm</option><option>Hoàn thành</option><option>Hủy</option>
-                      </select>
-                    </div>
-                  )}
-                  <div className="admin-form-group">
-                    <label className="admin-label">Ghi chú</label>
-                    <textarea className="admin-input" rows={2} value={scheduleForm.ghi_chu || ""}
-                      onChange={(e) => setScheduleForm({ ...scheduleForm, ghi_chu: e.target.value })} />
-                  </div>
-                </>
+                <Calendar size={20} style={{ color: "#2E7D32" }} />
               ) : (
-                <>
-                  <div className="admin-form-row">
-                    <div className="admin-form-group">
-                      <label className="admin-label">Loại *</label>
-                      <select className="admin-input" value={reminderForm.loai}
-                        onChange={(e) => setReminderForm({ ...reminderForm, loai: e.target.value })}>
-                        {LOAI_REMINDER.map((l) => <option key={l} value={l}>{l}</option>)}
-                      </select>
-                    </div>
-                    <div className="admin-form-group">
-                      <label className="admin-label">Ngày nhắc *</label>
-                      <DateInput value={reminderForm.ngay_nhac} onChange={(v) => setReminderForm({ ...reminderForm, ngay_nhac: v })} />
-                    </div>
-                  </div>
-                  <div className="admin-form-row">
-                    <div className="admin-form-group">
-                      <label className="admin-label">Khách hàng</label>
-                      <select className="admin-input" value={reminderForm.customer_id}
-                        onChange={(e) => setReminderForm({ ...reminderForm, customer_id: e.target.value })}>
-                        <option value="">— Chọn —</option>
-                        {customers.map((c) => <option key={c.id} value={c.id}>{c.ma_kh} — {c.ten_kh}</option>)}
-                      </select>
-                    </div>
-                    <div className="admin-form-group">
-                      <label className="admin-label">Hợp đồng</label>
-                      <select className="admin-input" value={reminderForm.contract_id}
-                        onChange={(e) => setReminderForm({ ...reminderForm, contract_id: e.target.value })}>
-                        <option value="">— Chọn —</option>
-                        {contracts.filter((c) => !reminderForm.customer_id || c.customer_id === reminderForm.customer_id).map((c) => (
-                          <option key={c.id} value={c.id}>{c.ma_hd} — {c.dich_vu}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="admin-form-group">
-                    <label className="admin-label">Người phụ trách</label>
-                    <select className="admin-input" value={reminderForm.nguoi_phu_trach}
-                      onChange={(e) => setReminderForm({ ...reminderForm, nguoi_phu_trach: e.target.value })}>
-                      <option value="">— Chọn —</option>
-                      {users.map((u) => <option key={u.id} value={u.id}>{u.ho_ten}</option>)}
+                <Bell size={20} style={{ color: "#F59E0B" }} />
+              )}
+              {formMode === "schedule"
+                ? editSchedule
+                  ? "Cập nhật lịch"
+                  : "Tạo lịch công việc"
+                : editReminder
+                ? "Cập nhật nhắc nhở"
+                : "Tạo nhắc nhở"}
+            </DialogTitle>
+            <DialogDescription>
+              {formMode === "schedule"
+                ? "Gán kỹ thuật viên, thời gian và địa điểm thực hiện."
+                : "Chọn loại, ngày nhắc và nội dung cần theo dõi."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Mode toggle — only when creating new (not editing) */}
+          {!editSchedule && !editReminder && (
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                padding: "12px 28px 0",
+              }}
+            >
+              <Button
+                size="sm"
+                variant={formMode === "schedule" ? "default" : "outline"}
+                onClick={() => setFormMode("schedule")}
+                style={{ flex: 1 }}
+              >
+                <Calendar size={14} /> Lịch công việc
+              </Button>
+              <Button
+                size="sm"
+                variant={formMode === "reminder" ? "default" : "outline"}
+                onClick={() => setFormMode("reminder")}
+                style={{ flex: 1 }}
+              >
+                <Bell size={14} /> Nhắc nhở
+              </Button>
+            </div>
+          )}
+
+          {formMode === "schedule" ? (
+            <>
+              <div className="form-grid">
+                <div className="form-field">
+                  <Label>
+                    Ngày thực hiện <span style={{ color: "#DC2626" }}>*</span>
+                  </Label>
+                  <DateInput
+                    value={scheduleForm.ngay_thuc_hien}
+                    onChange={(v) =>
+                      setScheduleForm({ ...scheduleForm, ngay_thuc_hien: v })
+                    }
+                  />
+                </div>
+                <div className="form-field">
+                  <Label>KTV phụ trách</Label>
+                  <select
+                    className="native-select"
+                    value={scheduleForm.ktv_id || ""}
+                    onChange={(e) =>
+                      setScheduleForm({
+                        ...scheduleForm,
+                        ktv_id: e.target.value || null,
+                      })
+                    }
+                  >
+                    <option value="">— Chọn KTV —</option>
+                    {technicians.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.ho_ten} — {t.sdt}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-field">
+                  <Label>Giờ bắt đầu</Label>
+                  <Input
+                    type="time"
+                    value={scheduleForm.gio_bat_dau || ""}
+                    onChange={(e) =>
+                      setScheduleForm({
+                        ...scheduleForm,
+                        gio_bat_dau: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="form-field">
+                  <Label>Giờ kết thúc</Label>
+                  <Input
+                    type="time"
+                    value={scheduleForm.gio_ket_thuc || ""}
+                    onChange={(e) =>
+                      setScheduleForm({
+                        ...scheduleForm,
+                        gio_ket_thuc: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="form-field full-width">
+                  <Label>Hợp đồng</Label>
+                  <select
+                    className="native-select"
+                    value={scheduleForm.contract_id || ""}
+                    onChange={(e) =>
+                      setScheduleForm({
+                        ...scheduleForm,
+                        contract_id: e.target.value || null,
+                      })
+                    }
+                  >
+                    <option value="">— Không liên kết HĐ —</option>
+                    {contracts.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.ma_hd} — {c.customers?.ten_kh} ({c.dich_vu})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-field full-width">
+                  <Label>Địa điểm</Label>
+                  <Input
+                    placeholder="Địa chỉ thực hiện"
+                    value={scheduleForm.dia_diem || ""}
+                    onChange={(e) =>
+                      setScheduleForm({
+                        ...scheduleForm,
+                        dia_diem: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                {editSchedule && (
+                  <div className="form-field">
+                    <Label>Trạng thái</Label>
+                    <select
+                      className="native-select"
+                      value={scheduleForm.trang_thai || "Chưa làm"}
+                      onChange={(e) =>
+                        setScheduleForm({
+                          ...scheduleForm,
+                          trang_thai: e.target.value,
+                        })
+                      }
+                    >
+                      <option>Chưa làm</option>
+                      <option>Đang làm</option>
+                      <option>Hoàn thành</option>
+                      <option>Hủy</option>
                     </select>
                   </div>
-                  <div className="admin-form-group">
-                    <label className="admin-label">Nội dung</label>
-                    <textarea className="admin-input" rows={3} value={reminderForm.noi_dung}
-                      onChange={(e) => setReminderForm({ ...reminderForm, noi_dung: e.target.value })}
-                      placeholder="Nội dung nhắc nhở..." />
-                  </div>
-                </>
-              )}
-            </div>
+                )}
+                <div className="form-field full-width">
+                  <Label>Ghi chú</Label>
+                  <Textarea
+                    rows={2}
+                    placeholder="Ghi chú thêm..."
+                    value={scheduleForm.ghi_chu || ""}
+                    onChange={(e) =>
+                      setScheduleForm({
+                        ...scheduleForm,
+                        ghi_chu: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
 
-            <div className="admin-dialog-footer">
-              {editSchedule && (
-                <button className="admin-btn admin-btn-outline"
-                  style={{ color: "var(--danger-500)", borderColor: "var(--danger-500)", marginRight: "auto" }}
-                  onClick={() => { handleDeleteSchedule(editSchedule.id); setShowForm(false); }}>
-                  <Trash2 size={14} /> Xóa
-                </button>
-              )}
-              <button className="admin-btn admin-btn-outline" onClick={() => setShowForm(false)}>Hủy</button>
-              <button className="admin-btn admin-btn-primary"
-                onClick={formMode === "schedule" ? handleScheduleSubmit : handleReminderSubmit}>
-                {formMode === "schedule"
-                  ? (editSchedule ? "Cập nhật" : "Tạo lịch")
-                  : "Tạo nhắc nhở"
-                }
-              </button>
-            </div>
+              <div className="form-actions">
+                {editSchedule && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={confirmDeleteSchedule}
+                    style={{ marginRight: "auto" }}
+                  >
+                    <Trash2 size={16} /> Xóa lịch
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowForm(false)}
+                  disabled={saving}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleScheduleSubmit}
+                  disabled={saving}
+                >
+                  {saving
+                    ? "Đang lưu..."
+                    : editSchedule
+                    ? "Cập nhật"
+                    : "Tạo lịch"}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="form-grid">
+                <div className="form-field">
+                  <Label>
+                    Loại nhắc <span style={{ color: "#DC2626" }}>*</span>
+                  </Label>
+                  <select
+                    className="native-select"
+                    value={reminderForm.loai}
+                    onChange={(e) =>
+                      setReminderForm({ ...reminderForm, loai: e.target.value })
+                    }
+                  >
+                    {LOAI_REMINDER.map((l) => (
+                      <option key={l} value={l}>
+                        {l}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-field">
+                  <Label>
+                    Ngày nhắc <span style={{ color: "#DC2626" }}>*</span>
+                  </Label>
+                  <DateInput
+                    value={reminderForm.ngay_nhac}
+                    onChange={(v) =>
+                      setReminderForm({ ...reminderForm, ngay_nhac: v })
+                    }
+                  />
+                </div>
+                <div className="form-field">
+                  <Label>Khách hàng</Label>
+                  <select
+                    className="native-select"
+                    value={reminderForm.customer_id || ""}
+                    onChange={(e) =>
+                      setReminderForm({
+                        ...reminderForm,
+                        customer_id: e.target.value,
+                        contract_id: "",
+                      })
+                    }
+                  >
+                    <option value="">— Không chọn —</option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.ma_kh} — {c.ten_kh}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-field">
+                  <Label>Hợp đồng</Label>
+                  <select
+                    className="native-select"
+                    value={reminderForm.contract_id || ""}
+                    onChange={(e) =>
+                      setReminderForm({
+                        ...reminderForm,
+                        contract_id: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">— Không chọn —</option>
+                    {contracts
+                      .filter(
+                        (c) =>
+                          !reminderForm.customer_id ||
+                          c.customer_id === reminderForm.customer_id
+                      )
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.ma_hd} — {c.dich_vu}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div className="form-field">
+                  <Label>Người phụ trách</Label>
+                  <select
+                    className="native-select"
+                    value={reminderForm.nguoi_phu_trach || ""}
+                    onChange={(e) =>
+                      setReminderForm({
+                        ...reminderForm,
+                        nguoi_phu_trach: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">— Không chọn —</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.ho_ten}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {editReminder && (
+                  <div className="form-field">
+                    <Label>Trạng thái</Label>
+                    <select
+                      className="native-select"
+                      value={reminderForm.trang_thai || "Chờ"}
+                      onChange={(e) =>
+                        setReminderForm({
+                          ...reminderForm,
+                          trang_thai: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="Chờ">Chờ</option>
+                      <option value="Đã làm">Đã làm</option>
+                      <option value="Bỏ qua">Bỏ qua</option>
+                    </select>
+                  </div>
+                )}
+                <div className="form-field full-width">
+                  <Label>Nội dung</Label>
+                  <Textarea
+                    rows={3}
+                    placeholder="Mô tả nội dung nhắc nhở..."
+                    value={reminderForm.noi_dung || ""}
+                    onChange={(e) =>
+                      setReminderForm({
+                        ...reminderForm,
+                        noi_dung: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions">
+                {editReminder && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={confirmDeleteReminder}
+                    style={{ marginRight: "auto" }}
+                  >
+                    <Trash2 size={16} /> Xóa nhắc
+                  </Button>
+                )}
+                {editReminder && editReminder.trang_thai === "Chờ" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      handleReminderDone(editReminder.id);
+                      setShowForm(false);
+                    }}
+                    style={{ color: "#047857", borderColor: "#A7F3D0" }}
+                  >
+                    <CheckCircle2 size={16} /> Đã làm
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowForm(false)}
+                  disabled={saving}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleReminderSubmit}
+                  disabled={saving}
+                >
+                  {saving
+                    ? "Đang lưu..."
+                    : editReminder
+                    ? "Cập nhật"
+                    : "Tạo nhắc nhở"}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle
+              style={{ display: "flex", alignItems: "center", gap: 8 }}
+            >
+              <AlertTriangle size={20} style={{ color: "#DC2626" }} />
+              Xác nhận xóa
+            </DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa{" "}
+              {deleteTarget?.type === "schedule" ? "lịch" : "nhắc nhở"}{" "}
+              <strong>{deleteTarget?.label}</strong>? Hành động này không thể
+              hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-actions">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmedDelete}>
+              <Trash2 size={16} /> Xóa
+            </Button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

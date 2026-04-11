@@ -61,7 +61,17 @@ export async function createReminder(input: CreateReminderInput): Promise<Remind
   return { ...data, users: Array.isArray(data.users) ? data.users[0] ?? null : data.users } as Reminder;
 }
 
-export async function updateReminder(id: string, updates: Partial<{ trang_thai: string; noi_dung: string }>): Promise<void> {
+export type UpdateReminderInput = Partial<{
+  customer_id: string | null;
+  contract_id: string | null;
+  loai: string;
+  ngay_nhac: string;
+  noi_dung: string | null;
+  trang_thai: string;
+  nguoi_phu_trach: string | null;
+}>;
+
+export async function updateReminder(id: string, updates: UpdateReminderInput): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.from("reminders").update(updates).eq("id", id);
   if (error) throw error;
