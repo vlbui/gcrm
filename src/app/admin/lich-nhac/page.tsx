@@ -245,6 +245,9 @@ export default function RemindersPage() {
   };
 
   const confirmDelete = (r: Reminder) => {
+    // Close the edit dialog first so two Radix Dialogs don't fight
+    // over focus-trap / overlay.
+    setDialogOpen(false);
     setDeletingItem(r);
     setDeleteDialogOpen(true);
   };
@@ -257,11 +260,7 @@ export default function RemindersPage() {
       toast.success("Đã xóa nhắc nhở");
       setDeleteDialogOpen(false);
       setDeletingItem(null);
-      // If delete came from edit dialog, close it too
-      if (editing?.id === deletingItem.id) {
-        setDialogOpen(false);
-        setEditing(null);
-      }
+      setEditing(null);
     } catch {
       toast.error("Lỗi xóa nhắc nhở");
     }
