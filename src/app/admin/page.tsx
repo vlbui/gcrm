@@ -149,7 +149,7 @@ export default function DashboardPage() {
         // Weekly schedule - visits in next 7 days
         supabase.from("service_visits").select("id, lan_thu, ngay_du_kien, trang_thai, contract_id, contracts(ma_hd, customers(ten_kh))").gte("ngay_du_kien", today).lte("ngay_du_kien", in7).order("ngay_du_kien"),
         // Activity logs
-        fetchActivityLogs(10),
+        fetchActivityLogs(5),
         // Debts
         fetchDebts(),
       ]);
