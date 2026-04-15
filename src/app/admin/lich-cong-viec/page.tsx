@@ -330,12 +330,16 @@ export default function SchedulePage() {
   const confirmDeleteSchedule = () => {
     if (!editSchedule) return;
     const label = editSchedule.contracts?.customers?.ten_kh || editSchedule.dia_diem || "lịch công việc";
+    // Close the edit dialog first so two Radix Dialogs don't fight
+    // over focus-trap / overlay.
+    setShowForm(false);
     requestDelete({ type: "schedule", id: editSchedule.id, label });
   };
 
   const confirmDeleteReminder = () => {
     if (!editReminder) return;
     const label = `${editReminder.loai}${editReminder.customers?.ten_kh ? ` - ${editReminder.customers.ten_kh}` : ""}`;
+    setShowForm(false);
     requestDelete({ type: "reminder", id: editReminder.id, label });
   };
 
@@ -350,7 +354,6 @@ export default function SchedulePage() {
       toast.success("Đã xóa");
       setDeleteDialogOpen(false);
       setDeleteTarget(null);
-      setShowForm(false);
       setEditSchedule(null);
       setEditReminder(null);
       await loadData();
